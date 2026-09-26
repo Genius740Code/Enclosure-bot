@@ -1,0 +1,93 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enclosure — play the bot</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#101827;color:#e5e7eb;margin:0;padding:16px}
+#app{max-width:760px;margin:0 auto}
+.stats{display:flex;gap:16px;font-size:18px;margin:8px 0}
+.blue{color:#60a5fa}.red{color:#f87171}
+#board{width:100%;height:auto;background:#0b1220;border:1px solid #334155;border-radius:8px;cursor:pointer;touch-action:manipulation}
+button{background:#1e293b;color:#e5e7eb;border:1px solid #475569;border-radius:6px;padding:8px 14px;font-size:15px;margin:4px;cursor:pointer}
+button:hover{background:#334155}
+#status{min-height:1.6em;margin:8px 0;font-size:16px}
+.think{opacity:.6}
+</style></head><body><div id="app">
+<h2>Enclosure — you vs bot</h2>
+<div class="stats"><span class="blue">Blue <b id="bs">0</b> (<span id="ba">0</span> area)</span>
+<span>move <b id="mv">0</b>/120 · <b id="tn">blue</b> to play (<b id="ar">1</b> left)</span>
+<span class="red">Red <b id="rs">0</b> (<span id="ra">0</span> area)</span></div>
+<svg id="board" viewBox="0 0 760 760"></svg>
+<div id="status">loading…</div>
+<div>
+<button onclick="newGame('blue')">New game as Blue</button>
+<button onclick="newGame('red')">New game as Red</button>
+<button onclick="pass()">Pass (end turn)</button>
+<button id="watchBtn" onclick="toggleWatch()">Watch bot vs bot</button>
+</div>
+<script>
+let watching=false;
+async function toggleWatch(){
+  watching=!watching;
+  document.getElementById('watchBtn').textContent=watching?'Stop watching':'Watch bot vs bot';
+  if(watching){await fetch('/demo-step',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({restart:state&&state.over})}).then(r=>r.json()).then(refresh);watchLoop();}
+}
+async function watchLoop(){
+  if(!watching)return;
+  const r=await fetch('/demo-step',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+  await refresh(await r.json());
+  if(state&&!state.over)setTimeout(watchLoop,900);else watching=false,document.getElementById('watchBtn').textContent='Watch bot vs bot';
+}
+const N=19, SZ=760, M=40, STEP=(SZ-2*M)/(N-1);
+const X=x=>M+x*STEP, Y=y=>M+(N-1-y)*STEP;
+let state=null, sel=null, targets=[];
+const svg=document.getElementById('board');
+function el(t,a){const e=document.createElementNS('http://www.w3.org/2000/svg',t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function draw(){
+  svg.innerHTML='';
+  for(let i=0;i<N;i++){svg.appendChild(el('line',{x1:X(i),y1:Y(0),x2:X(i),y2:Y(18),stroke:'#1e293b'}));svg.appendChild(el('line',{x1:X(0),y1:Y(i),x2:X(18),y2:Y(i),stroke:'#1e293b'}));}
+  for(const c of ['blue','red']){
+    for(const s of state.segments[c]) svg.appendChild(el('line',{x1:X(s.from[0]),y1:Y(s.from[1]),x2:X(s.to[0]),y2:Y(s.to[1]),stroke:c==='blue'?'#60a5fa':'#f87171','stroke-width':s.invincible?5:2.5,opacity:s.invincible?1:.75}));
+    for(const n of state.nodes[c]){const dot=el('circle',{cx:X(n[0]),cy:Y(n[1]),r:sel&&sel[0]===n[0]&&sel[1]===n[1]?9:6,fill:c==='blue'?'#2563eb':'#dc2626',stroke:'#fff','stroke-width':1});dot.dataset.c=c;dot.dataset.p=n.join(',');svg.appendChild(dot);}
+  }
+  for(const t of targets){const d=el('circle',{cx:X(t[0]),cy:Y(t[1]),r:5,fill:'none',stroke:'#22c55e','stroke-width':2});d.dataset.t=t.join(',');svg.appendChild(d);}
+  document.getElementById('bs').textContent=state.scores.blue.toFixed(1);
+  document.getElementById('rs').textContent=state.scores.red.toFixed(1);
+  document.getElementById('ba').textContent=state.areas.blue.toFixed(1);
+  document.getElementById('ra').textContent=state.areas.red.toFixed(1);
+  document.getElementById('mv').textContent=state.moveNumber;
+  document.getElementById('tn').textContent=state.turn;
+  document.getElementById('ar').textContent=state.actionsRemaining;
+}
+async function refresh(j){
+  state=j;
+  if(j.error) setStatus('Illegal: '+j.error+' — pick again.');
+  else if(j.over) setStatus('Game over — '+(j.winner==='draw'?'draw':j.winner+' wins')+'.');
+  else if(j.bot&&j.bot.moves.length) setStatus('Bot played ('+j.bot.ms+'ms): '+j.bot.moves.map(m=>m.from+'→'+m.to).join(' · ')+'. Your move.');
+  else setStatus(state.turn===state.human?'Your move ('+state.human+'). Click one of your dots, then a green target.':'Bot thinking…');
+  sel=null;targets=[];draw();
+}
+function setStatus(s){document.getElementById('status').textContent=s;}
+async function newGame(color){setStatus('Bot thinking…');const r=await fetch('/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({color})});refresh(await r.json());}
+async function pass(){const r=await fetch('/human',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pass:true})});refresh(await r.json());}
+svg.addEventListener('click',async e=>{
+  if(!state||state.over||state.turn!==state.human)return;
+  const t=e.target;
+  if(t.dataset.t&&sel){
+    const to=t.dataset.t.split(',').map(Number);
+    setStatus('Bot thinking…');
+    const r=await fetch('/human',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:sel,to})});
+    refresh(await r.json());return;
+  }
+  if(t.dataset.c===state.human){
+    sel=t.dataset.p.split(',').map(Number);
+    setStatus('From '+sel+' — checking legal targets…');
+    const r=await fetch('/legal?from='+sel.join(','));
+    const j=await r.json();targets=j.targets;
+    if(!targets.length)setStatus('From '+sel+' — no legal moves from this node, pick another dot.');
+    else setStatus('From '+sel+' — '+targets.length+' legal targets, pick a green one.');
+    draw();return;
+  }
+  sel=null;targets=[];draw();
+});
+fetch('/state').then(r=>r.json()).then(refresh);
+</script></div></body></html>

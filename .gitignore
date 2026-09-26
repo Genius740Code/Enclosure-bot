@@ -1,0 +1,8 @@
+node_modules/
+*.log
+*.moves.json
+mined-data/
+probe-inv.js
+/tmp/
+.env
+__pycache__/
