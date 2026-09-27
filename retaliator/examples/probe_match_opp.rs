@@ -22,9 +22,9 @@ mod opp_angelstyle;
 use meridian_engine::notation::parse_square;
 use meridian_engine::{Game, Move, MoveKind, Player, Position};
 
-/// Reasonable Blue solos (Blue starts holding D10-G10); one per game.
+/// Reasonable Blue solos (Blue starts holding A10-D10); one per game.
 const SOLOS: [&str; 8] = [
-    "D10-F11", "D10-C7", "A10-C11", "F10-H13", "E10-G13", "G10-I9", "D10-E12", "E10-D13",
+    "D10-F11", "D10-C7", "A10-C11", "B10-E12", "A10-D13", "D10-E12", "C10-E13", "B10-C7",
 ];
 
 type Engine = fn(&Position) -> Option<Move>;
