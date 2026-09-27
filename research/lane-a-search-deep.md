@@ -47,6 +47,26 @@ isolates the search itself.
 - Baseline (from `research/league-scoreboard.md`): v3 loses to v1 4/10, beats
   v2 7/10, league -20.0%, gauge 6/6.
 
+## Search cost (measured 2026-09-27, loaded 2-core box, probe progress lines)
+
+- Early-game moves (b ~100-200): ~1-6s CPU/move. Mid-game (24 actions in):
+  ~14s CPU/move average. Late-game moves rise steeply (48 directions x
+  growing node count -> b^2 evals per move): ~30-60s CPU/move.
+- Per game (~60 deep moves): ~25-40 min CPU; wall time 2-4x under the box's
+  load (load avg ~11, a data collector at ~1.4 cores + other lanes' builds).
+- DEPLOYMENT CAVEAT for the merge decision: depth 3 as-is costs ~25-40s
+  CPU/move average — OVER the site's ~20s/move budget on late-game moves.
+  Even a winning search needs a time-budget layer (iterative deepening from
+  depth 2, or depth capped by branching) before deployment — a lib.rs /
+  bot-integration concern, not a search_deep.rs one.
+- Overnight scope: the box supports ~0.5-0.7 core aggregate for Lane A, so
+  the full 22-game gate set (~11-16 hrs CPU) is not viable. Running the
+  decisive subset: h2h 2 openings x 2 colors (4 games), league skips 0+30 x
+  2 colors (4 games — skip 0 = genuine line, skip 30 = the collapse line the
+  diagnosis says needs depth), gauge 2 games (relaunched when h2h/league
+  land). n is below the brief's 8-per-claim minimum; verdicts are labeled
+  accordingly.
+
 ## Results
 
 (numbers appended as gates complete)
