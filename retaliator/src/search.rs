@@ -51,6 +51,10 @@ const CUT_RADIUS: i8 = 3;
 const REBUILD_PENALTY: f64 = 3.0;
 /// How many of the latest actions count as "recent" for cut avoidance.
 pub const CUT_MEMORY: usize = 6;
+/// Capture exposure: nodes held by a single edge can be captured outright.
+/// Counts ours vs theirs; each such node is a discrete, hard-to-reverse
+/// swing, so it prices higher than a generic edge.
+const CAPTURE_W: f64 = 3.0;
 /// Patience (rival-analysis steal #2): in the opening, don't snatch tiny
 /// loops; wall first, close big later. Penalty for a first-action close
 /// gaining less than this, while fewer than this many actions are played.
@@ -167,6 +171,21 @@ pub fn evaluate(position: &Position) -> f64 {
             + room(position, player) * ROOM_WEIGHT * events_left.min(1.0)
     };
     worth(Player::Blue) - worth(Player::Red)
+        + CAPTURE_W
+            * (one_edge_nodes(position, Player::Red) as f64
+                - one_edge_nodes(position, Player::Blue) as f64)
+}
+
+/// How many of `player`'s nodes hang by a single edge (capturable).
+fn one_edge_nodes(position: &Position, player: Player) -> u32 {
+    use std::collections::HashMap;
+    let mut degree: HashMap<usize, u32> = HashMap::new();
+    for edge in position.edges(player).iter() {
+        for end in [edge.origin(), edge.far()] {
+            *degree.entry(end.index()).or_insert(0) += 1;
+        }
+    }
+    position.nodes(player).iter().filter(|n| degree.get(&n.index()) == Some(&1)).count() as u32
 }
 
 /// [`evaluate`], except that a drawn game is worth 0.
