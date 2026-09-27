@@ -112,7 +112,7 @@ fn matchup(name: &str, ret: Engine, opp: Engine, opp_name: &str) {
         let ret_blue = g < 4;
         let out = play(ret_blue, SOLOS[g], ret, opp);
         println!(
-            "{name} game {} ret={}: margin={:+.0} ret[{:.1} {}] {opp_name}[{:.1} {}]",
+            "{name} vs {opp_name} game {} base={}: margin={:+.0} base[{:.1} {}] {opp_name}[{:.1} {}]",
             g + 1,
             if ret_blue { "blue" } else { "red" },
             out.margin,
@@ -143,7 +143,7 @@ fn matchup(name: &str, ret: Engine, opp: Engine, opp_name: &str) {
     let (rl, rc, rf, rn) = side_avg(|o| o.ret);
     let (ol, oc, of_, on) = side_avg(|o| o.opp);
     println!(
-        "== {name} vs {opp_name}: W-L {wins}-{wins_loss} D{draws} avg_margin={avg_pct:+.1}% avg_diff={avg_diff:+.0} | in {rn} losses: ret[close={rl:.1} cut={rc:.1} first={rf:.1}] | in {on} losses: {opp_name}[close={ol:.1} cut={oc:.1} first={of_:.1}]",
+        "== {name} vs {opp_name}: W-L {wins}-{wins_loss} D{draws} avg_margin={avg_pct:+.1}% avg_diff={avg_diff:+.0} | in {rn} losses: base[close={rl:.1} cut={rc:.1} first={rf:.1}] | in {on} losses: {opp_name}[close={ol:.1} cut={oc:.1} first={of_:.1}]",
         wins_loss = 8 - draws - wins,
     );
 }
@@ -162,7 +162,8 @@ fn main() {
     ];
     for (style_name, style) in styles {
         for (base_name, base) in baselines {
-            matchup(style_name, style, base, base_name);
+            // Baseline as `ret`: margin and W-L read from our perspective.
+            matchup(base_name, base, style, style_name);
         }
     }
 }
