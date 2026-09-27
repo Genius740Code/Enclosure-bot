@@ -44,6 +44,16 @@ could be all-eggs-one-basket fragility. DO NOT "fix" blindly.
   opening/midgame only). If GB clusters tighter, clustering is correct and
   the user's read is wrong — report and move on. One probe, one decision.
 
+## V4d2. Unbreakable shapes (field rule)
+Dense enemy clusters are cut-PROOF: any edge through them touches 2+
+opponent edges, which is illegal (one cut per move max). Consequences:
+(a) never spend actions "fighting" a cluster with no legal cut — build
+elsewhere; (b) every threat/vulnerability term (ours and Lane B's) must
+count only LEGAL cuts (via `check_move`/legal set), never geometric
+touches, or the eval prices fantasy cuts; (c) our own mild crowding is
+protective for the same reason — a second, defensive reading of the
+clustering question in V4d.
+
 ## V4e. Structural (the actual Elo)
 Lane A owns alpha-beta + ID + TT + time management per plan-v3 §2. If no
 output by next session, I build it in `search_deep.rs` myself, starting
