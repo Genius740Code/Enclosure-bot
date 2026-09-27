@@ -126,18 +126,25 @@ const PATIENCE_MAX_GAIN: f64 = 2.0;
 const PATIENCE_WINDOW: u8 = 12;
 const PATIENCE_PENALTY: f64 = 2.0;
 
-/// Legal-cuts-only vulnerability (this file's term, V4d2 field rule): the
-/// doom discount subtracts the worst one-action pop; the term adds the
-/// EROSION GAP — the total area the enemy can legally cut from the evaluated
-/// position BEYOND that worst pop, per distinct edge, from their legal move
-/// set. The max prices only the single worst pop; erosion across several
-/// cuttable edges over consecutive actions (the 41-cut farming line) is
-/// unpriced by it. Zero when only one edge is cuttable, so the term never
-/// disturbs single-cut positions. Units match the discount they join:
-/// area x min(events, 12), full-horizon points — no invented units.
-/// Computed in the same single pass as the worst pop, so the term adds no
-/// search cost. Set 0.0 to turn the term off (the ablation control).
-const VULN_W: f64 = 1.0;
+/// Legal-cuts-only vulnerability (V4d2 field rule): the doom discount subtracts
+/// the worst one-action pop; the term adds the EROSION GAP — the total area the
+/// enemy can legally cut from the evaluated position BEYOND that worst pop, per
+/// distinct edge, from their legal move set. The max prices only the single
+/// worst pop; erosion across several cuttable edges over consecutive actions
+/// (the 41-cut farming line) is unpriced by it. Zero when only one edge is
+/// cuttable, so the term never disturbs single-cut positions. Units match the
+/// discount it joins: area x min(events, 12), full-horizon points — no
+/// invented units. Computed in the same single pass as the worst pop, so the
+/// term adds no search cost.
+/// VULN ablation 2026-09-27 (ON=1.0 vs OFF=0.0, n=8-10 both colors per gate,
+/// faithfulness control 0 mismatches / 239 positions first):
+/// v1 h2h 3/10 vs 4/10 (as-blue avg -24.8% vs -11.6%), league -25.5% vs
+/// -20.0% (baseline exact), gauge 8/8 vs 8/8 (blue margin +54.7% vs +66.0%).
+/// Collapse line NOT fixed (skip=10/20 red -111.2% -> -120.7%). WORSE on
+/// every gate. Verdict: REJECTED — left at 0.0 (the shipped search, which the
+/// OFF control reproduces position-for-position). 0.5 untested; trend
+/// uniformly negative, dose unlikely to flip it.
+const VULN_W: f64 = 0.0;
 
 pub fn best_move(position: &Position) -> Option<Move> {
     best_move_with_avoid(position, &[])
