@@ -205,12 +205,15 @@ fn ranked(
             priority += horizon_extension(position, &after, mover);
             let target = mv.target().expect("legal moves end on the board");
             let own_gain = after.area(mover).to_f64() - position.area(mover).to_f64();
+            // All priorities run in full-horizon points (area x events), so
+            // fixed penalties must scale the same way or they never fire.
+            let hz = f64::from(position.scoring_events_left()).min(HORIZON);
             if first {
                 // Anti-rebuild routing: our loops were cut near these points
                 // recently; re-closing there gets farmed. Counter-cutting
                 // (breaking something) is exempt. (Rival-analysis steal #1.)
                 if outcome.broken.is_none() && near_points(avoid.iter().copied(), target, CUT_RADIUS) {
-                    priority -= REBUILD_PENALTY;
+                    priority -= REBUILD_PENALTY * hz;
                 }
                 // Patience: don't snatch tiny loops in the opening while the
                 // board is wide open; set up bigger closes instead (GB delays
@@ -219,13 +222,13 @@ fn ranked(
                     && own_gain < PATIENCE_MAX_GAIN
                     && position.actions_played() < PATIENCE_WINDOW
                 {
-                    priority -= PATIENCE_PENALTY;
+                    priority -= PATIENCE_PENALTY * hz;
                 }
                 // Fix 2: don't graze the enemy frontier for free.
                 if outcome.broken.is_none()
                     && near_enemy_node(position, opp, target, 1)
                 {
-                    priority -= CONTACT_PENALTY;
+                    priority -= CONTACT_PENALTY * hz;
                 }
                 // Fix 3: don't reinforce the back; expand instead. A Connect
                 // that adds no area far from the enemy burns tempo: the safe
@@ -234,7 +237,7 @@ fn ranked(
                     && own_gain <= 0.0
                     && !near_enemy_node(position, opp, target, DEADWOOD_ENEMY_DIST)
                 {
-                    priority -= DEADWOOD_PENALTY;
+                    priority -= DEADWOOD_PENALTY * hz;
                 }
             }
             Ranked { mv, after, value, priority }
