@@ -70,6 +70,41 @@ fn blue_opener(position: &Position) -> Option<Move> {
 
 /// How many of the latest actions count as "recent" for cut avoidance.
 pub const CUT_MEMORY: usize = 6;
+/// Fresh/shielded-wall avoidance: enemy edges placed last turn can't be
+/// cut this turn, so contesting them burns tempo. Penalty for a
+/// non-breaking first action landing near them.
+const FRESH_RADIUS: i8 = 2;
+const FRESH_PENALTY: f64 = 1.5;
+/// Do-nothing filter: a first action with no area gain, no break, negligible
+/// room growth and nowhere near the enemy does nothing on every axis.
+/// Penalize (both kinds) so shuffling ranks below every real option. Safe
+/// by symmetry: if ALL moves are dead, all share the penalty and order
+/// is preserved.
+const IDLE_ROOM: f64 = 0.5;
+const IDLE_ENEMY_DIST: i8 = 3;
+const IDLE_PENALTY: f64 = 2.0;
+/// Two-front play: where the position is hot (many close cross-color node
+/// pairs), building huge areas FAR from the fighting is nearly unbreakable —
+/// go both ways. Bonus for first actions landing far from all enemy
+/// nodes, paid only when heat says the local fight is contested.
+const FIGHT_DIST: i8 = 4;
+const FIGHT_HEAT: usize = 10;
+const REMOTE_DIST: i8 = 5;
+const REMOTE_BONUS: f64 = 1.0;
+/// Thicket density (the screenshot lesson): walls that share nodes are
+/// near-unbreakable (any cut touches 2+) AND bank area. Bonus for a first
+/// action landing next to 2+ own nodes. Deadwood still bans far no-gain
+/// Connects, so this only ever rewards thickets that gain or reach.
+const DENSE_DIST: i8 = 1;
+const DENSE_COUNT: u32 = 2;
+const DENSE_BONUS: f64 = 1.0;
+/// Doom discount: area we hold that the enemy pops in one action is false
+/// credit in the static eval (it counts area x 12 events as if it banks).
+/// For each candidate, the worst one-action pop of our area, times the
+/// capped horizon, is subtracted at selection. Doomed megaloops net to ~0,
+/// so the bot builds split/remote/dense ground instead of one big grazeable
+/// balloon. Computed only where the enemy is to move (their legal set).
+const DOOM_W: f64 = 1.0;
 /// Capture exposure: nodes held by a single edge can be captured outright.
 /// Counts ours vs theirs; each such node is a discrete, hard-to-reverse
 /// swing, so it prices higher than a generic edge.
@@ -81,6 +116,10 @@ const PATIENCE_MAX_GAIN: f64 = 2.0;
 const PATIENCE_WINDOW: u8 = 12;
 const PATIENCE_PENALTY: f64 = 2.0;
 
+/// Reply budget for the confirming ply: sized for near-complete coverage
+/// like the second ply. A truncated longest-first subset picks unrepresen-
+/// tative replies and the minimax actively misleads (measured: -58%
+/// league). Full coverage costs ~2x total nodes, still milliseconds.
 pub struct Analysis {
     /// Blue's lead after the best move and its reply.
     pub evaluation: f64,
@@ -97,7 +136,7 @@ pub struct Candidate {
     /// Blue's lead after this move and the best reply (honest static value;
     /// ordering uses the retaliation-adjusted score, kept separately).
     pub evaluation: f64,
-    /// This move and the best reply.
+    /// This move, its reply, and the confirming third ply where searched.
     pub pv: Vec<Move>,
     /// 1, plus the replies searched.
     pub visits: usize,
@@ -123,6 +162,7 @@ pub fn analyze(position: &Position, budget: usize) -> Analysis {
 
 pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -> Analysis {
     let mover = position.to_move();
+    let opp = mover.opponent();
     let budget = budget.clamp(SMALLEST_BUDGET, MOVE_BUDGET);
     let first_actions = ranked(position, budget / 2, true, avoid);
     let mut nodes = first_actions.len();
@@ -142,9 +182,41 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
             pv.push(*reply);
             depth = 2;
         }
-        let end = position_after_pv(position, &pv);
-        let adjusted = sign(mover) * evaluation + horizon_extension(position, &end, mover);
-        let visits = 1 + replies.len();
+        let mut end = position_after_pv(position, &pv);
+        let mut adjusted = sign(mover) * evaluation + horizon_extension(position, &end, mover);
+        // Poisoned ground counts at SELECTION, not just ranking: a line that
+        // rebuilds where we were just cut (or contests a fresh wall) loses
+        // here even if its honest eval is best — the eval can't see the
+        // re-cut coming, but the cut history can.
+        {
+            let hz_sel = f64::from(position.scoring_events_left()).min(HORIZON);
+            let mut probe = position.clone();
+            let oc = probe.apply_unchecked(mv);
+            if oc.broken.is_none() {
+                let tgt = mv.target().expect("legal moves end on the board");
+                if near_points(avoid.iter().copied(), tgt, CUT_RADIUS) {
+                    adjusted -= REBUILD_PENALTY * hz_sel;
+                }
+                if near_fresh_enemy(position, tgt) {
+                    adjusted -= FRESH_PENALTY * hz_sel;
+                }
+            }
+        }
+        let mut visits = 1 + replies.len();
+        // Doom discount (see const docs).
+        {
+            let doom_at = if end.to_move() == opp {
+                Some(&end)
+            } else if after.to_move() == opp {
+                Some(&after)
+            } else {
+                None
+            };
+            if let Some(pos) = doom_at {
+                let hz_doom = f64::from(pos.scoring_events_left()).min(HORIZON);
+                adjusted -= DOOM_W * max_pop(pos, mover) * hz_doom;
+            }
+        }
         scored.push((adjusted, Candidate { mv, evaluation, pv, visits }));
     }
     scored.sort_by(|a, b| {
@@ -198,6 +270,19 @@ pub fn evaluate(position: &Position) -> f64 {
                 - one_edge_nodes(position, Player::Blue) as f64)
 }
 
+/// The worst our-area loss across the enemy's legal replies from `pos`
+/// (enemy to move). The one-graze cost of our shape.
+fn max_pop(pos: &Position, victim: Player) -> f64 {
+    let held = pos.area(victim).to_f64();
+    let mut worst: f64 = 0.0;
+    for mv in pos.legal_moves().iter() {
+        let mut next = pos.clone();
+        next.apply_unchecked(mv);
+        worst = worst.max(held - next.area(victim).to_f64());
+    }
+    worst.max(0.0)
+}
+
 /// How many of `player`'s nodes hang by a single edge (capturable).
 fn one_edge_nodes(position: &Position, player: Player) -> u32 {
     use std::collections::HashMap;
@@ -227,6 +312,7 @@ fn ranked(
     let mover = position.to_move();
     let opp = mover.opponent();
     let room_before = room(position, mover);
+    let heat = fight_heat(position, mover, opp);
     let mut moves: Vec<Move> =
         position.legal_moves().iter().filter(|&mv| !repeats_a_connection(position, mv)).collect();
     moves.sort_by_key(|mv| (Reverse(length(*mv)), mv.index()));
@@ -250,6 +336,31 @@ fn ranked(
             // fixed penalties must scale the same way or they never fire.
             let hz = f64::from(position.scoring_events_left()).min(HORIZON);
             if first {
+                // Two-front play: hot position + far target = safe banking.
+                if heat >= FIGHT_HEAT
+                    && outcome.broken.is_none()
+                    && !near_enemy_node(position, opp, target, REMOTE_DIST)
+                {
+                    priority += REMOTE_BONUS * hz;
+                }
+                // Fresh/shielded walls: don't fight what can't be cut yet.
+                if outcome.broken.is_none()
+                    && near_fresh_enemy(position, target)
+                {
+                    priority -= FRESH_PENALTY * hz;
+                }
+                // Thicket density: land next to 2+ own nodes.
+                if near_own_count(position, mover, target) >= DENSE_COUNT {
+                    priority += DENSE_BONUS * hz;
+                }
+                // Do-nothing filter.
+                if outcome.broken.is_none()
+                    && own_gain <= 0.0
+                    && room(&after, mover) - room_before < IDLE_ROOM
+                    && !near_enemy_node(position, opp, target, IDLE_ENEMY_DIST)
+                {
+                    priority -= IDLE_PENALTY * hz;
+                }
                 // Anti-rebuild routing: our loops were cut near these points
                 // recently; re-closing there gets farmed. Counter-cutting
                 // (breaking something) is exempt. (Rival-analysis steal #1.)
@@ -291,6 +402,42 @@ fn ranked(
 /// Whether `target` is within Chebyshev `dist` of any of the given points.
 fn near_points(mut points: impl Iterator<Item = Point>, target: Point, dist: i8) -> bool {
     points.any(|p| (p.x() - target.x()).abs() <= dist && (p.y() - target.y()).abs() <= dist)
+}
+
+/// How many close opposing-node pairs the position holds: the fight heat.
+/// Computed once per ranking (not per candidate).
+fn fight_heat(position: &Position, mover: Player, opp: Player) -> usize {
+    let own: Vec<Point> = position.nodes(mover).iter().collect();
+    let foe: Vec<Point> = position.nodes(opp).iter().collect();
+    let mut heat = 0;
+    for a in &own {
+        for b in &foe {
+            if (a.x() - b.x()).abs() <= FIGHT_DIST && (a.y() - b.y()).abs() <= FIGHT_DIST {
+                heat += 1;
+            }
+        }
+    }
+    heat
+}
+
+/// Whether `target` is near enemy edges placed last turn (shielded: uncuttable
+/// now, so contesting them is burned tempo).
+fn near_fresh_enemy(position: &Position, target: Point) -> bool {
+    position.shielded_edges().any(|edge| {
+        near_points([edge.origin(), edge.far()].into_iter(), target, FRESH_RADIUS)
+    })
+}
+
+/// How many of `player`'s nodes are within Chebyshev `DENSE_DIST` of `target`.
+fn near_own_count(position: &Position, player: Player, target: Point) -> u32 {
+    position
+        .nodes(player)
+        .iter()
+        .filter(|node| {
+            (node.x() - target.x()).abs() <= DENSE_DIST
+                && (node.y() - target.y()).abs() <= DENSE_DIST
+        })
+        .count() as u32
 }
 
 /// Whether `target` is within Chebyshev `dist` of any of `player`'s nodes.

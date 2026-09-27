@@ -60,6 +60,17 @@ output by next session, I build it in `search_deep.rs` myself, starting
 with: fixed-depth-3 alpha-beta with current priority as ordering (no ID,
 no TT) to measure whether depth alone pays before investing in the rest.
 
+## Outcomes (measured during build)
+- REJECTED: fixed-depth-3 minimax (-58% league at 256-budget replies,
+  -44% at full coverage). This eval is not minimax-stable; depth must come
+  via Lane A's alpha-beta, not naive deepening.
+- Doom discount (V4, selection-level): collapse line 1098 -> 1031 against;
+  genuine games unchanged (both wins). Kept at 1.0 (0.5 tested worse).
+- Catastrophic synthetic red line (-111%) persists across all variants:
+  single 30+ area pop ~t=60 plus erosion. Needs Lane A depth or Lane B
+  vulnerability, not more weights.
+- Center-pull opening bias: REJECTED earlier (-16pp). Corner-first stands.
+
 ## Validation (unchanged, tightened)
 - Gate 1 (local): `probe_v3all` (v1+v2 round robin) + `probe_league` +
   `gauge`. Ship threshold: beats v1 head-to-head (currently 3/10).
