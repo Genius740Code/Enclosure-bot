@@ -540,7 +540,6 @@ fn negamax(
         let leaf_factor = if finished { 0.0 } else { factor_c };
         let swing = gained + destroyed;
         children.push((priority, mv, leaf_factor, swing, finished));
-        let _ = outcome;
     }
     children.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.index().cmp(&b.1.index())));
 

@@ -7,6 +7,7 @@
 //! https://constellation.blueshrimp.uk/bot-api.md has the details.
 
 pub mod search;
+pub mod search_deep;
 
 use std::cell::RefCell;
 
