@@ -112,6 +112,10 @@ const CAPTURE_W: f64 = 3.0;
 /// Patience (rival-analysis steal #2): in the opening, don't snatch tiny
 /// loops; wall first, close big later. Penalty for a first-action close
 /// gaining less than this, while fewer than this many actions are played.
+/// V5 ablation 2026-09-27: does this misfire on forced openings as Blue
+/// (delaying closes v1 snatches)? 0.0 = off. RESULT: off is byte-identical
+/// across all gates (v3all 4/10+7/10, league -20.0%, gauge 6/6) — the term
+/// never flips a pick in any measured line. Kept at 2.0 (harmless).
 const PATIENCE_MAX_GAIN: f64 = 2.0;
 const PATIENCE_WINDOW: u8 = 12;
 const PATIENCE_PENALTY: f64 = 2.0;
