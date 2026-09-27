@@ -10,7 +10,7 @@ pub mod search;
 
 use std::cell::RefCell;
 
-use meridian_engine::{Game, Move, notation};
+use meridian_engine::{Game, Move, Point, notation};
 use serde_json::{Value, json};
 
 use search::Analysis;
@@ -25,31 +25,56 @@ pub fn answer(request: &Value) -> Value {
 }
 
 fn reply(request: &Value) -> Result<Value, String> {
-    let game = replay(request)?;
+    let (game, avoid) = replay(request)?;
     match request["type"].as_str() {
         Some("move") => {
-            let best = search::best_move(game.position()).ok_or("The game is over.")?;
+            let best = search::best_move_with_avoid(game.position(), &avoid)
+                .ok_or("The game is over.")?;
             Ok(json!({"move": best.index()}))
         }
         Some("analysis") => {
             let visits = request["limits"]["visits"].as_u64().unwrap_or(DEFAULT_VISITS).min(search::MOVE_BUDGET as u64);
-            Ok(json!({"analysis": analysis_json(&search::analyze(game.position(), visits as usize))}))
+            Ok(json!({"analysis": analysis_json(&search::analyze_with_avoid(game.position(), visits as usize, &avoid))}))
         }
         _ => Err("type must be move or analysis".into()),
     }
 }
 
-/// The request's position: `start`, then the move IDs in `moves`.
-fn replay(request: &Value) -> Result<Game, String> {
+/// The request's position (`start`, then the move IDs in `moves`), plus the
+/// points near our loops the enemy cut in the last few actions — ground the
+/// search routes away from instead of rebuilding on.
+fn replay(request: &Value) -> Result<(Game, Vec<Point>), String> {
     let start = request["start"].as_str().ok_or("start is required: a position such as [B:A10-D10 R:P10-S10]")?;
     let mut game = Game::from_position(notation::parse_setup(start).map_err(|error| error.to_string())?);
     let moves = request["moves"].as_array().ok_or("moves is required: an array of move IDs")?;
+    let mut ids = Vec::with_capacity(moves.len());
     for id in moves {
         let mv = id.as_u64().and_then(|id| usize::try_from(id).ok()).and_then(Move::from_index);
-        let mv = mv.ok_or(format!("{id} is not a move ID"))?;
-        game.play(mv).map_err(|error| error.to_string())?;
+        ids.push(mv.ok_or(format!("{id} is not a move ID"))?);
     }
-    Ok(game)
+    // Our edges the enemy cut near the end of the line: rebuilding there is farmed.
+    // `broken` is always the mover's opponent's edge; collect them with their
+    // action index, then keep the recent cuts of our (final) side's edges.
+    let mut cuts = Vec::new();
+    for (i, &mv) in ids.iter().enumerate() {
+        let mover = game.position().to_move();
+        let outcome = game.play(mv).map_err(|error| error.to_string())?;
+        if let Some(cut) = outcome.broken {
+            cuts.push((i, mover, cut));
+        }
+    }
+    let ours = game.position().to_move();
+    let mut avoid = Vec::new();
+    for (i, mover, cut) in cuts.iter().rev() {
+        if ids.len() - i > search::CUT_MEMORY {
+            break;
+        }
+        if mover.opponent() == ours {
+            avoid.push(cut.origin());
+            avoid.push(cut.far());
+        }
+    }
+    Ok((game, avoid))
 }
 
 fn analysis_json(analysis: &Analysis) -> Value {

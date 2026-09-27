@@ -78,6 +78,33 @@ fn analysis_reply_shape() {
 }
 
 #[test]
+fn cut_history_still_answers_legally() {
+    // A real cut-containing line (from the Great Barrier loss): the replay
+    // must collect avoid points and still return a legal move.
+    let d: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string("/tmp/opencode/game-f4b7f187-37e3-403d-a578-70f6cfd0cda1.json").unwrap(),
+    )
+    .unwrap();
+    let all: Vec<usize> =
+        d["moves"].as_array().unwrap().iter().map(|v| v.as_u64().unwrap() as usize).collect();
+    let moves = &all[..40];
+    let mut game = start_game();
+    for &id in moves {
+        game.play(Move::from_index(id).unwrap()).unwrap();
+    }
+    let legal: Vec<usize> = game.legal_moves().iter().map(|mv| mv.index()).collect();
+    let reply = answer(&json!({
+        "type": "move",
+        "start": "[B:A10-D10 R:P10-S10]",
+        "moves": moves,
+        "limits": {"moveTimeMs": 20000},
+        "seed": 7,
+    }));
+    let id = reply["move"].as_u64().expect("reply has a move") as usize;
+    assert!(legal.contains(&id), "move {id} must be legal with cut history");
+}
+
+#[test]
 fn bad_requests_error_cleanly() {
     let reply = answer(&json!({"type": "move"}));
     assert!(reply["error"].is_string());

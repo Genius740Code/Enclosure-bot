@@ -4,12 +4,15 @@
 //! static evaluation) follows the site's own Scout bot. The fixes come from our
 //! self-play evidence:
 //!
-//! 1. **Break-first retaliation.** The static evaluation counts a popped enemy
-//!    loop only up to `HORIZON` scoring events, so early-game breaks are
-//!    underpriced by up to 3x. Both the candidate ranking and the final pick
-//!    add the uncapped remainder (`destroyed * (events - capped) * weight`).
-//!    A pure break-first 1-ply bot went 6-0 against our old greedy valuation,
-//!    so the weight is deliberately large.
+//! 1. **Full-horizon valuation.** The static evaluation counts enclosed area
+//!    only up to `HORIZON` scoring events, which underprices both big land
+//!    claims and loop-breaking retaliation early in the game (up to 3x).
+//!    Both the candidate ranking and the final pick add the uncapped
+//!    remainder for *both* sides symmetrically: own area gained and enemy
+//!    area destroyed, times the events past the horizon. A pure break-first
+//!    1-ply bot went 6-0 against our old greedy valuation, so denial counts
+//!    in full — but claims count exactly as much, so the bot takes land
+//!    instead of chasing cuts for their own sake.
 //! 2. **Contact avoidance.** A first action that ends next to an enemy node
 //!    without cutting anything just donates a target (the neck/aggro family
 //!    lives on this). Penalized.
@@ -31,9 +34,9 @@ const WIDTH: usize = 8;
 const HORIZON: f64 = 12.0;
 /// What the room a player's nodes span is worth, per unit of area, against area enclosed.
 const ROOM_WEIGHT: f64 = 0.4;
-/// How much of the beyond-horizon denial (popped enemy area times the scoring
-/// events past the horizon) counts, in both ranking and final selection.
-const RETALIATION_WEIGHT: f64 = 0.5;
+/// How much of the beyond-horizon area value counts, in both ranking and final
+/// selection. Applies symmetrically to claims and denial (see below).
+const HORIZON_WEIGHT: f64 = 0.5;
 /// First-action penalty for ending next to an enemy node without cutting anything.
 const CONTACT_PENALTY: f64 = 1.0;
 /// Penalty for a no-area reinforcement between own nodes far from the enemy.
@@ -41,6 +44,19 @@ const DEADWOOD_PENALTY: f64 = 2.0;
 /// Beyond this Chebyshev distance to the nearest enemy node, a no-area
 /// reinforcement counts as dead wood in the back.
 const DEADWOOD_ENEMY_DIST: i8 = 3;
+/// Anti-rebuild routing (rival-analysis steal #1): our edges were cut near
+/// these points within the last few actions, so re-closing there is farmed.
+/// Penalty for a non-breaking first action landing within this radius.
+const CUT_RADIUS: i8 = 3;
+const REBUILD_PENALTY: f64 = 3.0;
+/// How many of the latest actions count as "recent" for cut avoidance.
+pub const CUT_MEMORY: usize = 6;
+/// Patience (rival-analysis steal #2): in the opening, don't snatch tiny
+/// loops; wall first, close big later. Penalty for a first-action close
+/// gaining less than this, while fewer than this many actions are played.
+const PATIENCE_MAX_GAIN: f64 = 2.0;
+const PATIENCE_WINDOW: u8 = 12;
+const PATIENCE_PENALTY: f64 = 2.0;
 
 pub struct Analysis {
     /// Blue's lead after the best move and its reply.
@@ -65,13 +81,24 @@ pub struct Candidate {
 }
 
 pub fn best_move(position: &Position) -> Option<Move> {
-    analyze(position, MOVE_BUDGET).candidates.first().map(|candidate| candidate.mv)
+    best_move_with_avoid(position, &[])
+}
+
+/// Like [`best_move`], but steering clear of `avoid`: points near our loops
+/// the enemy recently cut. Rebuilding there is how rebuilder-farming works
+/// (41 cuts in one game); routing elsewhere denies the repeat cut.
+pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move> {
+    analyze_with_avoid(position, MOVE_BUDGET, avoid).candidates.first().map(|candidate| candidate.mv)
 }
 
 pub fn analyze(position: &Position, budget: usize) -> Analysis {
+    analyze_with_avoid(position, budget, &[])
+}
+
+pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -> Analysis {
     let mover = position.to_move();
     let budget = budget.clamp(SMALLEST_BUDGET, MOVE_BUDGET);
-    let first_actions = ranked(position, budget / 2, true);
+    let first_actions = ranked(position, budget / 2, true, avoid);
     let mut nodes = first_actions.len();
     let mut depth = usize::from(nodes > 0);
     let width = first_actions.len().min(WIDTH);
@@ -80,7 +107,7 @@ pub fn analyze(position: &Position, budget: usize) -> Analysis {
     // (adjusted score for ordering, candidate with honest static evaluation).
     let mut scored: Vec<(f64, Candidate)> = Vec::new();
     for (mv, after, _, _) in first_actions.into_iter().take(width) {
-        let replies = ranked(&after, reply_budget, false);
+        let replies = ranked(&after, reply_budget, false, &[]);
         nodes += replies.len();
         let mut pv = vec![mv];
         let mut evaluation = value(&after);
@@ -90,7 +117,7 @@ pub fn analyze(position: &Position, budget: usize) -> Analysis {
             depth = 2;
         }
         let end = position_after_pv(position, &pv);
-        let adjusted = sign(mover) * evaluation + retaliation_remainder(position, &end, mover);
+        let adjusted = sign(mover) * evaluation + horizon_extension(position, &end, mover);
         let visits = 1 + replies.len();
         scored.push((adjusted, Candidate { mv, evaluation, pv, visits }));
     }
@@ -111,14 +138,17 @@ fn position_after_pv(position: &Position, pv: &[Move]) -> Position {
     pos
 }
 
-/// The beyond-horizon part of a denial, mover-relative: enemy area destroyed
-/// along the line, times the scoring events past the horizon. The static
-/// evaluation already counts destruction up to the horizon; this is the rest.
-fn retaliation_remainder(before: &Position, end: &Position, mover: Player) -> f64 {
+/// The beyond-horizon part of an area swing, mover-relative: own area gained
+/// plus enemy area destroyed along the line, times the scoring events past
+/// the horizon. The static evaluation already counts both up to the horizon;
+/// this is the rest, kept symmetric so a break must beat the available
+/// claims on the merits instead of winning by default.
+fn horizon_extension(before: &Position, end: &Position, mover: Player) -> f64 {
+    let gained = (end.area(mover).to_f64() - before.area(mover).to_f64()).max(0.0);
     let destroyed =
         (before.area(mover.opponent()).to_f64() - end.area(mover.opponent()).to_f64()).max(0.0);
     let events = f64::from(end.scoring_events_left());
-    destroyed * (events - events.min(HORIZON)) * RETALIATION_WEIGHT
+    (gained + destroyed) * (events - events.min(HORIZON)) * HORIZON_WEIGHT
 }
 
 struct Ranked {
@@ -147,7 +177,12 @@ fn value(position: &Position) -> f64 {
 
 /// The mover's actions, best first, with the position after each and its value. Only the first
 /// `budget` of them, longest edges first, are tried.
-fn ranked(position: &Position, budget: usize, first: bool) -> Vec<(Move, Position, f64, f64)> {
+fn ranked(
+    position: &Position,
+    budget: usize,
+    first: bool,
+    avoid: &[Point],
+) -> Vec<(Move, Position, f64, f64)> {
     let mover = position.to_move();
     let opp = mover.opponent();
     let room_before = room(position, mover);
@@ -166,18 +201,35 @@ fn ranked(position: &Position, budget: usize, first: bool) -> Vec<(Move, Positio
             if first && after.to_move() == mover && !after.is_finished() {
                 priority += loop_bonus(position, mv, &after, room_before);
             }
-            // Fix 1: retaliation, in ranking as well as selection.
-            priority += retaliation_remainder(position, &after, mover);
+            // Fix 1: full-horizon claims and denial, in ranking as well as selection.
+            priority += horizon_extension(position, &after, mover);
             let target = mv.target().expect("legal moves end on the board");
-            if first && outcome.broken.is_none() {
+            let own_gain = after.area(mover).to_f64() - position.area(mover).to_f64();
+            if first {
+                // Anti-rebuild routing: our loops were cut near these points
+                // recently; re-closing there gets farmed. Counter-cutting
+                // (breaking something) is exempt. (Rival-analysis steal #1.)
+                if outcome.broken.is_none() && near_points(avoid.iter().copied(), target, CUT_RADIUS) {
+                    priority -= REBUILD_PENALTY;
+                }
+                // Patience: don't snatch tiny loops in the opening while the
+                // board is wide open; set up bigger closes instead (GB delays
+                // its first close to action ~13 and banks ~10/loop).
+                if outcome.kind == MoveKind::Connect
+                    && own_gain < PATIENCE_MAX_GAIN
+                    && position.actions_played() < PATIENCE_WINDOW
+                {
+                    priority -= PATIENCE_PENALTY;
+                }
                 // Fix 2: don't graze the enemy frontier for free.
-                if near_enemy_node(position, opp, target, 1) {
+                if outcome.broken.is_none()
+                    && near_enemy_node(position, opp, target, 1)
+                {
                     priority -= CONTACT_PENALTY;
                 }
                 // Fix 3: don't reinforce the back; expand instead. A Connect
                 // that adds no area far from the enemy burns tempo: the safe
                 // loop already banks, and redundancy never survives a cut.
-                let own_gain = after.area(mover).to_f64() - position.area(mover).to_f64();
                 if outcome.kind == MoveKind::Connect
                     && own_gain <= 0.0
                     && !near_enemy_node(position, opp, target, DEADWOOD_ENEMY_DIST)
@@ -192,11 +244,14 @@ fn ranked(position: &Position, budget: usize, first: bool) -> Vec<(Move, Positio
     tried.into_iter().map(|r| (r.mv, r.after, r.value, r.priority)).collect()
 }
 
+/// Whether `target` is within Chebyshev `dist` of any of the given points.
+fn near_points(mut points: impl Iterator<Item = Point>, target: Point, dist: i8) -> bool {
+    points.any(|p| (p.x() - target.x()).abs() <= dist && (p.y() - target.y()).abs() <= dist)
+}
+
 /// Whether `target` is within Chebyshev `dist` of any of `player`'s nodes.
 fn near_enemy_node(position: &Position, player: Player, target: Point, dist: i8) -> bool {
-    position.nodes(player).iter().any(|node| {
-        (node.x() - target.x()).abs() <= dist && (node.y() - target.y()).abs() <= dist
-    })
+    near_points(position.nodes(player).iter(), target, dist)
 }
 
 /// A connection between two of the mover's nodes is listed from both ends. This is the second.
