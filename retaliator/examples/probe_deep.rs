@@ -2,18 +2,20 @@
 //!
 //! Modes (arg 1, default `all`):
 //! - `h2h` — search_deep::best_move vs search::best_move (the v3 baseline),
-//!   4 openings x 2 colors = 4 games each color. Both engines are
-//!   deterministic, so the openings are what makes the games differ
-//!   (same device as probe_v3all).
+//!   openings x 2 colors (arg 2 = how many of the 4 openings, default 4).
+//!   Both engines are deterministic, so the openings are what makes the games
+//!   differ (same device as probe_v3all).
 //! - `league` — probe_league.rs structure with search_deep substituted for
-//!   the baseline: scoutbase opponent, skip 0/10/20/30 prelude (played by
-//!   search::best_move, as in the baseline), both colors.
+//!   the baseline: scoutbase opponent, skip prelude (played by
+//!   search::best_move, as in the baseline), both colors. Arg 2 = comma
+//!   separated skips (default 0,10,20,30).
 //! - `gauge` — gauge.rs structure with search_deep substituted: greedy
-//!   max-area 1-ply opponent, 6 games alternating colors.
+//!   max-area 1-ply opponent (arg 2 = games, default 6), alternating colors.
 //!
 //! The deep search keeps the baseline's evaluation, opener and root priority
 //! verbatim, so any difference against `search::best_move` isolates the
-//! search itself.
+//! search itself. Games print progress every 12 actions: the depth-3 search
+//! costs tens of seconds CPU per move, so the pace has to be visible.
 
 #[path = "support/scoutbase.rs"]
 mod scoutbase;
@@ -48,20 +50,28 @@ fn greedy(position: &Position) -> Option<Move> {
 
 /// Plays `a` vs `b` from `game`, returning a's and b's scores.
 fn play(mut game: Game, a_blue: bool, a: fn(&Position) -> Option<Move>, b: fn(&Position) -> Option<Move>) -> (f64, f64) {
+    let t = std::time::Instant::now();
+    let mut last = 0u8;
     while !game.is_over() {
         let a_moves = (game.position().to_move() == Player::Blue) == a_blue;
         game.play(if a_moves { a(game.position()) } else { b(game.position()) }.unwrap()).unwrap();
+        let played = game.position().actions_played();
+        if played >= last + 12 {
+            last = played;
+            println!("  t={played} elapsed={:.0}s", t.elapsed().as_secs_f64());
+        }
     }
     let asc = game.position().score(if a_blue { Player::Blue } else { Player::Red }).to_f64();
     let bsc = game.position().score(if a_blue { Player::Red } else { Player::Blue }).to_f64();
     (asc, bsc)
 }
 
-fn h2h() {
-    println!("== h2h: search_deep (depth 3) vs search baseline, 4 openings x 2 colors ==");
+fn h2h(openings: usize) {
+    println!("== h2h: search_deep (depth 3) vs search baseline, {openings} openings x 2 colors ==");
+    let opens = [None, Some(4864usize), Some(5589), Some(9199)];
     let (mut w, mut n) = (0, 0);
     let (mut w_blue, mut n_blue, mut w_red, mut n_red) = (0, 0, 0, 0);
-    for open in [None, Some(4864), Some(5589), Some(9199)] {
+    for open in opens.into_iter().take(openings.max(1)) {
         for deep_blue in [true, false] {
             let mut game = Game::new();
             if let Some(id) = open {
@@ -84,14 +94,14 @@ fn h2h() {
     println!("==> h2h search_deep vs search: {w}/{n} (blue {w_blue}/{n_blue}, red {w_red}/{n_red})");
 }
 
-fn league() {
-    println!("== league: search_deep (depth 3) vs scoutbase, skip 0/10/20/30, both colors ==");
+fn league(skips: &[usize]) {
+    println!("== league: search_deep (depth 3) vs scoutbase, skips {skips:?}, both colors ==");
     let mut sum = 0.0;
     let mut n = 0;
-    for skip in [0usize, 10, 20, 30] {
+    for skip in skips {
         for ret_blue in [true, false] {
             let mut game = Game::new();
-            for _ in 0..skip {
+            for _ in 0..*skip {
                 if game.is_over() { break; }
                 let mv = base(game.position()).unwrap();
                 game.play(mv).unwrap();
@@ -105,12 +115,11 @@ fn league() {
             n += 1;
         }
     }
-    println!("==> league AVG margin (ret perspective): {:+.1}%", sum / n as f64);
+    println!("==> league AVG margin (ret perspective): {:+.1}% over {n} games", sum / n.max(1) as f64);
 }
 
-fn gauge() {
-    println!("== gauge: search_deep (depth 3) vs greedy, 6 games ==");
-    let games = 6;
+fn gauge(games: usize) {
+    println!("== gauge: search_deep (depth 3) vs greedy, {games} games ==");
     let mut wins_r = 0;
     for g in 0..games {
         let ret_blue = g % 2 == 0;
@@ -134,15 +143,23 @@ fn gauge() {
 }
 
 fn main() {
-    let mode = std::env::args().nth(1).unwrap_or_else(|| "all".into());
+    let args: Vec<String> = std::env::args().collect();
+    let mode = args.get(1).cloned().unwrap_or_else(|| "all".into());
+    let n1 = args.get(2).and_then(|s| s.parse::<usize>().ok());
     match mode.as_str() {
-        "h2h" => h2h(),
-        "league" => league(),
-        "gauge" => gauge(),
+        "h2h" => h2h(n1.unwrap_or(4)),
+        "league" => {
+            let skips: Vec<usize> = args
+                .get(2)
+                .map(|s| s.split(',').filter_map(|p| p.parse().ok()).collect())
+                .unwrap_or_else(|| vec![0, 10, 20, 30]);
+            league(&skips);
+        }
+        "gauge" => gauge(n1.unwrap_or(6)),
         _ => {
-            h2h();
-            league();
-            gauge();
+            h2h(4);
+            league(&[0, 10, 20, 30]);
+            gauge(6);
         }
     }
 }
