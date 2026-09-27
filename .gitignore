@@ -6,3 +6,5 @@ probe-inv.js
 /tmp/
 .env
 __pycache__/
+target/
+dist/

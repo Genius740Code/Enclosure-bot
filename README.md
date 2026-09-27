@@ -20,28 +20,41 @@ empirical research log (self-play matchups, archive mining, verification).
 
 | File | What |
 |---|---|
-| `engine.js` | Real rules engine (extracted from the site bundle — do not modify logic) |
-| `bot.js` | Base heuristic bot (2-ply greedy + opponent denial) |
-| `bot-tourney.js` | Tournament pick: time-boxed wrapper, adaptive clock, never throws/illegal |
-| `botX-*.js`, `botA1-D1.js`, `botF-*` | Experiment variants (quiescence, transposition, criticality, ponder, retaliation) |
-| `chall-*.js` | Sparring archetypes (turtle, blob, neck-hunter, sprawler, aggro, sandbag, random, junk) |
-| `connector.js` | Live-site player (WebSocket: auth → subscribe/join → revision-checked moves) |
-| `play.js` / `play.py` + `bridge.js` | Terminal / tkinter practice UIs (rules via the JS engine) |
-| `server.js` + `play.html` | Browser practice UI, incl. bot-vs-bot watch mode |
-| `runB.js`, `runR.js`, `run-match.js` | Self-play harnesses (all moves replay-verified legal) |
-| `verifyC.js` | 22 engine zero-divergence checks |
-| `mined-fetch.js`, `mined-analyze.js` | Site archive miner (needs `ENC_USER`/`ENC_PASS`) |
-| `findings-*.md`, `TOURNEY-PLAYBOOK.md` | Research log + tournament playbook |
+| `engine/engine.js` | Real rules engine (extracted from the site bundle — do not modify logic) |
+| `bots/bot.js` | Base heuristic bot (2-ply greedy + opponent denial) |
+| `bots/bot-tourney.js` | Tournament pick: time-boxed wrapper, adaptive clock, never throws/illegal |
+| `bots/botX-*.js`, `bots/botA1-D1.js`, `bots/botF-*` | Experiment variants (quiescence, transposition, criticality, ponder, retaliation) |
+| `sparring/chall-*.js` | Sparring archetypes (turtle, blob, neck-hunter, sprawler, aggro, sandbag, random, junk) |
+| `live/connector.js` | Live-site player (WebSocket: auth → subscribe/join → revision-checked moves) |
+| `live/play.js` / `live/play.py` + `live/bridge.js` | Terminal / tkinter practice UIs (rules via the JS engine) |
+| `live/server.js` + `live/play.html` | Browser practice UI, incl. bot-vs-bot watch mode |
+| `harness/runB.js`, `harness/runR.js`, `harness/run-match.js` | Self-play harnesses (all moves replay-verified legal) |
+| `harness/verifyC.js` | 22 engine zero-divergence checks |
+| `tools/mined-fetch.js`, `tools/mined-analyze.js` | Site archive miner (needs `ENC_USER`/`ENC_PASS`) |
+| `retaliator/` | WASM bot for constellation.blueshrimp.uk (Rust; builds to `retaliator.wasm`) |
+| `vendor/meridian-bot-kit/` | Site's official bot kit (engine + Scout reference, third-party) |
+| `research/findings-*.md`, `research/TOURNEY-PLAYBOOK.md` | Research log + tournament playbook |
 
 ## Quick start
 
 ```bash
 npm install        # ws for the connector
-node play.js blue  # terminal: play the bot
+node live/play.js blue  # terminal: play the bot
 
-python3 play.py    # desktop UI (needs node alongside)
+python3 live/play.py    # desktop UI (needs node alongside)
 
-node server.js 8901  # browser UI at http://localhost:8901
+node live/server.js 8901  # browser UI at http://localhost:8901
+```
+
+Bot vs bot watch: open the browser UI → **Watch bot vs bot**.
+
+## WASM bot (constellation.blueshrimp.uk)
+
+```bash
+cd retaliator
+cargo test
+cargo build --release --target wasm32-wasip1
+# upload target/wasm32-wasip1/release/retaliator.wasm via My bots → New bot → WebAssembly
 ```
 
 Bot vs bot watch: open the browser UI → **Watch bot vs bot**.
@@ -50,7 +63,7 @@ Bot vs bot watch: open the browser UI → **Watch bot vs bot**.
 
 ```bash
 export ENC_USER=you ENC_PASS=yourpassH1
-node connector.js  # subscribes to tournament mt5x4j77, plays automatically
+node live/connector.js  # subscribes to tournament mt5x4j77, plays automatically
 ```
 
 Never open the game page on the same account while it plays (the site

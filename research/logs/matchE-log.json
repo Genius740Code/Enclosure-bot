@@ -1,0 +1,128 @@
+[
+ {
+  "game": 1,
+  "aColor": "blue",
+  "aScore": 2068.296733823,
+  "bScore": 3071.873268398,
+  "margin": -1003.5765345750001,
+  "egStart": {
+   "move": 109,
+   "blue": 1746.4498140750002,
+   "red": 2753.909126984,
+   "margin": -1007.4593129089999
+  },
+  "egDelta": {
+   "blue": 321.8,
+   "red": 318,
+   "marginSwing": 3.9
+  },
+  "divCount": 0,
+  "egSamples": 3,
+  "firstDivAt": -1
+ },
+ {
+  "game": 2,
+  "aColor": "red",
+  "aScore": 2839.9964285730002,
+  "bScore": 1315.431493498,
+  "margin": 1524.5649350750002,
+  "egStart": {
+   "move": 109,
+   "blue": 1141.2598484760001,
+   "red": 2462.7170634930003,
+   "margin": 1321.4572150170002
+  },
+  "egDelta": {
+   "blue": 174.2,
+   "red": 377.3,
+   "marginSwing": 203.1
+  },
+  "divCount": 1,
+  "egSamples": 3,
+  "firstDivAt": 109
+ },
+ {
+  "game": 3,
+  "aColor": "blue",
+  "aScore": 1882.6624708600002,
+  "bScore": 3216.0061938000003,
+  "margin": -1333.3437229400001,
+  "egStart": {
+   "move": 109,
+   "blue": 1596.6047785530002,
+   "red": 2831.1814463260002,
+   "margin": -1234.576667773
+  },
+  "egDelta": {
+   "blue": 286.1,
+   "red": 384.8,
+   "marginSwing": -98.8
+  },
+  "divCount": 0,
+  "egSamples": 3,
+  "firstDivAt": -1
+ },
+ {
+  "game": 4,
+  "aColor": "red",
+  "aScore": 3383.8324175830003,
+  "bScore": 1943.693240103,
+  "margin": 1440.1391774800002,
+  "egStart": {
+   "move": 109,
+   "blue": 1626.623917759,
+   "red": 2975.8801282050003,
+   "margin": 1349.2562104460003
+  },
+  "egDelta": {
+   "blue": 317.1,
+   "red": 408,
+   "marginSwing": 90.9
+  },
+  "divCount": 0,
+  "egSamples": 3,
+  "firstDivAt": -1
+ },
+ {
+  "game": 5,
+  "aColor": "blue",
+  "aScore": 2019.9688991490002,
+  "bScore": 3343.318467637,
+  "margin": -1323.349568488,
+  "egStart": {
+   "move": 109,
+   "blue": 1708.132319065,
+   "red": 2853.2898962110003,
+   "margin": -1145.1575771460002
+  },
+  "egDelta": {
+   "blue": 311.8,
+   "red": 490,
+   "marginSwing": -178.2
+  },
+  "divCount": 1,
+  "egSamples": 3,
+  "firstDivAt": 111
+ },
+ {
+  "game": 6,
+  "aColor": "red",
+  "aScore": 3195.363436564,
+  "bScore": 1759.8095668180001,
+  "margin": 1435.553869746,
+  "egStart": {
+   "move": 109,
+   "blue": 1445.5532731120002,
+   "red": 2758.4589493850003,
+   "margin": 1312.9056762730002
+  },
+  "egDelta": {
+   "blue": 314.3,
+   "red": 436.9,
+   "marginSwing": 122.6
+  },
+  "divCount": 0,
+  "egSamples": 3,
+  "firstDivAt": -1
+ }
+]

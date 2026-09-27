@@ -1,0 +1,44 @@
+[
+ {
+  "game": 1,
+  "aColor": "blue",
+  "aScore": 355.046824011,
+  "bScore": 559.683062765,
+  "margin": -204.63623875400003,
+  "egStart": {
+   "move": 109,
+   "blue": 311.79227855600004,
+   "red": 469.477615436,
+   "margin": -157.68533687999997
+  },
+  "egDelta": {
+   "blue": 43.3,
+   "red": 90.2,
+   "marginSwing": -47
+  },
+  "divCount": 3,
+  "egSamples": 4,
+  "firstDivAt": 111
+ },
+ {
+  "game": 2,
+  "aColor": "red",
+  "aScore": 487.57689393900006,
+  "bScore": 881.1188630800001,
+  "margin": -393.54196914100004,
+  "egStart": {
+   "move": 109,
+   "blue": 710.1431970790001,
+   "red": 414.266287879,
+   "margin": -295.87690920000006
+  },
+  "egDelta": {
+   "blue": 171,
+   "red": 73.3,
+   "marginSwing": -97.7
+  },
+  "divCount": 5,
+  "egSamples": 5,
+  "firstDivAt": 109
+ }
+]
