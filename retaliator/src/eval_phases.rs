@@ -146,6 +146,23 @@ const PATIENCE_PENALTY: f64 = 2.0;
 /// uniformly negative, dose unlikely to flip it.
 const VULN_W: f64 = 0.0;
 
+/// Cut+make gap (the gap between the enemy's cut and our re-make): the doom
+/// discount prices the enemy's worst one-action pop of our area at the full
+/// horizon (worst x 12), but a popped loop is usually re-makeable — the cut
+/// edge is ours, unshielded, and re-placing it restores the loop next turn,
+/// so the popped area is worth ONE scoring event, not twelve. The term adds
+/// back the over-discount for the re-makeable part: the area we can legally
+/// re-close in one action (via `check_move` from the position after their
+/// pop — legal cuts only, V4d2), times (min(events,12) - 1). Same full-horizon
+/// units as the discount it corrects; same single pass (the worst pop's move
+/// is found there). Chair evidence (control vs v1, open=5589): v1's closes
+/// bank +31..+57 while ours stay +5..+19 — the doom discount nets every
+/// poppable big loop to ~0, so the bot never builds one; v1 (no doom
+/// discount) does and out-banks us. Set 0.0 to turn the term off (the
+/// ablation control). One-pop scale only: the enemy's second action can pop
+/// again, which this does not price (the doom discount's own scale).
+const REM_W: f64 = 1.0;
+
 pub fn best_move(position: &Position) -> Option<Move> {
     best_move_with_avoid(position, &[])
 }
@@ -156,19 +173,19 @@ pub fn best_move(position: &Position) -> Option<Move> {
 /// contract as `search::best_move_with_avoid`, so a gated merge into lib.rs
 /// keeps the anti-rebuild routing in `replay` wired.
 pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, true)
+    best_move_features(position, MOVE_BUDGET, avoid, true, true)
 }
 
-/// The identical search with the legal-cuts-only vulnerability term OFF: the
-/// ablation control. It must pick exactly what `search::best_move` picks —
-/// `probe_b_h2h` checks that position for position before trusting any game.
-/// (Not every probe uses it; the gate keeps per-example dead-code quiet.)
+/// The identical search with every added term OFF: the ablation control. It
+/// must pick exactly what `search::best_move` picks — `probe_b_h2h` checks
+/// that position for position before trusting any game. (Not every probe uses
+/// it; the gate keeps per-example dead-code quiet.)
 #[allow(dead_code)]
 pub fn baseline_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false)
+    best_move_features(position, MOVE_BUDGET, &[], false, false)
 }
 
-/// The skeleton's selection loop, with the vulnerability term gated. The
+/// The skeleton's selection loop, with the added terms gated. The
 /// `Analysis`/`Candidate` reporting surface is not copied: probes read the
 /// pick, and the main session merges the term itself.
 fn best_move_features(
@@ -176,6 +193,7 @@ fn best_move_features(
     budget: usize,
     avoid: &[Point],
     vuln: bool,
+    remake: bool,
 ) -> Option<Move> {
     if let Some(open) = blue_opener(position) {
         return Some(open);
@@ -235,15 +253,27 @@ fn best_move_features(
             };
             if let Some(pos) = doom_at {
                 let hz_doom = f64::from(pos.scoring_events_left()).min(HORIZON);
-                let (worst, cuttable) = pop_and_cuttable(pos, mover);
+                let (worst, cuttable, worst_mv) = pop_cut_remake(pos, mover);
                 adjusted -= DOOM_W * worst * hz_doom;
-                // The term: the erosion gap — area the enemy can LEGALLY cut
-                // BEYOND the single worst pop, which no max ever prices.
-                // Zero when only one edge is cuttable, so the term bites
-                // exactly on multi-edge erosion (the farming line). Same
+                // The (rejected) vulnerability term: the erosion gap — area the
+                // enemy can LEGALLY cut BEYOND the single worst pop, which no
+                // max ever prices. Zero when only one edge is cuttable. Same
                 // full-horizon units, same single pass as the max.
+                // Ablation 2026-09-27: WORSE on every gate (v1 3/10 vs 4/10,
+                // league -25.5% vs -20.0%, gauge blue -11.3pp). Left off.
                 if vuln {
                     adjusted -= VULN_W * (cuttable - worst) * hz_doom;
+                }
+                // The cut+make gap: the doom discount prices the enemy's worst
+                // one-action pop at the full horizon, but the popped area we
+                // can legally re-close in one action is restored next turn —
+                // worth ONE scoring event, not twelve. Add back the
+                // over-discount for that part. Zero when the re-make is
+                // illegal (the pop was part of a surrounding attack): the doom
+                // discount then stands at full strength.
+                if remake {
+                    let remakeable = remake_area(pos, worst_mv, mover);
+                    adjusted += REM_W * remakeable * (hz_doom - 1.0);
                 }
             }
         }
@@ -298,23 +328,29 @@ pub fn evaluate(position: &Position) -> f64 {
                 - one_edge_nodes(position, Player::Blue) as f64)
 }
 
-/// The worst one-action pop of `victim`'s area, and the total area the enemy
+/// The worst one-action pop of `victim`'s area, the total area the enemy
 /// can legally cut from `pos` (enemy to move), counted once per distinct cut
-/// edge. One pass over the enemy's legal set: legal cuts only, so a dense
-/// cluster — any edge through it touches 2+ opposing edges, which is illegal
-/// (one cut per move max) — and shielded edges price zero. No fantasy cuts,
-/// no geometric touches (V4d2). The worst pop is exactly the shipped
-/// `max_pop`; the cuttable sum is the term's widening of it.
-fn pop_and_cuttable(pos: &Position, victim: Player) -> (f64, f64) {
+/// edge, and the move that caused the worst pop. One pass over the enemy's
+/// legal set: legal cuts only, so a dense cluster — any edge through it
+/// touches 2+ opposing edges, which is illegal (one cut per move max) — and
+/// shielded edges price zero. No fantasy cuts, no geometric touches (V4d2).
+/// The worst pop is exactly the shipped `max_pop`; the cuttable sum is the
+/// (rejected) vulnerability term's widening of it; the worst pop's move feeds
+/// the cut+make gap term.
+fn pop_cut_remake(pos: &Position, victim: Player) -> (f64, f64, Option<Move>) {
     let held = pos.area(victim).to_f64();
     let mut seen: Vec<Edge> = Vec::new();
     let mut worst: f64 = 0.0;
     let mut cuttable: f64 = 0.0;
+    let mut worst_mv: Option<Move> = None;
     for mv in pos.legal_moves().iter() {
         let mut next = pos.clone();
         let outcome = next.apply_unchecked(mv);
         let loss = held - next.area(victim).to_f64();
-        worst = worst.max(loss);
+        if loss > worst {
+            worst = loss;
+            worst_mv = Some(mv);
+        }
         if let Some(cut) = outcome.broken {
             if !seen.contains(&cut) {
                 seen.push(cut);
@@ -322,7 +358,33 @@ fn pop_and_cuttable(pos: &Position, victim: Player) -> (f64, f64) {
             }
         }
     }
-    (worst.max(0.0), cuttable.max(0.0))
+    (worst.max(0.0), cuttable.max(0.0), worst_mv)
+}
+
+/// The part of the worst one-action pop that `victim` can legally re-close in
+/// one action (the re-make): apply the enemy's worst pop, then try re-placing
+/// the edge it cut — both endpoints are still `victim`'s nodes, and the edge
+/// is not shielded (it was ours, not their last turn's placement), so the only
+/// blockers are the engine's own (`check_move`: breaks-several, overlaps). The
+/// re-make restores the loop next turn, so the popped area is worth one
+/// scoring event, not the horizon. Zero when the re-place is illegal (the pop
+/// was part of a surrounding attack) — the doom discount then stands at full
+/// strength, as it should.
+fn remake_area(pos: &Position, pop: Option<Move>, victim: Player) -> f64 {
+    let Some(mv) = pop else { return 0.0 };
+    let mut after_pop = pos.clone();
+    let outcome = after_pop.apply_unchecked(mv);
+    let loss = pos.area(victim).to_f64() - after_pop.area(victim).to_f64();
+    let Some(cut) = outcome.broken else { return 0.0 };
+    let Some(re) = Move::between(cut.origin(), cut.far()) else { return 0.0 };
+    // The re-place must be legal from the position after the pop (engine only).
+    if after_pop.check_move(re).is_err() {
+        return 0.0;
+    }
+    let mut after_re = after_pop.clone();
+    after_re.apply_unchecked(re);
+    let gain = after_re.area(victim).to_f64() - after_pop.area(victim).to_f64();
+    gain.max(0.0).min(loss.max(0.0))
 }
 
 /// How many of `player`'s nodes hang by a single edge (capturable).
