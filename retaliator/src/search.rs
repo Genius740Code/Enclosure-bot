@@ -49,6 +49,25 @@ const DEADWOOD_ENEMY_DIST: i8 = 3;
 /// Penalty for a non-breaking first action landing within this radius.
 const CUT_RADIUS: i8 = 3;
 const REBUILD_PENALTY: f64 = 3.0;
+/// Blue's forced first action: D10-F7. Measured over 12 games vs three
+/// opponents (v1, v2, scout-class): +20% to +41% margins, 12/12 positive,
+/// vs -4% to +14% unforced. The search walks backward (D10-A7) on
+/// direction-index ties; the forward diagonal banks early and develops
+/// toward the center. Zero risk: at action 1 nothing can make it illegal
+/// except a non-standard start, which falls through to search via the
+/// legality check below.
+fn blue_opener(position: &Position) -> Option<Move> {
+    if position.actions_played() != 0 {
+        return None;
+    }
+    let mv = Move::between(
+        Point::new(-6, 0).expect("D10 on board"),
+        Point::new(-4, -3).expect("F7 on board"),
+    )
+    .expect("D10-F7 is a king step");
+    position.check_move(mv).ok().map(|_| mv)
+}
+
 /// How many of the latest actions count as "recent" for cut avoidance.
 pub const CUT_MEMORY: usize = 6;
 /// Capture exposure: nodes held by a single edge can be captured outright.
@@ -92,6 +111,9 @@ pub fn best_move(position: &Position) -> Option<Move> {
 /// the enemy recently cut. Rebuilding there is how rebuilder-farming works
 /// (41 cuts in one game); routing elsewhere denies the repeat cut.
 pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move> {
+    if let Some(open) = blue_opener(position) {
+        return Some(open);
+    }
     analyze_with_avoid(position, MOVE_BUDGET, avoid).candidates.first().map(|candidate| candidate.mv)
 }
 
