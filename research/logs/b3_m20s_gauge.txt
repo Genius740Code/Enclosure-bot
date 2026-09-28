@@ -1,0 +1,10 @@
+B3 config: mem=20 scale=2
+game 1: laneb=blue blue=2373.6 red=1322.7 margin=+44.3% breaks R=31 G=30 (13s)
+game 2: laneb=red blue=1364.1 red=4437.4 margin=+69.3% breaks R=3 G=2 (14s)
+game 3: laneb=blue blue=2373.6 red=1322.7 margin=+44.3% breaks R=31 G=30 (13s)
+game 4: laneb=red blue=1364.1 red=4437.4 margin=+69.3% breaks R=3 G=2 (14s)
+game 5: laneb=blue blue=2373.6 red=1322.7 margin=+44.3% breaks R=31 G=30 (15s)
+game 6: laneb=red blue=1364.1 red=4437.4 margin=+69.3% breaks R=3 G=2 (13s)
+game 7: laneb=blue blue=2373.6 red=1322.7 margin=+44.3% breaks R=31 G=30 (14s)
+game 8: laneb=red blue=1364.1 red=4437.4 margin=+69.3% breaks R=3 G=2 (15s)
+laneb wins: 8/8
