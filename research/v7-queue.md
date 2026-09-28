@@ -21,3 +21,21 @@ v7 must BUILD there. Routed to: Lane E job one (own-shape bonus, metric: our
 area lifetime 30.7 -> parity with rivals ~49.8); Lane O second half
 (what cracks them when rivals build them); Lane C2 census (who builds them,
 do they win).
+
+## Q3 (USER 2026-09-28): Great Barrier's unbreakable-area game — detect, counter, steal
+"GB makes moves that get loads of area that isn't breakable. Bot should find
+if GB is doing it, counter it, and use it itself sometimes."
+- Routed three ways:
+  (a) DETECT (Lane C2): census GB's site games (incl. the v6-vs-GB/GB2.0 rated
+      games now queued) for unbreakable-share: what fraction of GB's banked
+      area sits in 2+ touch walls? Detection spec: a per-game unbreakable-share
+      number C2 reports for every GB game, so counters can key off it.
+  (b) COUNTER (Lane O): once the shape is characterized, test counters —
+      early contest of the corridor root, pre-building to deny the second
+      wall, price-denial of GB's bank race. One variable each; collapser work
+      first, this second.
+  (c) STEAL (Lane E): same as Q2 — adopt the shape for ourselves when the
+      board offers it ("sometimes": gate the bonus on build-progress/tempo so
+      we don't force corridors into bad ground).
+- Falsifiable: if GB's unbreakable-share doesn't predict GB wins, the
+  detection spec is wrong and we kill this line.
