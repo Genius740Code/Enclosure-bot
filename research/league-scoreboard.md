@@ -44,3 +44,22 @@ cuttable area at full horizon weight on every candidate; ~25 cuts/side/game
 is normal play, so it discounts all big-area claims — small-loop habit.
 `VULN_W` left at 0.0 (only verified terms in the rig). Numbers:
 `research/lane-b-vuln.md`. 0.5 dose untested (trend uniformly negative).
+
+## Experiment B-2 — cut+make gap math / doom-discount ablation — 2026-09-28
+Mechanism verified in the engine: the doom discount prices the enemy's
+one-action pop at x12, but the re-make is shield-delayed two turns (the
+pop's placed edge crosses the re-place path and shields it), so the popped
+area misses TWO scoring events, not twelve. Two re-make-aware corrections
+never fired (SourceNotOwned / BreaksShieldedEdge always block); the correct
+form needs the enemy's block tree — too heavy for an eval term.
+| variant | v1 W/L | league margin % | gauge W/L | verdict |
+|---|---|---|---|---|
+| eval_phases doom OFF (DOOM_W=0.0) | **5/10** (blue 1/5 -16.7%, red 4/5 +9.2%) | **-9.9%** | 8/8 (blue +53.5, red +69.3) | **RECOMMEND (merge candidate)** |
+| shipped = doom ON (control) | 4/10 (blue 2/5 -11.6%, red 2/5 +3.6%) | -20.0% | 8/8 (blue +66.0, red +69.3) | baseline |
+Note: doom OFF better on league (+10.1pp), v1 (+1 win, as-red +5.6pp),
+collapse lines (+16.7pp skip=10: -94.5% vs -111.2%; +55.5pp skip=30: -55.9%
+vs -111.4%), gauge equal. The doom discount FAILS the line it was added for
+(V4 note "1098 -> 1031 against" recorded the same regression). Only
+regression: as-Blue chair 2/5 -> 1/5 (n=5 exact). Faithfulness control
+0/239 positions (re-verified after each restructure). Numbers:
+`research/lane-b-gap.md`. RE off.
