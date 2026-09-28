@@ -75,6 +75,21 @@ Worktrees live outside the repo. Bot code: `retaliator/src/search.rs` (SHIPPED B
 5. **Opponent watch (Lane D/G track, `opp_*` probes only)**. Blob/sacrifice/long-farm
    mimics on `lane-d-opp`; capybara fingerprint in research/g-capybara.md.
 
+## Branch map (all on origin; read-only except your own lane branch)
+- `master` — only main session merges here (gated winners). Tags v5, v6...
+- `lane-a-search` — search track (search_deep.rs). ACTIVE work may be mid-flight.
+- `lane-b-eval` — eval track (eval_phases.rs). ACTIVE work may be mid-flight.
+- `lane-c-autopsy` — finished analyses (c-blunder-catalog.md, c-site-losses-2.md). READ.
+- `lane-d-opp` — finished D mimics+tournament. `lane-d2-opp` — D2 blob/sac/longfarm
+  mimics (may be mid-flight; adopt dont redo).
+- `lane-e-siteops` — site-ops.md + harness-gap-avoid-path.md. READ, don't redo.
+- `lane-g-recon` — g-capybara.md fingerprint. READ.
+- `lane-h-opener` — opener probes (probe_bluefirst.rs, probe_mesh.rs). ACTIVE maybe.
+- `work-*` local branches in others' checkouts are SCRATCH — ignore them.
+Rules: start each lane worktree from the listed branch tip (`git log origin/<branch> -3`
+first); never force-push a lane branch (append commits); never merge lane->master
+except via the gated-winner checkpoint; delete no branches.
+
 ## Lane file ownership
 - A: `search_deep.rs` + `probe_deep.rs`. B/X: `eval_phases.rs` + `probe_b_*`/`league_b`/`gauge_b`
   (X and B share the track: run SEQUENTIALLY, never concurrently).
