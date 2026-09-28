@@ -4,11 +4,12 @@
 //! changes; forced prefixes + shipped searches only.
 //!
 //! Forcing pattern (extends lane-h `probe_bluefirst`, catalog-0 fix, to multi-move
-//! prefixes): a forced opening plays as engine action 1 (that side's `own` counter
-//! starts at 1 -- the site consumed its first own move). A bot with a prefix plays those
-//! moves as its own moves, in order; the first prefix move that is ILLEGAL at its turn
-//! TRUNCATES the prefix (fall-throughs are counted and reported, never silent -- the
-//! probe_bluechair no-op lesson). After the prefix everyone plays their shipped search:
+//! prefixes): a forced opening plays as engine action 1 (the site consumed that side's
+//! first own move; the prefix is simply delayed one tempo, entries are never skipped --
+//! the probe_mesh v1 off-by-one lesson). A bot with a prefix plays those moves as its own
+//! moves, in order; the first prefix move that is ILLEGAL at its turn TRUNCATES the prefix
+//! (fall-throughs are counted and reported, never silent -- the probe_bluechair no-op
+//! lesson). After the prefix everyone plays their shipped search:
 //! us = `retaliator::search::best_move` (v3); the GB clone plays scoutbase (its described
 //! engine family) or v3 as a second configuration.
 //!
@@ -93,8 +94,10 @@ fn move_txt(mv: Move) -> String {
 struct Bot {
     prefix: Vec<Move>,
     search: SearchFn,
-    /// Own moves already made (1 when the site's forced opening consumed this side's move).
-    own: usize,
+    /// Prefix entries already played. Independent of how many own moves the site consumed:
+    /// entry 0 is ALWAYS the next prefix move to play (a forced opening just delays the
+    /// prefix by one tempo; it never skips entries -- the probe_mesh v1 off-by-one lesson).
+    forced_idx: usize,
     expected: usize,
     inj: usize,
     /// First prefix slot that could not be played: (slot, engine act, why).
@@ -102,28 +105,28 @@ struct Bot {
 }
 
 impl Bot {
-    fn free(search: SearchFn, own: usize) -> Bot {
-        Bot { prefix: Vec::new(), search, own, expected: 0, inj: 0, stall: None }
+    fn free(search: SearchFn) -> Bot {
+        Bot { prefix: Vec::new(), search, forced_idx: 0, expected: 0, inj: 0, stall: None }
     }
-    fn forced(prefix: Vec<Move>, search: SearchFn, own: usize) -> Bot {
+    fn forced(prefix: Vec<Move>, search: SearchFn) -> Bot {
         let expected = prefix.len();
-        Bot { prefix, search, own, expected, inj: 0, stall: None }
+        Bot { prefix, search, forced_idx: 0, expected, inj: 0, stall: None }
     }
     fn next(&mut self, pos: &Position, act1: u8) -> Move {
-        if self.own < self.prefix.len() {
-            let mv = self.prefix[self.own];
+        if self.forced_idx < self.prefix.len() {
+            let mv = self.prefix[self.forced_idx];
             match pos.check_move(mv) {
                 Ok(_) => {
-                    self.own += 1;
+                    self.forced_idx += 1;
                     self.inj += 1;
                     return mv;
                 }
                 Err(why) => {
                     if self.stall.is_none() {
-                        self.stall = Some((self.own, act1, format!("{why}")));
+                        self.stall = Some((self.forced_idx, act1, format!("{why}")));
                     }
                     // Truncate: the prefix is dead, search takes over for good.
-                    self.own = self.prefix.len();
+                    self.forced_idx = self.prefix.len();
                 }
             }
         }
@@ -243,11 +246,11 @@ fn stall_txt(row: &Row, idx: usize, tag: &str) -> String {
     }
 }
 
-fn us_bot(treat: &str, full: &[Move], search: SearchFn, own: usize) -> Bot {
+fn us_bot(treat: &str, full: &[Move], search: SearchFn) -> Bot {
     match treat {
-        "base" => Bot::free(search, own),
-        "mesh6" => Bot::forced(full[..6].to_vec(), search, own),
-        "mesh8" => Bot::forced(full.to_vec(), search, own),
+        "base" => Bot::free(search),
+        "mesh6" => Bot::forced(full[..6].to_vec(), search),
+        "mesh8" => Bot::forced(full.to_vec(), search),
         _ => panic!("unknown treatment {treat}"),
     }
 }
@@ -276,8 +279,8 @@ fn part_a(
     // (we are Blue): the 5 standard openings (none = blue_opener D10-F7 for the base).
     for (oname, open) in std_opens() {
         for treat in treatments {
-            let us = us_bot(treat, mesh_b, v3, usize::from(open.is_some()));
-            let gbot = Bot::forced(gbook_r.to_vec(), gb, 0);
+            let us = us_bot(treat, mesh_b, v3);
+            let gbot = Bot::forced(gbook_r.to_vec(), gb);
             let row = play(open, us, gbot);
             recs.push(Rec {
                 part: "a",
@@ -295,8 +298,8 @@ fn part_a(
     let gb_opens = [("D10-F11", one("D10-F11")), ("D10-C7", one("D10-C7")), ("A10-C11", one("A10-C11"))];
     for (oname, open) in gb_opens {
         for treat in treatments {
-            let us = us_bot(treat, mesh_r, v3, 0);
-            let gbot = Bot::forced(gbook_b.to_vec(), gb, 1);
+            let us = us_bot(treat, mesh_r, v3);
+            let gbot = Bot::forced(gbook_b.to_vec(), gb);
             let row = play(Some(open), gbot, us);
             recs.push(Rec {
                 part: "a",
@@ -314,15 +317,15 @@ fn part_a(
 fn part_b(vs_name: &str, vs: SearchFn, mesh_b: &[Move], mesh_r: &[Move], recs: &mut Vec<Rec>) {
     for (oname, open) in std_opens() {
         for us_blue in [true, false] {
-            let (mesh, us_own, them_own) = if us_blue {
-                (mesh_b, usize::from(open.is_some()), 0)
-            } else {
-                (mesh_r, 0, usize::from(open.is_some()))
-            };
             for treat in ["base", "mesh6", "mesh8"] {
-                let us = us_bot(treat, mesh, v3, us_own);
-                let them = Bot::free(vs, them_own);
-                let row = if us_blue { play(open, us, them) } else { play(open, them, us) };
+                let them = Bot::free(vs);
+                let row = if us_blue {
+                    let us = us_bot(treat, mesh_b, v3);
+                    play(open, us, them)
+                } else {
+                    let us = us_bot(treat, mesh_r, v3);
+                    play(open, them, us)
+                };
                 recs.push(Rec {
                     part: "b",
                     key: format!("VS={vs_name}"),
@@ -536,8 +539,8 @@ fn main() {
     match section.as_str() {
         "smoke" => {
             // One game, fast: GB-Red book (scoutbase post) vs mesh6-Blue, no opening.
-            let us = us_bot("mesh6", &mesh_b, v3, 0);
-            let gbot = Bot::forced(gbook_r.to_vec(), scoutbase::best_move, 0);
+            let us = us_bot("mesh6", &mesh_b, v3);
+            let gbot = Bot::forced(gbook_r.to_vec(), scoutbase::best_move);
             let row = play(None, us, gbot);
             recs.push(Rec {
                 part: "a",
