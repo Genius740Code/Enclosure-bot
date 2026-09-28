@@ -1,0 +1,9 @@
+skip=0 ret=blue rs=1089 ss=1230 margin=-13.0% (12s)
+skip=0 ret=red rs=1863 ss=1279 margin=+31.4% (14s)
+skip=10 ret=blue rs=1089 ss=1230 margin=-13.0% (13s)
+skip=10 ret=red rs=977 ss=2192 margin=-124.3% (15s)
+skip=20 ret=blue rs=1089 ss=1230 margin=-13.0% (16s)
+skip=20 ret=red rs=977 ss=2192 margin=-124.3% (17s)
+skip=30 ret=blue rs=1318 ss=1189 margin=+9.8% (13s)
+skip=30 ret=red rs=1010 ss=1187 margin=-17.5% (16s)
+AVG margin (ret perspective): -33.0%
