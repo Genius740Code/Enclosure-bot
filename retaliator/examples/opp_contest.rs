@@ -107,44 +107,60 @@ fn contest_best_move(pos: &Position) -> (Option<Move>, Option<ContestClass>) {
     }
 }
 
-fn play(solo: &str) -> (f64, f64, u32, u32, f64, bool) {
+fn play(solo: &str, ret_blue: bool, contest: bool) -> (f64, f64, u32, u32, u32, f64, bool) {
     let mut game = Game::new();
     let mut first = true;
     let mut cuts = 0;
     let mut occupies = 0;
+    let mut our_cuts = 0;
     let mut foe_max_area = 0.0f64;
+    let foe = if ret_blue { Player::Red } else { Player::Blue };
     while !game.is_over() {
-        let ret_moves = game.position().to_move() == Player::Blue;
+        let ret_moves = (game.position().to_move() == Player::Blue) == ret_blue;
         let mv = if first {
             first = false;
             solo_move(&game, solo)
         } else if ret_moves {
-            let (mv, class) = contest_best_move(game.position());
-            match class {
-                Some(ContestClass::CutSite) => cuts += 1,
-                Some(ContestClass::Occupy) => occupies += 1,
-                None => {}
+            if contest {
+                let (mv, class) = contest_best_move(game.position());
+                match class {
+                    Some(ContestClass::CutSite) => cuts += 1,
+                    Some(ContestClass::Occupy) => occupies += 1,
+                    None => {}
+                }
+                mv
+            } else {
+                retaliator::search::best_move(game.position())
             }
-            mv
         } else {
             opp_collapser::best_move(game.position())
         };
-        game.play(mv.unwrap()).unwrap();
-        foe_max_area = foe_max_area.max(game.position().area(Player::Red).to_f64());
+        let mover_is_ret = (game.position().to_move() == Player::Blue) == ret_blue;
+        let pre_actions = game.position().actions_played();
+        let outcome = game.play(mv.unwrap()).unwrap();
+        if mover_is_ret && pre_actions > 0 && outcome.broken.is_some() {
+            our_cuts += 1;
+        }
+        foe_max_area = foe_max_area.max(game.position().area(foe).to_f64());
     }
-    let rs = game.position().score(Player::Blue).to_f64();
-    let ss = game.position().score(Player::Red).to_f64();
-    (rs, ss, cuts, occupies, foe_max_area, foe_max_area >= BIG_CLOSE)
+    let rs = game.position().score(if ret_blue { Player::Blue } else { Player::Red }).to_f64();
+    let ss = game.position().score(if ret_blue { Player::Red } else { Player::Blue }).to_f64();
+    (rs, ss, cuts, occupies, our_cuts, foe_max_area, foe_max_area >= BIG_CLOSE)
 }
 
-fn main() {
-    println!("=== CONTEST-GEN vs COLLAPSER (skip=0 ret=Blue, 8 solos, BONUS=0) ===");
+fn arm(contest: bool, ret_blue: bool) {
+    let label = format!(
+        "{} ret={}",
+        if contest { "CONTEST" } else { "BASELINE" },
+        if ret_blue { "Blue" } else { "Red" }
+    );
     let mut w = 0;
     let mut l = 0;
     let mut sum = 0.0;
     let mut converted = 0;
+    let mut tcuts = 0u32;
     for (g, solo) in SOLOS.iter().enumerate() {
-        let (rs, ss, cuts, occupies, foe_max, big) = play(solo);
+        let (rs, ss, cuts, occupies, our_cuts, foe_max, big) = play(solo, ret_blue, contest);
         let margin = (rs - ss) / rs * 100.0;
         if rs > ss {
             w += 1;
@@ -155,22 +171,23 @@ fn main() {
             converted += 1;
         }
         sum += margin;
+        tcuts += our_cuts;
         println!(
-            "game{} margin={:+.1}% contest cut={} occupy={} foeMaxArea={:.0} bigClose={} {}",
-            g + 1,
-            margin,
-            cuts,
-            occupies,
-            foe_max,
-            big,
+            "  {} game{} margin={:+.1}% contest cut={} occupy={} ourCuts={} foeMaxArea={:.0} bigClose={} {}",
+            label, g + 1, margin, cuts, occupies, our_cuts, foe_max, big,
             if rs > ss { "WIN" } else { "LOSS" }
         );
     }
     println!(
-        "CONTEST {}-{} avg={:+.1}% conversion(no-big-close)={}/8 (n=8)",
-        w,
-        l,
-        sum / 8.0,
-        converted
+        "{} {}-{} avg={:+.1}% ourCutsAvg={:.1}/game conversion={}/8 (n=8)",
+        label, w, l, sum / 8.0, tcuts as f64 / 8.0, converted
     );
+}
+
+fn main() {
+    println!("=== CONTEST-GEN vs COLLAPSER (skip=0, 8 solos, BONUS=0) ===");
+    arm(false, true);
+    arm(true, true);
+    arm(false, false);
+    arm(true, false);
 }

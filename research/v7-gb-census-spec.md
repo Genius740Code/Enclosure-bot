@@ -62,7 +62,16 @@ Prediction test: over score-decided games (highest signal), fraction where
 
 ## Local validation (Lane O, available data)
 
-GB-mimic vs scoutbase, 8 solos x both colors (n=16) — see `opp_census.rs`
-output (committed with results). Site-game test BLOCKED: no cached
-`tools/mined-data`, fetch needs site credentials (not attempted; HTTP-429
-policy applies). C2 runs the js port when data is available.
+GB-mimic (`opp_gbstyle`) vs scoutbase, 8 solos x both colors (n=16),
+`cargo run --release --example opp_census` @ 41a6828:
+
+- GB W-L: **0-16** (confirms `research/lane-d-gb.md`: least dangerous style).
+- Higher-share player won: **14/16** decided (16/16 decided, 0 NaN).
+  - 8/8 as Blue, 6/8 as Red (2 DISAGREE: gbShare 0.68/0.73 vs foe 0.66/0.71,
+    margins where scoutbase won anyway on volume).
+- GB shares cluster 0.60-0.73; scoutbase winners 0.71-0.92. The metric
+  separates thin-walled losers from thick-walled winners but does NOT
+  explain GB's losses alone (GB loses on close-rate/volume, share only
+  predicts within ~87%).
+- Verdict: census number is computable and predictive (14/16); worth C2's
+  site-game run. Prediction test on human GB games still open.
