@@ -107,3 +107,15 @@ Not all our lines deserve equal defense. Rank live lines by strength
 strong, abandon the weak early (don't good-money-after-bad a doomed line).
 - Gated by: does strength-ranking predict which lines survive? (C2 first,
   then E prices it.) Kills the sunk-cost rebuilds that farmers exploit.
+
+## Q9 (USER 2026-09-28, DIRECTIVE): multi-turn shape investments + big-picture horizon
+"C2 should aim for bigger picture: even 4-5 turns of setup can build a big
+shape or help a lot. Bot may be too short-term — partly the 33ms calculation
+time, which will be fixed."
+- Two coupled fixes: (a) ANALYSIS horizon (C2: judge plans over 4-5 turn
+  arcs, not single moves — a setup that pays on turn 5 is good, not slow);
+  (b) THINK horizon (S: Q6 ~2s budget must BUY multi-turn shape lines, not
+  just deeper 1-ply ranking — extensions must reach the shape payoff).
+- Test: positions where the best 1-ply move and the best 5-turn plan differ;
+  v7 must pick the plan. If longer thought just ranks the same move higher,
+  the budget is wasted and we cut it back.
