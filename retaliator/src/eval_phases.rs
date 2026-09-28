@@ -1,33 +1,29 @@
-//! Lane B (eval/phases): legal-cuts-only vulnerability pricing.
+//! Lane B (eval/phases): the shipped `search.rs` skeleton with the
+//! cut+make-gap ablation result — the doom discount gated OFF in `best_move`.
 //!
 //! This file is the shipped `search.rs` skeleton (2-ply WIDTH-8, full-horizon
-//! valuation, every V4/V5 term) with ONE added term, kept in a separate file
-//! because eval lanes add here and the main session merges gated winners into
-//! `search.rs` themselves. Copied verbatim, not imported: the skeleton's items
-//! are private, and a shared copy would let one drift from the other.
+//! valuation, every V4/V5 term) with the tested terms kept behind flags, in a
+//! separate file because eval lanes add here and the main session merges
+//! gated winners into `search.rs` themselves. Copied verbatim, not imported:
+//! the skeleton's items are private, and a shared copy would let one drift
+//! from the other.
 //!
-//! **Legal-cuts-only vulnerability (V4d2 field rule).** The static eval counts
-//! our area x `HORIZON` events as if it all banks, and the doom discount
-//! subtracts the single worst one-action pop. Both miss erosion: several of
-//! our edges legally cuttable over consecutive actions drain area that no max
-//! ever prices (the 41-cut farming line in `f61a06ec`). The term widens the
-//! doom discount's "worst pop" to the total area the enemy can LEGALLY cut
-//! from the evaluated position, counted once per distinct edge, in one pass
-//! over their legal move set. Legal cuts only: a dense cluster — any edge
-//! through it touches 2+ opposing edges, which is illegal — prices zero, and
-//! shielded edges are struck out by the movegen itself. No fantasy cuts, no
-//! geometric touches, same full-horizon units as the discount it widens.
-//!
-//! The term is inert while our enclosed area is 0 (nothing to cut), so it
-//! cannot distort the opening where the Blue chair lives; it bites from the
-//! first closed loop on. `baseline_best_move` is the identical search with
-//! the term OFF: the ablation control, which must pick exactly what
-//! `search::best_move` picks — probe `probe_b_h2h` checks that position for
-//! position before trusting any game.
+//! **B-2 verdict (cut+make gap, 2026-09-28).** The doom discount prices the
+//! enemy's worst one-action pop of our area at the full horizon (worst x 12),
+//! but the re-make is shield-delayed two turns — the popped area misses
+//! exactly TWO scoring events, not twelve. Ablation (n=8-10 both colors,
+//! faithfulness control 0/239 first): doom OFF is better on league -9.9% vs
+//! -20.0% (+10.1pp), v1 h2h 5/10 vs 4/10, collapse line -94.5% vs -111.2%
+//! (+16.7pp — the term fails the very line it was added for), gauge 8/8
+//! equal; only the as-Blue chair regresses (2/5 -> 1/5, n=5). `best_move`
+//! runs with the doom OFF (the verified recommendation);
+//! `baseline_best_move` keeps it ON (the shipped search, which `probe_b_h2h`
+//! checks position for position). The vulnerability (VULN) and re-make
+//! (REM) terms are rejected/never-fire — see their const docs.
 
 use std::cmp::Reverse;
 
-use meridian_engine::{Edge, Move, MoveKind, Outcome, Player, Point, Position};
+use meridian_engine::{Edge, IllegalMove, Move, MoveKind, Outcome, Player, Point, Position};
 
 /// Positions searched for a move in a game. Analysis asks for its own number, up to this.
 pub const MOVE_BUDGET: usize = 4096;
@@ -108,8 +104,17 @@ const DENSE_BONUS: f64 = 1.0;
 /// capped horizon, is subtracted at selection. Doomed megaloops net to ~0,
 /// so the bot builds split/remote/dense ground instead of one big grazeable
 /// balloon. Computed only where the enemy is to move (their legal set).
-/// With [`VULN_W`] on, the "worst pop" widens to the total legally-cuttable
-/// area (see below); this constant keeps the scale either way.
+/// B-2 ablation 2026-09-28 (ON=1.0 vs OFF=0.0, n=8-10 both colors,
+/// faithfulness control 0/239 first): league -9.9% vs -20.0% (+10.1pp), v1
+/// h2h 5/10 vs 4/10 (as-red 4/5 +9.2% vs 2/5 +3.6%), collapse line -94.5% vs
+/// -111.2% (+16.7pp — the term fails the very line it was added for), gauge
+/// 8/8 equal. Only regression: as-Blue v1 chair 2/5 -> 1/5 (-5.1pp, n=5
+/// exact for the set). Verdict: RECOMMEND OFF — `best_move` runs with the
+/// doom off (gated by the `doom` flag); `baseline_best_move` keeps it on
+/// (the shipped search). Mechanism (cut+make gap): the re-make is
+/// shield-delayed two turns, so the true doom is ~2-3 events, not 12 — see
+/// REM_W's doc. Weight if re-enabled: 1.0 (0.5 tested worse on the collapse
+/// line, V4-era).
 const DOOM_W: f64 = 1.0;
 /// Capture exposure: nodes held by a single edge can be captured outright.
 /// Counts ours vs theirs; each such node is a discrete, hard-to-reverse
@@ -146,21 +151,31 @@ const PATIENCE_PENALTY: f64 = 2.0;
 /// uniformly negative, dose unlikely to flip it.
 const VULN_W: f64 = 0.0;
 
-/// Cut+make gap (the gap between the enemy's cut and our re-make): the doom
-/// discount prices the enemy's worst one-action pop of our area at the full
-/// horizon (worst x 12), but a popped loop is usually re-makeable — the cut
-/// edge is ours, unshielded, and re-placing it restores the loop next turn,
-/// so the popped area is worth ONE scoring event, not twelve. The term adds
-/// back the over-discount for the re-makeable part: the area we can legally
-/// re-close in one action (via `check_move` from the position after their
-/// pop — legal cuts only, V4d2), times (min(events,12) - 1). Same full-horizon
-/// units as the discount it corrects; same single pass (the worst pop's move
-/// is found there). Chair evidence (control vs v1, open=5589): v1's closes
-/// bank +31..+57 while ours stay +5..+19 — the doom discount nets every
-/// poppable big loop to ~0, so the bot never builds one; v1 (no doom
-/// discount) does and out-banks us. Set 0.0 to turn the term off (the
-/// ablation control). One-pop scale only: the enemy's second action can pop
-/// again, which this does not price (the doom discount's own scale).
+/// Cut+make gap (the gap between the enemy's cut and our re-make) — EXPLORED,
+/// NOT SHIPPED (2026-09-27/28). The doom discount prices the enemy's worst
+/// one-action pop of our area at the full horizon (worst x 12), but a popped
+/// loop is re-made only after a two-turn shield delay: the pop's own placed
+/// edge crosses the re-place path and is fresh/shielded on our next turn, so
+/// the re-place is illegal until the shield drops — the popped area misses
+/// exactly TWO scoring events, not twelve. Two implementations of the
+/// re-make-aware correction never fired: (1) checking the re-place from the
+/// post-pop position always fails SourceNotOwned (it is the enemy's move
+/// there); (2) checking it after every legal reply always fails
+/// BreaksShieldedEdge (the pop's placed edge always crosses the path). The
+/// correct form needs the enemy's block tree over their remaining actions —
+/// too heavy for an eval term. The ablation that DOES verify the mechanism:
+/// the doom discount OFF entirely (DOOM_W 1.0 -> 0.0, n=8-10 both colors,
+/// faithfulness control 0/239 first) — league -9.9% vs -20.0% (+10.1pp), v1
+/// h2h 5/10 vs 4/10 (as-red 4/5 +9.2% vs 2/5 +3.6%), collapse line -94.5% vs
+/// -111.2% (+16.7pp — the term fails the very line it was added for; the V4
+/// note "1098 -> 1031 against" recorded this same regression), gauge 8/8
+/// equal. Only regression: as-Blue v1 chair 2/5 -11.6% -> 1/5 -16.7% (n=5,
+/// exact for the set). Verdict: RECOMMEND DOOM OFF — `best_move` runs with
+/// the doom discount off (the verified recommendation); `baseline_best_move`
+/// keeps it on (the shipped search, which the faithfulness probe checks
+/// position for position). 0.5 dose untested on the current gates (V4 tested
+/// it worse on the collapse line); the rig supports it (flip DOOM_W + the
+/// doom flag) if the as-Blue regression confirms.
 const REM_W: f64 = 1.0;
 
 pub fn best_move(position: &Position) -> Option<Move> {
@@ -173,27 +188,31 @@ pub fn best_move(position: &Position) -> Option<Move> {
 /// contract as `search::best_move_with_avoid`, so a gated merge into lib.rs
 /// keeps the anti-rebuild routing in `replay` wired.
 pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, true, true)
+    // The verified recommendation: the doom discount OFF (see REM_W's doc —
+    // league +10.1pp, v1 h2h 5/10 vs 4/10, collapse +16.7pp, gauge equal),
+    // every added term off (vuln rejected, re-make never fires).
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false)
 }
 
-/// The identical search with every added term OFF: the ablation control. It
-/// must pick exactly what `search::best_move` picks — `probe_b_h2h` checks
-/// that position for position before trusting any game. (Not every probe uses
-/// it; the gate keeps per-example dead-code quiet.)
+/// The shipped `search::best_move` exactly: the doom discount ON, no added
+/// terms — the ablation control. `probe_b_h2h` checks it position for
+/// position against this before trusting any game. (Not every probe uses it;
+/// the gate keeps per-example dead-code quiet.)
 #[allow(dead_code)]
 pub fn baseline_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, true)
 }
 
-/// The skeleton's selection loop, with the added terms gated. The
-/// `Analysis`/`Candidate` reporting surface is not copied: probes read the
-/// pick, and the main session merges the term itself.
+/// The skeleton's selection loop, with the doom discount and the added terms
+/// gated. The `Analysis`/`Candidate` reporting surface is not copied: probes
+/// read the pick, and the main session merges the term itself.
 fn best_move_features(
     position: &Position,
     budget: usize,
     avoid: &[Point],
     vuln: bool,
     remake: bool,
+    doom: bool,
 ) -> Option<Move> {
     if let Some(open) = blue_opener(position) {
         return Some(open);
@@ -254,7 +273,9 @@ fn best_move_features(
             if let Some(pos) = doom_at {
                 let hz_doom = f64::from(pos.scoring_events_left()).min(HORIZON);
                 let (worst, cuttable, worst_mv) = pop_cut_remake(pos, mover);
-                adjusted -= DOOM_W * worst * hz_doom;
+                if doom {
+                    adjusted -= DOOM_W * worst * hz_doom;
+                }
                 // The (rejected) vulnerability term: the erosion gap — area the
                 // enemy can LEGALLY cut BEYOND the single worst pop, which no
                 // max ever prices. Zero when only one edge is cuttable. Same
