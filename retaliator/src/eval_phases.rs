@@ -190,7 +190,34 @@ const CLOSE_W: f64 = 1.0;
 /// = exact cancellation of the capped-area credit; the beyond-horizon
 /// extension credit (0.5 x max(0, events-12)) is left in place and
 /// measured.
+///
+/// **Dose correction after the first confirm run (probe_b_farm, form A):**
+/// with the capped factor alone the act-51 target (446956a1, ~35 events
+/// left) does NOT flip — the re-close keeps its beyond-horizon extension
+/// credit (4.5 x 0.5 x 23 ~= 52 points) on top of the penalty-capped
+/// remainder, and no fresh move outscores it; at the act-113 target
+/// (f9c819ed, ~4 events left) form A flips exactly as predicted. So the
+/// scaled penalty runs with the FULL credit factor
+/// (`min(E,12) + 0.5 x max(0, E-12)`, `REBUILD_FULL` below) — the same
+/// units the eval itself pays a close — which cancels the whole area
+/// credit of a cut-ground re-close at W=1.0.
 const REBUILD_GAIN_W: f64 = 1.0;
+
+/// Whether the scaled penalty uses the full credit factor
+/// `min(E,12) + 0.5 x max(0, E-12)` (true — the dose correction above)
+/// or only the capped `min(E,12)` (form A, measured insufficient at the
+/// act-51 confirm target).
+const REBUILD_FULL: bool = true;
+
+/// The full-horizon factor the eval pays a close's gained area at:
+/// the capped static part plus the horizon extension's beyond-cap part
+/// (0.5 weight), i.e. exactly what `evaluate` + `horizon_extension`
+/// credit for `gain` area.
+fn credit_factor(events_left: u8) -> f64 {
+    let capped = f64::from(events_left).min(HORIZON);
+    let beyond = (f64::from(events_left) - capped).max(0.0);
+    capped + 0.5 * beyond
+}
 
 /// The B-3 farm-cycle routing form, gated per entry point (the flat
 /// shipped routing is always on whenever `avoid` is non-empty).
@@ -379,7 +406,12 @@ fn best_move_features(
                 && (oc.broken.is_none() || rebuild == Rebuild::ScaledAll)
             {
                 let gain_sel = probe.area(mover).to_f64() - position.area(mover).to_f64();
-                adjusted -= REBUILD_GAIN_W * gain_sel.max(0.0) * hz_sel;
+                let factor = if REBUILD_FULL {
+                    credit_factor(position.scoring_events_left())
+                } else {
+                    hz_sel
+                };
+                adjusted -= REBUILD_GAIN_W * gain_sel.max(0.0) * factor;
             }
         }
         // Doom discount (see const docs): the proven worst-one-action-pop
@@ -643,7 +675,12 @@ fn ranked(
                     && (outcome.broken.is_none() || rebuild == Rebuild::ScaledAll)
                     && near_points(avoid.iter().copied(), target, CUT_RADIUS)
                 {
-                    priority -= REBUILD_GAIN_W * own_gain.max(0.0) * hz;
+                    let factor = if REBUILD_FULL {
+                        credit_factor(position.scoring_events_left())
+                    } else {
+                        hz
+                    };
+                    priority -= REBUILD_GAIN_W * own_gain.max(0.0) * factor;
                 }
                 // Patience: don't snatch tiny loops in the opening while the
                 // board is wide open; set up bigger closes instead (GB delays
