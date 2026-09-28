@@ -362,29 +362,36 @@ fn pop_cut_remake(pos: &Position, victim: Player) -> (f64, f64, Option<Move>) {
 }
 
 /// The part of the worst one-action pop that `victim` can legally re-close in
-/// one action (the re-make): apply the enemy's worst pop, then try re-placing
-/// the edge it cut — both endpoints are still `victim`'s nodes, and the edge
-/// is not shielded (it was ours, not their last turn's placement), so the only
-/// blockers are the engine's own (`check_move`: breaks-several, overlaps). The
-/// re-make restores the loop next turn, so the popped area is worth one
-/// scoring event, not the horizon. Zero when the re-place is illegal (the pop
-/// was part of a surrounding attack) — the doom discount then stands at full
-/// strength, as it should.
+/// one action (the re-make): apply the enemy's worst pop, then require the
+/// re-place of the cut edge to be legal after EVERY legal reply the enemy
+/// still has — the pop was their first action of the turn, their reply comes
+/// before `victim` moves again, and any reply that blocks the re-place (a
+/// fresh edge across its path, or a second cut changing the geometry) kills
+/// it; the enemy picks such a reply whenever it is best. Both endpoints of
+/// the cut edge are still `victim`'s nodes, and the edge is not shielded (it
+/// was ours, not their placement), so the blockers are the engine's own
+/// (`check_move` from the post-reply position: breaks-several, fresh-shield,
+/// overlaps). The re-make restores the loop next turn, so the popped area is
+/// worth one scoring event, not the horizon. Zero when the re-place can be
+/// blocked — the doom discount then stands at full strength.
 fn remake_area(pos: &Position, pop: Option<Move>, victim: Player) -> f64 {
     let Some(mv) = pop else { return 0.0 };
     let mut after_pop = pos.clone();
     let outcome = after_pop.apply_unchecked(mv);
     let loss = pos.area(victim).to_f64() - after_pop.area(victim).to_f64();
-    let Some(cut) = outcome.broken else { return 0.0 };
-    let Some(re) = Move::between(cut.origin(), cut.far()) else { return 0.0 };
-    // The re-place must be legal from the position after the pop (engine only).
-    if after_pop.check_move(re).is_err() {
+    if loss <= 0.0 {
         return 0.0;
     }
-    let mut after_re = after_pop.clone();
-    after_re.apply_unchecked(re);
-    let gain = after_re.area(victim).to_f64() - after_pop.area(victim).to_f64();
-    gain.max(0.0).min(loss.max(0.0))
+    let Some(cut) = outcome.broken else { return 0.0 };
+    let Some(re) = Move::between(cut.origin(), cut.far()) else { return 0.0 };
+    for reply in after_pop.legal_moves().iter() {
+        let mut after_reply = after_pop.clone();
+        after_reply.apply_unchecked(reply);
+        if after_reply.check_move(re).is_err() {
+            return 0.0;
+        }
+    }
+    loss
 }
 
 /// How many of `player`'s nodes hang by a single edge (capturable).
