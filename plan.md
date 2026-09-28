@@ -4,6 +4,41 @@
 
 ---
 
+## 🔴 IMMEDIATE ACTION REQUIRED — sst1 BOT FIX
+
+**Any AI reading this plan MUST fix this before proceeding with v7/v8 work.**
+
+### The Problem
+The sst1 24/7 bot (`Riposte_bot` on meaf.us/sst1/) works up to `lobby_join` + `lobby_state`, then receives a **Close frame** and disconnects. It never queues for a match.
+
+### Root Cause
+After `lobby_join` → `lobby_state` (with `"queued": false`), the bot sits idle. The server closes the connection because the bot never enters the matchmaking queue.
+
+### The Fix (MANDATORY)
+In the lobby message handler, after receiving `lobby_state` with `"queued": false`, the bot **MUST** immediately send:
+```json
+{"action": "lobby_quick_play"}
+```
+
+Then the flow continues:
+```
+lobby_quick_play → match_found → edge game WS (edgeToken + gameID) 
+→ retaliator.best_move_routed() → send move → game_over → save game → lobby_quick_play (loop)
+```
+
+### Test Checklist (ALL MUST PASS)
+- [ ] Auth → edgeToken ✅
+- [ ] WS handshake ✅
+- [ ] syn → syn_ack ✅
+- [ ] lobby_join → lobby_state ✅
+- [ ] **lobby_quick_play → match_found** ❌ (CURRENTLY MISSING)
+- [ ] edge game WS connect → retaliator moves → game_over ✅
+- [ ] Save game JSON → loop back to lobby_quick_play ✅
+
+**STOP. Fix this first. Then continue with v7/v8 work.**
+
+---
+
 ## 1. CURRENT STATE (as of 2026-09-28)
 
 ### v6 Status (LIVE ON SITE)
@@ -289,6 +324,36 @@ Then git push:
 ```bash
 cd /home/genius74o/game && git add plan.md && git commit -m "plan: updated with latest status" && git push origin master
 ```
+
+---
+
+## 🔴 CRITICAL FIX REQUIRED — sst1 BOT GAME LOOP
+
+**The sst1 bot currently works up to `lobby_join` + `lobby_state`, but then receives a Close frame and stops.**
+
+### Root Cause
+The bot sends `lobby_join` → gets `lobby_state` + `lobby_queue_state` (queued: false) + `lobby_challenge_state` → then gets a **Close frame** from the server.
+
+**The Fix**: After `lobby_join` + `lobby_state`, the bot **MUST** send `{"action": "lobby_quick_play"}` to actually enter the matchmaking queue. The server closes the connection if the bot just sits in the lobby without queuing.
+
+### Required Fix in Bot Daemon
+In the lobby message handler, after receiving `lobby_state` with `"queued": false`, the bot MUST immediately send:
+```json
+{"action": "lobby_quick_play"}
+```
+
+Then wait for `match_found` → connect to edge game WS → play game with retaliator → save game → loop back to `lobby_quick_play`.
+
+### Test Checklist for sst1 Bot
+- [ ] Auth → edgeToken ✅
+- [ ] WS handshake ✅
+- [ ] syn → syn_ack ✅
+- [ ] lobby_join → lobby_state ✅
+- [ ] **lobby_quick_play → match_found** ❌ (MISSING)
+- [ ] edge game WS connect → retaliator moves → game_over ✅
+- [ ] Save game JSON → loop back to lobby_quick_play ✅
+
+**Any AI working on this plan MUST fix this before considering sst1 bot "working".**
 
 ---
 
