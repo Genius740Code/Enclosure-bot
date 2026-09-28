@@ -20,6 +20,19 @@
 //! `baseline_best_move` keeps it ON (the shipped search, which `probe_b_h2h`
 //! checks position for position). The vulnerability (VULN) and re-make
 //! (REM) terms are rejected/never-fire — see their const docs.
+//!
+//! **B-3 term (farm-cycle routing, 2026-09-28).** C2's site autopsy
+//! (`c-site-losses-2` H1): the farm cycles run 20-40 actions — far beyond
+//! the shipped CUT_MEMORY 6 — and the farmed re-closes are close+cut
+//! combis (16013 +4.5 re-popped 4x by 17112; 16970 x4) whose own_gain x
+//! hz credit (54-198 full-horizon points at the observed gains) dwarfs
+//! the flat rebuild penalty (3.0 x 12 = 36), so the shipped routing can
+//! never flip them. The B-3 term scales the cut-ground penalty by the
+//! SAME own_gain x hz (`REBUILD_GAIN_W`, gated by `Rebuild`); the avoid
+//! set itself is the caller's, and the probes sweep its memory 12/20/40
+//! against the shipped 6. Lane D proved the flat routing (mem 6) flips
+//! the vlad-style farmer 6-2 -> 8-0; B-3 extends what it remembers and
+//! what it prices. Numbers: `research/lane-b3-farm.md`.
 
 use std::cmp::Reverse;
 
@@ -47,6 +60,9 @@ const DEADWOOD_ENEMY_DIST: i8 = 3;
 /// Anti-rebuild routing (rival-analysis steal #1): our edges were cut near
 /// these points within the last few actions, so re-closing there is farmed.
 /// Penalty for a non-breaking first action landing within this radius.
+/// B-3 extends it with the gain-scaled penalty (`REBUILD_GAIN_W`, gated by
+/// `Rebuild`) — the flat 3.0 x hz = 36 full-horizon points can never beat a
+/// farmed re-close banking own_gain x hz (54-198).
 const CUT_RADIUS: i8 = 3;
 const REBUILD_PENALTY: f64 = 3.0;
 /// Blue's forced first action: D10-F7. Measured over 12 games vs three
@@ -155,6 +171,43 @@ const PATIENCE_PENALTY: f64 = 2.0;
 const CLOSE_T: f64 = 3.0;
 const CLOSE_W: f64 = 1.0;
 
+/// B-3 farm-cycle routing: the gain-scaled part of the anti-rebuild
+/// penalty. The flat `REBUILD_PENALTY` is 3.0 x hz = 36 full-horizon points
+/// at hz 12, but the farmed re-close it must beat banks own_gain x hz —
+/// 54-198 points for the site gains (+4.5 re-close 16013 popped 4x by
+/// 17112; +9.0..+10.5 re-close 16970 x4; c-site-losses-2 H1) — so the flat
+/// penalty can never flip the pick (36 < 54). This weight scales the
+/// penalty by the SAME own_gain x hz on cut ground, so a re-close there
+/// nets ~zero capped-area credit and any fresh-ground move with a
+/// positive net outranks it (C2's confirm target). Full-horizon units,
+/// deterministic tiebreak by move index, legality via the engine only.
+/// The farm cycles run 20-40 actions — far beyond the shipped CUT_MEMORY
+/// 6 — so the avoid set's memory is the caller's concern (B-3 sweeps
+/// 12/20/40 there, `B3_MEM` in the gate probes). `Rebuild::ScaledAll`
+/// also prices BREAKING re-closes (the C2 farmed re-closes are close+cut
+/// combis, exempt under the shipped form); the flat part keeps its
+/// non-breaking domain, so pure counter-cuts (gain 0) stay free. Dose 1.0
+/// = exact cancellation of the capped-area credit; the beyond-horizon
+/// extension credit (0.5 x max(0, events-12)) is left in place and
+/// measured.
+const REBUILD_GAIN_W: f64 = 1.0;
+
+/// The B-3 farm-cycle routing form, gated per entry point (the flat
+/// shipped routing is always on whenever `avoid` is non-empty).
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Rebuild {
+    /// Shipped routing only: flat penalty, non-breaking first actions.
+    Off,
+    /// Flat + gain-scaled penalty, keeping the shipped counter-cut
+    /// exemption (non-breaking first actions only).
+    ScaledExempt,
+    /// Flat + gain-scaled penalty on every first action on cut ground,
+    /// breaking included — the farm-cycle form: the C2 farmed re-closes
+    /// are close+cut combis ([51] 16013, [113] 16970), exempt under the
+    /// shipped form. Pure counter-cuts (gain 0) still pay nothing.
+    ScaledAll,
+}
+
 /// Legal-cuts-only vulnerability (V4d2 field rule): the doom discount subtracts
 /// the worst one-action pop; the term adds the EROSION GAP — the total area the
 /// enemy can legally cut from the evaluated position BEYOND that worst pop, per
@@ -212,12 +265,28 @@ pub fn best_move(position: &Position) -> Option<Move> {
 /// contract as `search::best_move_with_avoid`, so a gated merge into lib.rs
 /// keeps the anti-rebuild routing in `replay` wired.
 pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move> {
-    // The verified recommendation: the doom discount OFF (see REM_W's doc —
-    // league +10.1pp, v1 h2h 5/10 vs 4/10, collapse +16.7pp, gauge equal),
-    // every added term off (vuln rejected, re-make never fires). The
-    // gain-scaled close priority (CLOSE) is swept from here: flip the last
-    // argument + CLOSE_T per config run (the lane-b dose precedent).
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, true)
+    // The B-3 base config: the doom-OFF control (B-2's verified
+    // recommendation) with every added term off — CLOSE OFF too (the B-2
+    // sweep verdict: all four CLOSE_T doses lost to the close-off control;
+    // HEAD carried the last swept state for reproducibility, B-3 restores
+    // the control). The B-3 term is NOT on this path: it is gated per entry
+    // point (`farm_best_move_with_avoid`), so the faithfulness control and
+    // the gate defaults stay the published doom-OFF control, and this path
+    // keeps the shipped routing semantics (flat penalty) for any avoid set
+    // the caller passes.
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off)
+}
+
+/// The B-3 term under test: the shipped anti-rebuild routing plus the
+/// gain-scaled cut-ground penalty in `form` (see `REBUILD_GAIN_W`). The
+/// avoid set is the caller's; the gate probes sweep its memory 12/20/40
+/// (`B3_MEM`) against the shipped 6.
+pub fn farm_best_move_with_avoid(
+    position: &Position,
+    avoid: &[Point],
+    form: Rebuild,
+) -> Option<Move> {
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form)
 }
 
 /// The shipped `search::best_move` exactly: the doom discount ON, no added
@@ -226,7 +295,7 @@ pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move
 /// the gate keeps per-example dead-code quiet.)
 #[allow(dead_code)]
 pub fn baseline_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off)
 }
 
 /// The CLOSE_B2 ablation control: doom OFF (the B-2 recommendation) with the
@@ -235,7 +304,7 @@ pub fn baseline_best_move(position: &Position) -> Option<Move> {
 /// term alone.
 #[allow(dead_code)]
 pub fn ablation_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off)
 }
 
 /// The skeleton's selection loop, with the doom discount and the added terms
@@ -249,6 +318,7 @@ fn best_move_features(
     remake: bool,
     doom: bool,
     close: bool,
+    rebuild: Rebuild,
 ) -> Option<Move> {
     if let Some(open) = blue_opener(position) {
         return Some(open);
@@ -256,7 +326,7 @@ fn best_move_features(
     let mover = position.to_move();
     let opp = mover.opponent();
     let budget = budget.clamp(SMALLEST_BUDGET, MOVE_BUDGET);
-    let first_actions = ranked(position, budget / 2, true, avoid, close);
+    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild);
     let nodes = first_actions.len();
     let width = first_actions.len().min(WIDTH);
     let reply_budget = (budget - nodes) / width.max(1);
@@ -264,7 +334,7 @@ fn best_move_features(
     // (adjusted score for ordering, the move it belongs to).
     let mut scored: Vec<(f64, Move)> = Vec::new();
     for (mv, after, _, _) in first_actions.into_iter().take(width) {
-        let replies = ranked(&after, reply_budget, false, &[], false);
+        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off);
         let mut pv = vec![mv];
         let mut evaluation = value(&after);
         if let Some((reply, _, reply_value, _)) = replies.first() {
@@ -281,9 +351,10 @@ fn best_move_features(
             let hz_sel = f64::from(position.scoring_events_left()).min(HORIZON);
             let mut probe = position.clone();
             let oc = probe.apply_unchecked(mv);
+            let tgt = mv.target().expect("legal moves end on the board");
+            let on_cut = near_points(avoid.iter().copied(), tgt, CUT_RADIUS);
             if oc.broken.is_none() {
-                let tgt = mv.target().expect("legal moves end on the board");
-                if near_points(avoid.iter().copied(), tgt, CUT_RADIUS) {
+                if on_cut {
                     adjusted -= REBUILD_PENALTY * hz_sel;
                 }
                 if near_fresh_enemy(position, tgt) {
@@ -297,6 +368,18 @@ fn best_move_features(
                         probe.area(mover).to_f64() - position.area(mover).to_f64();
                     adjusted += CLOSE_W * (gain_sel - CLOSE_T) * hz_sel;
                 }
+            }
+            // B-3 farm-cycle routing at selection (gated): the same
+            // gain-scaled term as in ranking, so the pick itself flips the
+            // farmed re-close off cut ground. `ScaledAll` also prices the
+            // breaking re-closes (the close+cut combis the site losses are
+            // made of); the flat part above keeps its non-breaking domain.
+            if rebuild != Rebuild::Off
+                && on_cut
+                && (oc.broken.is_none() || rebuild == Rebuild::ScaledAll)
+            {
+                let gain_sel = probe.area(mover).to_f64() - position.area(mover).to_f64();
+                adjusted -= REBUILD_GAIN_W * gain_sel.max(0.0) * hz_sel;
             }
         }
         // Doom discount (see const docs): the proven worst-one-action-pop
@@ -485,6 +568,7 @@ fn ranked(
     first: bool,
     avoid: &[Point],
     close: bool,
+    rebuild: Rebuild,
 ) -> Vec<(Move, Position, f64, f64)> {
     let mover = position.to_move();
     let opp = mover.opponent();
@@ -543,6 +627,23 @@ fn ranked(
                 // (breaking something) is exempt. (Rival-analysis steal #1.)
                 if outcome.broken.is_none() && near_points(avoid.iter().copied(), target, CUT_RADIUS) {
                     priority -= REBUILD_PENALTY * hz;
+                }
+                // B-3 farm-cycle routing (gated by `rebuild`): the flat
+                // penalty above is 36 full-horizon points at hz 12, but the
+                // farmed re-close it must beat banks own_gain x hz
+                // (54-198 for the site gains) — it can never flip the pick.
+                // Scale the penalty by the same own_gain x hz so a
+                // cut-ground re-close nets ~zero area credit and any
+                // fresh-ground move with a positive net outranks it.
+                // `ScaledAll` also prices breaking re-closes (the farmed
+                // re-closes are close+cut combis); the flat part keeps its
+                // non-breaking domain, so pure counter-cuts (gain 0) stay
+                // free.
+                if rebuild != Rebuild::Off
+                    && (outcome.broken.is_none() || rebuild == Rebuild::ScaledAll)
+                    && near_points(avoid.iter().copied(), target, CUT_RADIUS)
+                {
+                    priority -= REBUILD_GAIN_W * own_gain.max(0.0) * hz;
                 }
                 // Patience: don't snatch tiny loops in the opening while the
                 // board is wide open; set up bigger closes instead (GB delays
