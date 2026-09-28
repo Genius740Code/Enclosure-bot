@@ -32,13 +32,24 @@ fn deep(position: &Position) -> Option<Move> {
     retaliator::search_deep::best_move(position)
 }
 
-/// The candidate: real alpha-beta with move ordering, depth 3, 2s budget.
+/// The candidate: real alpha-beta with move ordering, depth 3, 2s budget (FULL_WIDTH).
 fn deep_budget(position: &Position) -> Option<Move> {
     retaliator::search_deep::best_move_with_budget(
         position,
         retaliator::search_deep::DEFAULT_DEPTH,
         &[],
         &retaliator::search_deep::Budget::Ms(retaliator::search_deep::DEFAULT_BUD_MS),
+    )
+}
+
+/// The candidate: real alpha-beta with move ordering, depth 3, 2s budget, DEFAULT_WIDTH (deployment config).
+fn deep_capped_budget(position: &Position) -> Option<Move> {
+    retaliator::search_deep::best_move_capped(
+        position,
+        retaliator::search_deep::DEFAULT_DEPTH,
+        &[],
+        &retaliator::search_deep::Budget::Ms(retaliator::search_deep::DEFAULT_BUD_MS),
+        retaliator::search_deep::DEFAULT_WIDTH,
     )
 }
 
@@ -132,6 +143,34 @@ fn h2h_budget(openings: usize) {
     println!("==> h2h_budget search_deep vs search: {w}/{n} (blue {w_blue}/{n_blue}, red {w_red}/{n_red})");
 }
 
+fn h2h_capped_budget(openings: usize) {
+    println!("== h2h_capped_budget: search_deep (depth 3, 2s budget, DEFAULT_WIDTH) vs search baseline, {openings} openings x 2 colors ==");
+    let opens = [None, Some(4864usize), Some(5589), Some(9199)];
+    let (mut w, mut n) = (0, 0);
+    let (mut w_blue, mut n_blue, mut w_red, mut n_red) = (0, 0, 0, 0);
+    for open in opens.into_iter().take(openings.max(1)) {
+        for deep_blue in [true, false] {
+            let mut game = Game::new();
+            if let Some(id) = open {
+                game.play(Move::from_index(id).unwrap()).unwrap();
+            }
+            let t = std::time::Instant::now();
+            let (dsc, bsc) = play(game, deep_blue, deep_capped_budget, base);
+            n += 1;
+            let won = dsc > bsc;
+            if won { w += 1; }
+            if deep_blue { n_blue += 1; if won { w_blue += 1; } } else { n_red += 1; if won { w_red += 1; } }
+            println!(
+                "open={open:?} deep={} {dsc:.0}-{bsc:.0} {} ({:.0}s)",
+                if deep_blue { "blue" } else { "red" },
+                if won { "DEEP WINS" } else { "base wins" },
+                t.elapsed().as_secs_f64()
+            );
+        }
+    }
+    println!("==> h2h_capped_budget search_deep vs search: {w}/{n} (blue {w_blue}/{n_blue}, red {w_red}/{n_red})");
+}
+
 fn league(skips: &[usize]) {
     println!("== league: search_deep (depth 3) vs scoutbase, skips {skips:?}, both colors ==");
     let mut sum = 0.0;
@@ -187,6 +226,30 @@ fn gauge_budget(games: usize) {
         let ret_blue = g % 2 == 0;
         let t = std::time::Instant::now();
         let (rs, gs) = play(Game::new(), ret_blue, deep_budget, greedy);
+        let margin = (rs - gs) / rs * 100.0;
+        if rs > gs {
+            wins_r += 1;
+        }
+        println!(
+            "game {}: deep={} blue={:.1} red={:.1} margin={:+.1}% ({:.0}s)",
+            g + 1,
+            if ret_blue { "blue" } else { "red" },
+            if ret_blue { rs } else { gs },
+            if ret_blue { gs } else { rs },
+            margin,
+            t.elapsed().as_secs_f64()
+        );
+    }
+    println!("==> deep wins: {wins_r}/{games}");
+}
+
+fn gauge_capped_budget(games: usize) {
+    println!("== gauge_capped_budget: search_deep (depth 3, 2s budget, DEFAULT_WIDTH) vs greedy, {games} games ==");
+    let mut wins_r = 0;
+    for g in 0..games {
+        let ret_blue = g % 2 == 0;
+        let t = std::time::Instant::now();
+        let (rs, gs) = play(Game::new(), ret_blue, deep_capped_budget, greedy);
         let margin = (rs - gs) / rs * 100.0;
         if rs > gs {
             wins_r += 1;
@@ -480,6 +543,8 @@ fn main() {
         "benchcap" => benchcap(),
         "gauge_budget" => gauge_budget(n1.unwrap_or(6)),
         "h2h_budget" => h2h_budget(n1.unwrap_or(5)),
+        "gauge_capped_budget" => gauge_capped_budget(n1.unwrap_or(6)),
+        "h2h_capped_budget" => h2h_capped_budget(n1.unwrap_or(5)),
         "profile" => profile(n1.unwrap_or(20000)),
         _ => {
             h2h(4);
