@@ -174,19 +174,37 @@ fn main() {
         }
         play_logged(game, true, &format!("open={open:?}"));
     }
-    // Opener-response test: forced opening as Blue action 0, then our first
-    // searched action FORCED to D10-F7, rest free search for both sides.
-    println!("== opener-response test: forced D10-F7 as our action 1 after each site opening");
+    // Opener-response test: forced opening as Blue action 0, Red's first turn
+    // free (v1), then D10-F7 FORCED as our first action of our first turn
+    // (the earliest it can legally be played — after Red's 2-action turn),
+    // rest free search for both sides. V1 of this test was a NO-OP: it
+    // checked legality on Red's turn, where D10-F7 is always illegal.
+    println!("== opener-response test: Red turn 1 free, then forced D10-F7 as our action 3");
     for open in [None, Some(4864), Some(5589), Some(11723), Some(9199)] {
         let mut game = Game::new();
         if let Some(id) = open {
             game.play(Move::from_index(id).unwrap()).unwrap();
         }
-        let opener = Move::between(Point::new(-6, 0).unwrap(), Point::new(-4, -3).unwrap()).unwrap();
-        if let Ok(mv) = game.position().check_move(opener) {
-            let _ = mv;
-            game.play(opener).unwrap();
+        // Red's full first turn (and, in the None game, Blue's solo — v1's
+        // search picks D10-A7 there), free: play v1 until it's OUR turn.
+        while game.position().to_move() == Player::Red {
+            let mv = v1base::best_move(game.position()).unwrap();
+            println!(
+                "  red@{} {} {}",
+                game.position().actions_played() + 1,
+                mv.index(),
+                meridian_engine::notation::move_text(mv.source, mv.target().unwrap())
+            );
+            game.play(mv).unwrap();
         }
+        // Force the opener as our first action of our first turn.
+        let opener = Move::between(Point::new(-6, 0).unwrap(), Point::new(-4, -3).unwrap()).unwrap();
+        let forced = if game.position().check_move(opener).is_ok() {
+            game.play(opener).unwrap();
+            true
+        } else {
+            false
+        };
         // rest free
         while !game.is_over() {
             let mv = if (game.position().to_move() == Player::Blue) {
@@ -199,7 +217,8 @@ fn main() {
         }
         let (bs, rs) = (score_of(&game, Player::Blue), score_of(&game, Player::Red));
         println!(
-            "open={open:?} +D10-F7@1: {bs:.0}-{rs:.0} {}",
+            "open={open:?} +D10-F7@our-act-3 ({}): {bs:.0}-{rs:.0} {}",
+            if forced { "forced" } else { "ILLEGAL, free instead" },
             if bs > rs { "BLUE WINS" } else { "RED WINS" }
         );
     }

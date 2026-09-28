@@ -1,7 +1,8 @@
 # Lane C — Blunder catalog (autopsy of problems #1 and #2), 2026-09-27
 
-Branch `work-c-autopsy` @ `c63b15f` (probes imported from `lane-a-search`), code base `eb100e9`
-(V5-1 baseline). Analysis only — no `retaliator/src/*` changes. Every claim below cites probe
+Branch `lane-c-autopsy`; first run at `c63b15f` (probes imported from `lane-a-search`),
+code base `eb100e9` (V5-1 baseline), verified byte-identical on re-run 2026-09-28.
+Analysis only — no `retaliator/src/*` changes. Every claim below cites probe
 action numbers `[n]` and measured evals from this run.
 
 ## 0. Method, numbering, and two instrument facts
@@ -21,12 +22,13 @@ action numbers `[n]` and measured evals from this run.
   same scheduled instant). Consistent with that: in every observed rated game our first move is
   **not** D10-F7 (7030, 4503, 5228), so `blue_opener`'s measured +20–41% advantage is never
   exercised on site; it exists only in local `open=None` games.
-- **The opener-response experiment in `probe_bluechair` is a NO-OP.** It calls
-  `game.position().check_move(D10-F7)` immediately after the forced opening — Red's turn, so the
-  move is always illegal and never played. All five "+D10-F7@1" lines are byte-identical replays
-  of the main games (1256-1745 etc.), i.e. **no data**. One-line fix for the probe owner: only
-  inject when `to_move() == Blue` (after Red's 2-action turn), e.g. play Red's reply via
-  `v1base::best_move` first, then force the opener.
+- **The opener-response experiment in `probe_bluechair` was a NO-OP in the
+  first run** (it checked `D10-F7` legality on Red's turn, where the move is
+  always illegal). **Fixed and re-run 2026-09-28** — Red's first turn free
+  (v1), then D10-F7 forced as our first real action (engine act 3): results
+  in §1.6. Side note from the fix: with no forced opening, v1's own search
+  picks D10-A7 (backward diagonal) as its solo opener, exactly as
+  `search.rs`'s comment predicts.
 
 ## 1. Problem #1 — Blue chair: v3 as Blue vs v1 on the site's forced openings
 
@@ -163,6 +165,32 @@ by the enemy area it actually un banks (rival-analysis steal #3) — the [40] mo
 sides of the bug in one action (worthless cut paid a bonus + farmed re-close chosen).**
 → **A (secondary):** at the [40] position, depth-3 sees Red's J7-G8 re-cut at ply 3; if the
 re-close still wins on banked-once EV, the answer is B's routing penalty, not depth.
+
+### 1.6 The opener-response question, ANSWERED (2026-09-28, fixed probe)
+
+D10-F7 forced as our first real action (engine act 3) after each site opening,
+Red's first turn free. Baseline = the main games above (v3's search responds freely).
+
+| opening | baseline | +D10-F7@act3 | change |
+|---|---|---|---|
+| None | **1322-786 W** | **1322-786 W** | same |
+| 4864 = A10-D8 | **1243-1237 W** | **1019-1438 L** | **flipped to loss** |
+| 5589 = D10-B9 | 1256-1745 L | 1038-1356 L | margin −489 → −318 |
+| 11723 = A10-C11 | 1637-1806 L | 916-1150 L | margin −169 → −234 |
+| 9199 = D10-F10 | 1415-2120 L | **1053-619 W** | **flipped to win** |
+
+**Finding: first-response placement is a first-order factor, but no fixed response
+dominates.** Forcing the measured opener flips 2 of 5 games in OPPOSITE directions
+(9199's farm-fest becomes a win: the baseline's A10-C7 response at [3] invites the
+34–50 cut blitz; 4864's won game becomes a loss). Margins swing ±300–700 points on
+one move choice. The win/loss is decided by the interaction between our first
+response and Red's first-turn reply — i.e. the search's action-1/act-3 choice is
+unstable at the scale that decides rated games. This is consistent with
+hypothesis #1/§1.3 (enemy close-ground release): different first responses expose
+different edges to Red's first cut-close combo.
+→ **For Lane A/B:** the first response is worth MORE search (plan-v3 §2.4 time
+management) or a stability check (easy-move fast path must not fire at act 1–3);
+a single fixed response is NOT the answer (measured mixed, n=1 per line, deterministic).
 
 ## 2. Problem #2 — Red collapse (`probe_balloon`, ret as Red vs scoutbase after skip pre-moves)
 
@@ -322,11 +350,17 @@ eval-side problems today.
 
 - Probe numbering: forced-opening games' probe-n = engine action − 1 (§0); all citations above
   are probe-n as printed in the logs.
-- `probe_bluechair`'s opener-response experiment returned no data (no-op bug, §0) — the
-  "does D10-F7 as the response turn it around?" question is still open.
+- `probe_bluechair`'s opener-response experiment returned no data in the FIRST run
+  (no-op bug, §0); **fixed and re-run 2026-09-28, results in §1.6** — mixed (flips 2 of
+  5 in opposite directions), so the "one fixed response" idea is measured OUT; the
+  instability of the first response is the takeaway.
 - Balloon findings rest on the three deterministic skip lines (one distinct collapse game,
   §2.3); conclusions consistent across all three.
 - Site autopsies (f61a06ec, f4b7f187, 6b66f7db, 4f0c9650, 3910c73c) are of the *deployed*
   bots (with avoid routing); local probes are without it (§3.6).
-- No `retaliator/src/*` files were touched; artifacts: this file only. Site game JSONs and
+- No `retaliator/src/*` files were touched; artifacts: this file + the two probes
+  (`probe_bluechair` — fixed opener-response test, `probe_balloon`). Site game JSONs and
   autopsy transcripts kept outside the repo at `/tmp/opencode/sitegames/`.
+- Verification re-run 2026-09-28 (fresh binaries, same code base): all five bluechair
+  finals and all three balloon finals reproduced byte-identically to the first run;
+  the §1.6 opener-response numbers are from the re-run.
