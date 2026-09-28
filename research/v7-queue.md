@@ -39,3 +39,20 @@ if GB is doing it, counter it, and use it itself sometimes."
       we don't force corridors into bad ground).
 - Falsifiable: if GB's unbreakable-share doesn't predict GB wins, the
   detection spec is wrong and we kill this line.
+
+## Q4 (USER 2026-09-28): never concede remote space — one far line becomes an unbankable bank
+"Bad to give them space: even 1 line far from their main lines is risky —
+if they place it, it's never break and causes problems in the long run."
+- Mechanism: a remote foothold faces no contest, thickens unchallenged into
+  2+ touch walls, then banks every event forever. Early contest costs a tempo;
+  late contest is impossible (nothing to cut).
+- Mirror image of shipped REMOTE_BONUS (we go far when heat is high). The
+  missing half: DENY_THEIRS — price enemy far-from-fight expansion as a
+  threat proportional to its unbreakability (shared-node count), not just its
+  current area (which reads ~0 while it is being built — exactly when it is
+  cheapest to kill).
+- Routed to: Lane E, with Q1 (end-state valuation: a remote bank scores at
+  EVERY event, so its full-horizon value is maximal — the two ideas compose).
+- Falsifiable: contest-remote dose sweep must raise enemy-area-lifetime gap
+  (theirs falls) without tanking our own build; if early contests just donate
+  targets (neck/aggro lesson), CONTACT_PENALTY interplay decides and we kill it.
