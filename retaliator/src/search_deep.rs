@@ -210,6 +210,12 @@ const XBOT_CAPTURE_BONUS: f64 = 100.0;
 const XBOT_CUT_BONUS: f64 = 50.0;
 const XBOT_CLOSE_BONUS: f64 = 30.0;
 
+/// Aspiration window delta: the half-width around the previous depth's score.
+/// When a depth search fails high/low, the window is widened by this factor.
+const ASPIRATION_DELTA: f64 = 50.0; // full-horizon points
+const ASPIRATION_WIDEN: f64 = 3.0;  // widen factor on fail high/low
+const ASPIRATION_MAX_DELTA: f64 = 10000.0; // effectively infinite
+
 /// Blue's forced first action: D10-F7. Measured over 12 games vs three
 /// opponents (v1, v2, scout-class): +20% to +41% margins, 12/12 positive.
 /// Kept identical to the baseline so the deep-search probes share the opener
@@ -690,32 +696,38 @@ pub fn analyze_capped(
     width: Width,
 ) -> DeepAnalysis {
     match budget {
-        Budget::Unbounded => analyze_impl(position, max_depth, avoid, None, width),
+        Budget::Unbounded => {
+            // Single-depth call (used by gates): no iterative deepening, no aspiration
+            analyze_impl(position, max_depth, avoid, None, width, None)
+        }
         Budget::Ms(cap_ms) => {
             let started = cpu_now();
             let cap = *cap_ms as f64 / 1000.0;
-            let mut analysis = analyze_impl(position, 1, avoid, None, width);
+            let mut analysis = analyze_impl(position, 1, avoid, None, width, None);
             let mut nodes = analysis.nodes;
             for depth in 2..=max_depth {
                 if cpu_now() - started >= cap {
                     break;
                 }
                 let stop = Stop::Cpu { started, cap };
-                let next = analyze_impl(position, depth, avoid, Some(&stop), width);
+                // Aspiration window centered on previous depth's best evaluation
+                let aspiration_center = analysis.evaluation;
+                let next = analyze_impl(position, depth, avoid, Some(&stop), width, Some(aspiration_center));
                 nodes += next.nodes;
                 analysis = merge_analyses(next, analysis, nodes);
             }
             analysis
         }
         Budget::Nodes(limit) => {
-            let mut analysis = analyze_impl(position, 1, avoid, None, width);
+            let mut analysis = analyze_impl(position, 1, avoid, None, width, None);
             let mut used = analysis.nodes;
             for depth in 2..=max_depth {
                 if used >= *limit {
                     break;
                 }
                 let stop = Stop::Nodes { used, limit: *limit };
-                let next = analyze_impl(position, depth, avoid, Some(&stop), width);
+                let aspiration_center = analysis.evaluation;
+                let next = analyze_impl(position, depth, avoid, Some(&stop), width, Some(aspiration_center));
                 used += next.nodes;
                 analysis = merge_analyses(next, analysis, used);
             }
@@ -930,7 +942,7 @@ pub fn analyze(position: &Position, depth: u8) -> DeepAnalysis {
 }
 
 pub fn analyze_with_avoid(position: &Position, depth: u8, avoid: &[Point]) -> DeepAnalysis {
-    analyze_impl(position, depth, avoid, None, FULL_WIDTH)
+    analyze_impl(position, depth, avoid, None, FULL_WIDTH, None)
 }
 
 /// The analysis itself. `stop` is the budget's root-level checkpoint: the
@@ -939,81 +951,132 @@ pub fn analyze_with_avoid(position: &Position, depth: u8, avoid: &[Point]) -> De
 /// root children fit under the cap. `width` caps how many root children are
 /// searched at all; the root list is priority-ordered, so this is the same
 /// "top-N by 1-ply priority" cut the budget makes, but deterministic.
+/// `aspiration` is an optional center value for aspiration window search:
+/// if Some(score), the root search uses a narrow window around that score,
+/// widening on fail high/low until the true value is bracketed.
 fn analyze_impl(
     position: &Position,
     depth: u8,
     avoid: &[Point],
     stop: Option<&Stop>,
     width: Width,
+    aspiration: Option<f64>,
 ) -> DeepAnalysis {
     let mover = position.to_move();
     let opp = mover.opponent();
+    let root = ranked(position, avoid);
+    let root_moves: Vec<Ranked> = root.into_iter().take(width.root).collect();
+
+    // Create context once; reused across aspiration re-searches (TT persists).
     let mut ctx = Ctx::new();
     ctx.width = width;
-    let root = ranked(position, avoid);
-    let mut scored: Vec<(f64, DeepCandidate)> = Vec::with_capacity(root.len());
-    let mut alpha = f64::NEG_INFINITY;
 
-    for (searched, Ranked { mv, after, priority, .. }) in root.into_iter().take(width.root).enumerate() {
-        if searched > 0 && stop.is_some_and(|stop| stop.exceeded(&ctx)) {
-            break;
+    // Aspiration window search: start narrow around the previous depth's best score,
+    // widen on fail high/low until the true value is bracketed.
+    let mut delta = aspiration.map(|_| ASPIRATION_DELTA).unwrap_or(f64::INFINITY);
+    let mut best_analysis: Option<DeepAnalysis> = None;
+    let mut first_search = true;
+
+    loop {
+        // Clear TT before each re-search to avoid pollution from failed-window bounds.
+        // We keep the PV table but the TT must be clean for correct bounds.
+        if !first_search {
+            ctx.tt.clear();
         }
-        let before_nodes = ctx.nodes;
-        // The root's accumulated extension is zero (no plies above), so the
-        // child's value at depth 1 is exactly its priority.
-        let (v, child_pv) = if after.is_finished() || depth <= 1 {
-            ctx.pv_len[1] = 0;
-            (priority, Vec::new())
+        first_search = false;
+
+        let mut scored: Vec<(f64, DeepCandidate)> = Vec::with_capacity(root_moves.len());
+
+        // Initial alpha/beta for the root search
+        let (mut alpha, mut beta) = if let Some(center) = aspiration {
+            (center - delta, center + delta)
         } else {
-            let swing = (after.area(mover).to_f64() - position.area(mover).to_f64()).max(0.0)
-                + (position.area(opp).to_f64() - after.area(opp).to_f64()).max(0.0);
-            let child_ext = sign(mover) * swing;
-            let v = if after.to_move() == mover {
-                // Same player's second action: the window never flips.
-                negamax(&after, depth - 1, 1, alpha, f64::INFINITY, child_ext, &mut ctx)
-            } else {
-                -negamax(&after, depth - 1, 1, -f64::INFINITY, -alpha, child_ext, &mut ctx)
-            };
-            let child_pv = ctx.line(1);
-            (v, child_pv)
+            (f64::NEG_INFINITY, f64::INFINITY)
         };
-        let mut pv = vec![mv];
-        pv.extend(child_pv);
-        // Poisoned ground counts at SELECTION, not just ranking: a line that
-        // rebuilds where we were just cut (or contests a fresh wall) loses
-        // here even if its honest eval is best — the cut history can see what
-        // the eval can't. (Same terms as the baseline's selection.)
-        let mut adjusted = v;
-        {
-            let hz_sel = f64::from(position.scoring_events_left()).min(HORIZON);
-            let cut_something = after.edges(opp).len() < position.edges(opp).len();
-            if !cut_something {
-                let tgt = mv.target().expect("legal moves end on the board");
-                if near_points(avoid.iter().copied(), tgt, CUT_RADIUS) {
-                    adjusted -= REBUILD_PENALTY * hz_sel;
-                }
-                if near_fresh_enemy(position, tgt) {
-                    adjusted -= FRESH_PENALTY * hz_sel;
+
+        let mut search_aborted = false;
+        for (searched, Ranked { mv, after, priority, .. }) in root_moves.iter().enumerate() {
+            if searched > 0 && stop.is_some_and(|stop| stop.exceeded(&ctx)) {
+                search_aborted = true;
+                break;
+            }
+            let before_nodes = ctx.nodes;
+            let (v, child_pv) = if after.is_finished() || depth <= 1 {
+                ctx.pv_len[1] = 0;
+                (*priority, Vec::<Move>::new())
+            } else {
+                let swing = (after.area(mover).to_f64() - position.area(mover).to_f64()).max(0.0)
+                    + (position.area(opp).to_f64() - after.area(opp).to_f64()).max(0.0);
+                let child_ext = sign(mover) * swing;
+                let v = if after.to_move() == mover {
+                    negamax(&after, depth - 1, 1, alpha, beta, child_ext, &mut ctx)
+                } else {
+                    -negamax(&after, depth - 1, 1, -beta, -alpha, child_ext, &mut ctx)
+                };
+                let child_pv = ctx.line(1);
+                (v, child_pv)
+            };
+            let mut pv = vec![mv.clone()];
+            pv.extend(child_pv);
+            let mut adjusted = v;
+            {
+                let hz_sel = f64::from(position.scoring_events_left()).min(HORIZON);
+                let cut_something = after.edges(opp).len() < position.edges(opp).len();
+                if !cut_something {
+                    let tgt = mv.target().expect("legal moves end on the board");
+                    if near_points(avoid.iter().copied(), tgt, CUT_RADIUS) {
+                        adjusted -= REBUILD_PENALTY * hz_sel;
+                    }
+                    if near_fresh_enemy(position, tgt) {
+                        adjusted -= FRESH_PENALTY * hz_sel;
+                    }
                 }
             }
+            let visits = ctx.nodes - before_nodes;
+            scored.push((adjusted, DeepCandidate { mv: mv.clone(), evaluation: sign(mover) * v, pv, visits }));
+            if v > alpha {
+                alpha = v;
+            }
+            if alpha >= beta {
+                break;
+            }
         }
-        let visits = ctx.nodes - before_nodes;
-        scored.push((adjusted, DeepCandidate { mv, evaluation: sign(mover) * v, pv, visits }));
-        if v > alpha {
-            alpha = v;
-        }
-    }
 
-    scored.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.mv.index().cmp(&b.1.mv.index())));
-    let candidates = scored.into_iter().map(|(_, c)| c).collect::<Vec<_>>();
-    let evaluation = candidates.first().map_or_else(|| value(position), |best| best.evaluation);
-    DeepAnalysis {
-        evaluation,
-        depth: usize::from(depth),
-        nodes: ctx.nodes,
-        tt_hits: ctx.tt_hits,
-        tt_stores: ctx.tt_stores,
-        candidates,
+        if search_aborted && best_analysis.is_some() {
+            return best_analysis.unwrap();
+        }
+
+        scored.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.mv.index().cmp(&b.1.mv.index())));
+        let candidates = scored.into_iter().map(|(_, c)| c).collect::<Vec<_>>();
+        let evaluation = candidates.first().map_or_else(|| value(position), |best| best.evaluation);
+        let analysis = DeepAnalysis {
+            evaluation,
+            depth: usize::from(depth),
+            nodes: ctx.nodes,
+            tt_hits: ctx.tt_hits,
+            tt_stores: ctx.tt_stores,
+            candidates,
+        };
+
+        // Check if aspiration window succeeded (value within window)
+        if let Some(center) = aspiration {
+            if evaluation > center - delta && evaluation < center + delta {
+                return analysis; // Window succeeded
+            }
+            // Fail high or fail low: widen window and re-search
+            delta *= ASPIRATION_WIDEN;
+            if delta > ASPIRATION_MAX_DELTA {
+                // Window wide enough, accept this result
+                return analysis;
+            }
+            // Continue loop with widened window; context (TT) is reused
+            best_analysis = Some(analysis);
+            // Reset PV lens for the new search (but keep TT)
+            ctx.pv_len.fill(0);
+            continue;
+        }
+
+        return analysis;
     }
 }
 
