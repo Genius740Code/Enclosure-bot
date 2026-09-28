@@ -210,6 +210,12 @@ const XBOT_CAPTURE_BONUS: f64 = 100.0;
 const XBOT_CUT_BONUS: f64 = 50.0;
 const XBOT_CLOSE_BONUS: f64 = 30.0;
 
+/// Q14 killer moves + history heuristic (on top of the XBot order above).
+/// Ordering only: killers/TT-best/history reorder children, never the values
+/// (`priority` stays the exact leaf value at depth 1). Toggle for the
+/// ablation gate (nodes/pos drop >20% vs XBot alone, value-exact).
+const USE_KILLER_HISTORY: bool = true;
+
 /// Aspiration window delta: the half-width around the previous depth's score.
 /// When a depth search fails high/low, the window is widened by this factor.
 const ASPIRATION_DELTA: f64 = 50.0; // full-horizon points
@@ -695,15 +701,29 @@ pub fn analyze_capped(
     budget: &Budget,
     width: Width,
 ) -> DeepAnalysis {
+    analyze_capped_kh(position, max_depth, avoid, budget, width, USE_KILLER_HISTORY)
+}
+
+/// [`analyze_capped`] with explicit killer/history ordering control: the Q14
+/// ablation gate (nodes/pos drop >20% vs XBot alone, value-exact). Production
+/// always passes `USE_KILLER_HISTORY`.
+pub fn analyze_capped_kh(
+    position: &Position,
+    max_depth: u8,
+    avoid: &[Point],
+    budget: &Budget,
+    width: Width,
+    use_kh: bool,
+) -> DeepAnalysis {
     match budget {
         Budget::Unbounded => {
             // Single-depth call (used by gates): no iterative deepening, no aspiration
-            analyze_impl(position, max_depth, avoid, None, width, None)
+            analyze_impl(position, max_depth, avoid, None, width, None, use_kh)
         }
         Budget::Ms(cap_ms) => {
             let started = cpu_now();
             let cap = *cap_ms as f64 / 1000.0;
-            let mut analysis = analyze_impl(position, 1, avoid, None, width, None);
+            let mut analysis = analyze_impl(position, 1, avoid, None, width, None, use_kh);
             let mut nodes = analysis.nodes;
             for depth in 2..=max_depth {
                 if cpu_now() - started >= cap {
@@ -714,14 +734,14 @@ pub fn analyze_capped(
                 // `evaluation` is Blue-relative; the window lives in the
                 // mover's perspective, so convert (matters when mover is Red).
                 let aspiration_center = sign(position.to_move()) * analysis.evaluation;
-                let next = analyze_impl(position, depth, avoid, Some(&stop), width, Some(aspiration_center));
+                let next = analyze_impl(position, depth, avoid, Some(&stop), width, Some(aspiration_center), use_kh);
                 nodes += next.nodes;
                 analysis = merge_analyses(next, analysis, nodes);
             }
             analysis
         }
         Budget::Nodes(limit) => {
-            let mut analysis = analyze_impl(position, 1, avoid, None, width, None);
+            let mut analysis = analyze_impl(position, 1, avoid, None, width, None, use_kh);
             let mut used = analysis.nodes;
             for depth in 2..=max_depth {
                 if used >= *limit {
@@ -730,7 +750,7 @@ pub fn analyze_capped(
                 let stop = Stop::Nodes { used, limit: *limit };
                 // Mover-perspective center (see Ms arm): `evaluation` is Blue-relative.
                 let aspiration_center = sign(position.to_move()) * analysis.evaluation;
-                let next = analyze_impl(position, depth, avoid, Some(&stop), width, Some(aspiration_center));
+                let next = analyze_impl(position, depth, avoid, Some(&stop), width, Some(aspiration_center), use_kh);
                 used += next.nodes;
                 analysis = merge_analyses(next, analysis, used);
             }
@@ -851,6 +871,15 @@ struct Ctx {
     tt_stores: u64,
     /// This search's width: children per interior node, priority-ordered.
     width: Width,
+    /// Killer moves (Q14): two per ply, tried right after the TT move. Cutoff
+    /// producers — ordering only, never touch values. Cleared per search.
+    killers: [[Option<Move>; 2]; MAX_PLY],
+    /// History heuristic (Q14): cumulative depth-squared cutoff credit per
+    /// move index. Breaks priority ties in ordering; never touches values.
+    history: Box<[i32; meridian_engine::NUM_MOVES]>,
+    /// Whether killer/history ordering is active (ablation toggle for the
+    /// >20% nodes/pos gate; production always runs with it on).
+    use_kh: bool,
 }
 
 impl Ctx {
@@ -863,6 +892,12 @@ impl Ctx {
             tt_hits: 0,
             tt_stores: 0,
             width: FULL_WIDTH,
+            killers: [[None; 2]; MAX_PLY],
+            history: vec![0i32; meridian_engine::NUM_MOVES]
+                .into_boxed_slice()
+                .try_into()
+                .expect("history table sized by NUM_MOVES"),
+            use_kh: USE_KILLER_HISTORY,
         }
     }
 
@@ -945,7 +980,7 @@ pub fn analyze(position: &Position, depth: u8) -> DeepAnalysis {
 }
 
 pub fn analyze_with_avoid(position: &Position, depth: u8, avoid: &[Point]) -> DeepAnalysis {
-    analyze_impl(position, depth, avoid, None, FULL_WIDTH, None)
+    analyze_impl(position, depth, avoid, None, FULL_WIDTH, None, USE_KILLER_HISTORY)
 }
 
 /// The analysis itself. `stop` is the budget's root-level checkpoint: the
@@ -965,6 +1000,7 @@ fn analyze_impl(
     stop: Option<&Stop>,
     width: Width,
     aspiration: Option<f64>,
+    use_kh: bool,
 ) -> DeepAnalysis {
     let mover = position.to_move();
     let opp = mover.opponent();
@@ -974,6 +1010,7 @@ fn analyze_impl(
     // Create context once; reused across aspiration re-searches (TT persists).
     let mut ctx = Ctx::new();
     ctx.width = width;
+    ctx.use_kh = use_kh;
 
     // Aspiration window search: start narrow around the previous depth's best score,
     // widen on fail high/low until the true value is bracketed.
@@ -1211,18 +1248,40 @@ fn negamax(
         let leaf_factor = if facts.finished { 0.0 } else { factor_c };
         children.push((priority, mv, leaf_factor, facts.swing, facts.finished));
     }
-    children.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.index().cmp(&b.1.index())));
-    // Transposition move ordering: the best child of an earlier visit to this
-    // position goes first, so cutoffs come sooner. The children's values are
-    // unchanged — only interior tie-breaks and node counts can differ.
-    if let Some(entry) = ctx.tt.get(&key) {
-        if let Some(want) = entry.best {
-            if let Some(at) = children.iter().position(|child| child.1.index() == want.index()) {
-                let front = children.remove(at);
-                children.insert(0, front);
-            }
+    // Move ordering (Q14): the TT move first, then this ply's killers, then
+    // priority with history breaking ties and the move index last. Ordering
+    // only — the values (`priority`) are untouched, so an exact (full-window)
+    // search returns the same value and best move; only cutoffs arrive sooner.
+    // With `use_kh` off this degrades to the old shape (TT move first — which
+    // was coded but never populated before Q14 — then priority, then index).
+    let tt_best =
+        ctx.tt.get(&key).and_then(|entry| entry.best).map(|candidate| candidate.index());
+    let (k0, k1) = if ctx.use_kh && ply < MAX_PLY {
+        (
+            ctx.killers[ply][0].map(|killer| killer.index()),
+            ctx.killers[ply][1].map(|killer| killer.index()),
+        )
+    } else {
+        (None, None)
+    };
+    let tier = |id: usize| {
+        if Some(id) == tt_best {
+            0
+        } else if Some(id) == k0 {
+            1
+        } else if Some(id) == k1 {
+            2
+        } else {
+            3
         }
-    }
+    };
+    children.sort_by(|a, b| {
+        tier(a.1.index())
+            .cmp(&tier(b.1.index()))
+            .then(b.0.total_cmp(&a.0))
+            .then(ctx.history[b.1.index()].cmp(&ctx.history[a.1.index()]))
+            .then(a.1.index().cmp(&b.1.index()))
+    });
     // Width cap: the beam. The children are priority-ordered (the TT move
     // first), so this keeps the sharpest few — cuts, captures and area
     // swings sort high in the cheap priority — and drops the quiet tail.
@@ -1268,6 +1327,7 @@ fn negamax(
         };
         if v > best {
             best = v;
+            best_move = Some(mv);
             // PV update: this move, then the child's line.
             let base = ply * MAX_PLY;
             ctx.pv[base] = mv;
@@ -1282,6 +1342,17 @@ fn negamax(
         }
         if alpha >= beta {
             cutoff = true;
+            // Q14: this move refuted the node — killer + history credit, so
+            // siblings and revisits try it first. Ordering data only; the
+            // value returned above is already fixed.
+            if ctx.use_kh && ply < MAX_PLY {
+                if ctx.killers[ply][0] != Some(mv) {
+                    ctx.killers[ply][1] = ctx.killers[ply][0];
+                    ctx.killers[ply][0] = Some(mv);
+                }
+                ctx.history[mv.index()] = ctx.history[mv.index()]
+                    .saturating_add((depth as i32) * (depth as i32));
+            }
             break;
         }
     }
@@ -1289,7 +1360,9 @@ fn negamax(
     // children at any depth; the value parts only mean something at depth 1,
     // where one factor serves every live child (see [`TtEntry`]).
     let mut entry = ctx.tt.remove(&key).unwrap_or_else(TtEntry::new);
-    if best_move.is_some() {
+    // Gated on `use_kh` so the ablation's OFF arm reproduces the tip exactly
+    // (the field existed but was never populated before Q14).
+    if ctx.use_kh && best_move.is_some() {
         entry.best = best_move;
     }
     if depth == 1 {

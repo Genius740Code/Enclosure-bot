@@ -82,3 +82,17 @@ control, changed lines: red losses 871-3469, 719-2251, 950-4293, 1482-4062,
 `probe_deep gauge_capped_budget` (6): **6/6**.
 Verdict: real bug, fixed — but NOT the red-collapse root cause (W/L unchanged).
 Red still concedes 2000-4000 to the 2-ply baseline as Blue. Next: Q14 ordering.
+
+## Experiment V7-S-Q14 — killer moves + history heuristic on XBot order — 2026-09-28
+Change (search_deep.rs only + benchorder probe mode): TT-best/killer0/killer1/
+priority/history/index composite child order; cutoffs credit ply killers (2/ply)
++ depth-squared history; `priority` untouched so depth-1 exact leaf values can't
+change; TT-best population gated on the toggle so OFF == tip exactly.
+Ablation (`probe_deep benchorder`, Unbounded depth-3, 12 positions): **0 best-move
+or eval mismatches (value-exact PASS)**. Nodes: capped 478->466 (**+2.5%**),
+full 64347->60861 (**+5.4%**) — gate (>20%) FAILS on totals. Split: turn-start
+t=12 full-width 2560->570 / 1969->473 (**-77%** where cutoffs exist); t=13
+subtrees are ordering-proof (capped tree searched fully, 56/56 nodes both ways:
+all fail-low, no ordering can prune). Mechanism works as theory predicts; totals
+dominated by the unprunable position. Kept (strictly positive for the Ms budget:
+more reach per second, zero exactness risk) — strength verdict from full gates.

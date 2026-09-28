@@ -546,6 +546,78 @@ fn benchcap() {
     }
 }
 
+/// Q14 ablation: killer/history ordering ON vs OFF (XBot alone), exact search
+/// (`Budget::Unbounded`, no aspiration) at capped width and at full width.
+/// Prints per-position nodes/best/eval both ways plus totals: the gate is
+/// nodes/pos down >20% with zero best-move/eval mismatches (value-exact).
+fn benchorder() {
+    use retaliator::search_deep::{Budget, FULL_WIDTH, DEFAULT_WIDTH};
+    println!("== benchorder: KH on vs off, Unbounded depth-3, capped + full width ==");
+    let (mut cap_off, mut cap_on, mut full_off, mut full_on) = (0u64, 0u64, 0u64, 0u64);
+    let (mut mism, mut n) = (0u32, 0u32);
+    for open in [None, Some(4864usize)] {
+        let mut game = Game::new();
+        if let Some(id) = open {
+            game.play(Move::from_index(id).unwrap()).unwrap();
+        }
+        for target in [12usize, 13, 24, 25, 48, 49] {
+            while !game.is_over() && usize::from(game.position().actions_played()) < target {
+                let mv = base(game.position()).unwrap();
+                game.play(mv).unwrap();
+            }
+            if game.is_over() {
+                break;
+            }
+            let pos = game.position().clone();
+            let run = |width, kh: bool| {
+                retaliator::search_deep::analyze_capped_kh(&pos, 3, &[], &Budget::Unbounded, width, kh)
+            };
+            let c0 = run(DEFAULT_WIDTH, false);
+            let c1 = run(DEFAULT_WIDTH, true);
+            // Full width is orders of magnitude pricier: only the two cheapest
+            // (turn-start) positions per game carry it; the capped width (the
+            // production width) covers all six.
+            let (f0, f1, fb0, fb1, full_ok) = if target == 12 || target == 13 {
+                let f0 = run(FULL_WIDTH, false);
+                let f1 = run(FULL_WIDTH, true);
+                let fb0 = f0.candidates.first().map(|c| c.mv.index()).unwrap_or(usize::MAX);
+                let fb1 = f1.candidates.first().map(|c| c.mv.index()).unwrap_or(usize::MAX);
+                full_off += f0.nodes;
+                full_on += f1.nodes;
+                let ok = fb0 == fb1 && f0.evaluation.to_bits() == f1.evaluation.to_bits();
+                (f0.nodes, f1.nodes, fb0, fb1, ok)
+            } else {
+                (0, 0, usize::MAX, usize::MAX, true)
+            };
+            let b0 = c0.candidates.first().map(|c| c.mv.index()).unwrap_or(usize::MAX);
+            let b1 = c1.candidates.first().map(|c| c.mv.index()).unwrap_or(usize::MAX);
+            let ok = b0 == b1
+                && c0.evaluation.to_bits() == c1.evaluation.to_bits()
+                && full_ok;
+            if !ok {
+                mism += 1;
+            }
+            n += 1;
+            cap_off += c0.nodes;
+            cap_on += c1.nodes;
+            println!(
+                "  t={} open={open:?}: cap off={} on={} best={b0}/{b1} | full off={f0} on={f1} best={fb0}/{fb1} {}",
+                pos.actions_played(),
+                c0.nodes,
+                c1.nodes,
+                if ok { "EXACT" } else { "MISMATCH" }
+            );
+            std::hint::black_box((&c0, &c1));
+        }
+    }
+    let pct = |off: u64, on: u64| (off as f64 - on as f64) / off.max(1) as f64 * 100.0;
+    println!(
+        "==> benchorder over {n} positions, {mism} mismatches: capped {cap_off}->{cap_on} ({:+.1}%), full {full_off}->{full_on} ({:+.1}%)",
+        pct(cap_off, cap_on),
+        pct(full_off, full_on)
+    );
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mode = args.get(1).cloned().unwrap_or_else(|| "all".into());
@@ -569,6 +641,7 @@ fn main() {
         "h2h_budget" => h2h_budget(n1.unwrap_or(5)),
         "gauge_capped_budget" => gauge_capped_budget(n1.unwrap_or(6)),
         "h2h_capped_budget" => h2h_capped_budget(n1.unwrap_or(5)),
+        "benchorder" => benchorder(),
         "league_capped_budget" => {
             let skips: Vec<usize> = args
                 .get(2)
