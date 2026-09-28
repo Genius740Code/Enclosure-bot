@@ -28,7 +28,9 @@ fn reply(request: &Value) -> Result<Value, String> {
     let (game, avoid) = replay(request)?;
     match request["type"].as_str() {
         Some("move") => {
-            let best = search::best_move_with_avoid(game.position(), &avoid)
+            // v6-mesh: route through the mesh-prefix entry so the forced
+            // opening plays on site; history comes from the request's moves.
+            let best = search::best_move_routed(game.position(), game.moves(), &avoid)
                 .ok_or("The game is over.")?;
             Ok(json!({"move": best.index()}))
         }
