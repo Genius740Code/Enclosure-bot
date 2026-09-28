@@ -29,3 +29,26 @@ Change: `PATIENCE_PENALTY` 2.0 -> 0.0 in `retaliator/src/search.rs`.
 Result: byte-identical lines in every gate — v3all v1 4/10 / v2 7/10,
 league -20.0%, gauge 6/6. Term never flips a pick in any measured line.
 Verdict: **REJECTED (no effect)**. Reverted to 2.0 with provenance comment.
+
+## Probe — Lane H blue first-move sweep (forced-action action-1 candidates) — 2026-09-28
+Instrument: `probe_bluefirst` (lane-h-bluefirst.md), probe-only, 90 games (45 per matchup).
+Fixes catalog §0's no-op: on a forced opening the site's choice plays as engine action 1,
+Red's [2,3] via the opponent, then the candidate is forced as Blue's first own move (eng 4).
+Baselines reproduce probe_v3all byte-for-byte (all 10 v1-matchup lines); empty-start base ≡
+D10-F7-forced (2073-1294 v3-v3, 1322-786 v1) — `blue_opener` is exactly a forced action-1.
+Results (side=blue, margin=(ours-theirs)/ours):
+- Empty start: D10-F7 best vs both (+40.5% v1, +37.6% v3); A10-C8 2nd (+22.2/+11.0);
+  D10-A7 +1.7/−8.4; long diagonals toward center all LOSE (−22.0/−15.8, −28.9/−22.4,
+  −41.6/−60.9) despite the best early evals (D10-G10 E9=+121 → still L) — H6 area-first book
+  REJECTED.
+- Forced openings, no universal fix (per-opening best: 4864→A10-C9 +6.9/+6.9; 5589→D10-G7
+  +17.2 v1 only; 11723→base −10.3 best, all 7 candidates L; 9199→D10-F7 +41.2/+32.4 wins both).
+  Aggregate 8 games/candidate: D10-F7 3/8 mean −7.7% (worst −49.1), D10-G7 3/8 −12.9%,
+  D10-A7 2/8 −13.1%, base 1/8 −25.2% — every candidate's mean vs v1 on forced openings negative.
+- Act-5..10 eval is an artifact: identical across candidates that diverge later (9199:
+  F7/G7/G13 all −26/−25/−88/−86/+28/+28 → +41.2/−5.8/−65.5 finals) and inverted where it
+  differs (9199 base E9=+77 best → −49.8 worst; 4864 winners have the worst evals).
+Verdict: **NO ACTION-1 FIXES THE SITE LOSSES — problem is later (close-survival/farming).
+Keep `blue_opener` D10-F7 (best empty-start action-1, nothing beats it); reject the
+area-first book; do not force D10-F7 at eng 4 (high-variance gamble). Confirm target for B:
+9199/v1 base at eng 9 (eval +77, final −49.8).**
