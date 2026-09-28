@@ -63,3 +63,8 @@ vs -111.4%), gauge equal. The doom discount FAILS the line it was added for
 regression: as-Blue chair 2/5 -> 1/5 (n=5 exact). Faithfulness control
 0/239 positions (re-verified after each restructure). Numbers:
 `research/lane-b-gap.md`. RE off.
+Dose test (0.5): v1 **6/10** (only config crossing the ship threshold;
+as-blue chair 2/5 kept) BUT league **-27.3%** (worst) and collapse rows
+**-137.7%** (worst) — non-monotone, no config dominates. 0.5 = the
+v1-threshold alternative for the main session; 0.0 = the league-best
+default. 0.25 untested.

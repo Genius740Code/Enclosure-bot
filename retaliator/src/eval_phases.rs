@@ -113,8 +113,17 @@ const DENSE_BONUS: f64 = 1.0;
 /// doom off (gated by the `doom` flag); `baseline_best_move` keeps it on
 /// (the shipped search). Mechanism (cut+make gap): the re-make is
 /// shield-delayed two turns, so the true doom is ~2-3 events, not 12 — see
-/// REM_W's doc. Weight if re-enabled: 1.0 (0.5 tested worse on the collapse
-/// line, V4-era).
+/// REM_W's doc. Weight if re-enabled: 1.0. Dose response measured
+/// 2026-09-28 (n=8-10 both colors per gate): NON-MONOTONE. league:
+/// 0.0 -> -9.9% (best), 1.0 -> -20.0%, 0.5 -> -27.3% (worst). Collapse rows:
+/// 0.0 -> -94.5/-94.5/-55.9 (best), 0.5 -> -137.7/-137.7/-104.7 (worst),
+/// 1.0 -> -111.2/-111.2/-111.4. v1 h2h: 1.0 -> 4/10, 0.0 -> 5/10,
+/// 0.5 -> 6/10 (the only configuration crossing the ship threshold; its wins
+/// are narrow coin-flips: 4864-blue +0.5%, 5589-red +3.6%, and it loses
+/// 9199-red -8.0% that 0.0 wins +5.2%). gauge 8/8 all doses. RECOMMEND 0.0
+/// (league + collapse best, most robust); the 0.5 dose is the v1-threshold
+/// alternative — the main session weighs the site threshold (plan-v4 Gate 2)
+/// against the local league.
 const DOOM_W: f64 = 1.0;
 /// Capture exposure: nodes held by a single edge can be captured outright.
 /// Counts ours vs theirs; each such node is a discrete, hard-to-reverse

@@ -56,6 +56,21 @@ Chair"5589" trajectory (doom off vs on, same openings): the doom-off bot's
 midgame diverges at act ~80 (close to +11.5 gap, no cut) vs the doom-on bot
 (close to +5.2, cut); final -38.3% vs -39.0%.
 
+## Dose response: 0.5 tested — NON-MONOTONE
+
+| Gate | DOOM 1.0 (shipped) | DOOM 0.5 | DOOM 0.0 (off) |
+|---|---|---|---|
+| league (8 g) | -20.0% | **-27.3%** (worst) | **-9.9%** (best) |
+| collapse rows (red) | -111.2/-111.2/-111.4 | **-137.7/-137.7/-104.7** (worst) | **-94.5/-94.5/-55.9** (best) |
+| v1 h2h (10 g) | 4/10 | **6/10** (best) | 5/10 |
+| gauge (8 g) | 8/8 | 8/8 | 8/8 |
+
+The 0.5 dose crosses the ship threshold on v1 (6/10 > 5/10 — plan-v4 Gate 1:
+"beats v1 head-to-head") and keeps the as-Blue chair at 2/5 — but its wins
+are narrow coin-flips (4864-blue +0.5%, 5589-red +3.6%) and it loses 9199-red
+(-8.0%) that 0.0 wins (+5.2%). Meanwhile its league (-27.3%) and collapse
+rows (-137.7%) are the WORST of the three doses. No configuration dominates.
+
 ## Why the over-discount costs so much
 
 The doom discount nets every poppable big loop to ~0 (area × 12 credit minus
@@ -81,3 +96,9 @@ with ablation numbers, not a new term. The main session decides the
 `search.rs` merge; do not merge to master from this lane. The
 vulnerability (VULN) and re-make (REM) terms: REJECTED / never-fire — see
 `research/lane-b-vuln.md` and the const docs.
+
+Dose alternative: DOOM 0.5 gives v1 6/10 (the only configuration crossing
+the plan-v4 ship threshold) and keeps the as-Blue chair at 2/5, but its
+league (-27.3%) and collapse rows (-137.7%) are the worst of the three
+doses — the main session weighs the site threshold (Gate 2) against the
+local league. The dose response is non-monotone; 0.25 untested.
