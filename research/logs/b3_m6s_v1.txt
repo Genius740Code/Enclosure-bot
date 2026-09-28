@@ -1,0 +1,12 @@
+B3 config: mem=6 scale=2
+laneB vs v1 open=None a=blue 811-611 margin=+24.7% diff=+201 A WINS (50s)
+laneB vs v1 open=None a=red 1029-858 margin=+16.6% diff=+171 A WINS (69s)
+laneB vs v1 open=Some(4864) a=blue 838-1209 margin=-44.2% diff=-370 b wins (66s)
+laneB vs v1 open=Some(4864) a=red 1113-1120 margin=-0.6% diff=-6 b wins (81s)
+laneB vs v1 open=Some(5589) a=blue 1001-1475 margin=-47.4% diff=-474 b wins (87s)
+laneB vs v1 open=Some(5589) a=red 1311-2167 margin=-65.4% diff=-857 b wins (65s)
+laneB vs v1 open=Some(11723) a=blue 1133-1550 margin=-36.7% diff=-417 b wins (62s)
+laneB vs v1 open=Some(11723) a=red 1344-1334 margin=+0.8% diff=+11 A WINS (58s)
+laneB vs v1 open=Some(9199) a=blue 1026-2277 margin=-122.0% diff=-1251 b wins (48s)
+laneB vs v1 open=Some(9199) a=red 1210-1286 margin=-6.3% diff=-76 b wins (56s)
+==> laneB vs v1: 3/10 | as blue 1/5 avg margin -45.1% | as red 2/5 avg margin -11.0%
