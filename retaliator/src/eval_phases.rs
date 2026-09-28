@@ -114,6 +114,25 @@ const REMOTE_BONUS: f64 = 1.0;
 const DENSE_DIST: i8 = 1;
 const DENSE_COUNT: u32 = 2;
 const DENSE_BONUS: f64 = 1.0;
+
+/// Unbreakable-shape building (Lane E v7): rivals win by making walls that
+/// share nodes along their length (2+ touches = no legal cut — v4 already
+/// avoids cutting there). Mirror term: bonus for OUR first actions that
+/// EXTEND shared-node walls / create 2+ touch thickets for us.
+/// - A "shared node" = one of our nodes with degree >= 2 (a junction in our wall network).
+/// - EXTENDING: the move's source is already a shared node (degree >= 2 before the move).
+/// - CREATING: the move's target becomes a shared node (connects to 2+ existing own nodes).
+/// Full-horizon units (area x min(events, 12)), deterministic tiebreak by move index.
+const EXTEND_SHARED_W: f64 = 1.0;
+const CREATE_SHARED_W: f64 = 1.0;
+
+/// Cut-threat steal (rival-analysis #3: GB's cut bonus / spacebot's cut-threat
+/// model): at each leaf, prefer moves that cut high-value enemy edges and
+/// avoid leaving own big-loop edges exposed. The term scores the net cut
+/// exposure: (enemy cuttable area) - (own cuttable area) for edges that are
+/// legally cuttable in one action. Weighted by the area each edge shields.
+/// Full-horizon units, applied at ranking for first actions.
+const CUT_THREAT_W: f64 = 0.5;
 /// Doom discount: area we hold that the enemy pops in one action is false
 /// credit in the static eval (it counts area x 12 events as if it banks).
 /// For each candidate, the worst one-action pop of our area, times the
@@ -311,7 +330,7 @@ pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move
     // the gate defaults stay the published doom-OFF control, and this path
     // keeps the shipped routing semantics (flat penalty) for any avoid set
     // the caller passes.
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, false, false)
 }
 
 /// The B-3 term under test: the shipped anti-rebuild routing plus the
@@ -323,7 +342,7 @@ pub fn farm_best_move_with_avoid(
     avoid: &[Point],
     form: Rebuild,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, false, false)
 }
 
 /// The shipped `search::best_move` exactly: the doom discount ON, no added
@@ -332,7 +351,7 @@ pub fn farm_best_move_with_avoid(
 /// the gate keeps per-example dead-code quiet.)
 #[allow(dead_code)]
 pub fn baseline_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, false, false)
 }
 
 /// The CLOSE_B2 ablation control: doom OFF (the B-2 recommendation) with the
@@ -341,7 +360,7 @@ pub fn baseline_best_move(position: &Position) -> Option<Move> {
 /// term alone.
 #[allow(dead_code)]
 pub fn ablation_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, false, false)
 }
 
 /// The skeleton's selection loop, with the doom discount and the added terms
@@ -356,6 +375,8 @@ fn best_move_features(
     doom: bool,
     close: bool,
     rebuild: Rebuild,
+    unbreakable: bool,
+    cut_threat: bool,
 ) -> Option<Move> {
     if let Some(open) = blue_opener(position) {
         return Some(open);
@@ -363,7 +384,7 @@ fn best_move_features(
     let mover = position.to_move();
     let opp = mover.opponent();
     let budget = budget.clamp(SMALLEST_BUDGET, MOVE_BUDGET);
-    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild);
+    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild, unbreakable, cut_threat);
     let nodes = first_actions.len();
     let width = first_actions.len().min(WIDTH);
     let reply_budget = (budget - nodes) / width.max(1);
@@ -371,7 +392,7 @@ fn best_move_features(
     // (adjusted score for ordering, the move it belongs to).
     let mut scored: Vec<(f64, Move)> = Vec::new();
     for (mv, after, _, _) in first_actions.into_iter().take(width) {
-        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off);
+        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off, false, false);
         let mut pv = vec![mv];
         let mut evaluation = value(&after);
         if let Some((reply, _, reply_value, _)) = replies.first() {
@@ -611,6 +632,8 @@ fn ranked(
     avoid: &[Point],
     close: bool,
     rebuild: Rebuild,
+    unbreakable: bool,
+    cut_threat: bool,
 ) -> Vec<(Move, Position, f64, f64)> {
     let mover = position.to_move();
     let opp = mover.opponent();
@@ -655,6 +678,28 @@ fn ranked(
                 // Thicket density: land next to 2+ own nodes.
                 if near_own_count(position, mover, target) >= DENSE_COUNT {
                     priority += DENSE_BONUS * hz;
+                }
+                // Unbreakable-shape building (Lane E v7): extend shared-node walls /
+                // create 2+ touch thickets. A "shared node" = our node with degree >= 2.
+                // EXTENDING: source is already a shared node (degree >= 2 before the move).
+                // CREATING: target becomes a shared node (will connect to 2+ existing own nodes).
+                if unbreakable {
+                    let src_deg = node_degree(position, mover, mv.source);
+                    let tgt_deg_after = node_degree(&after, mover, target);
+                    if src_deg >= 2 {
+                        priority += EXTEND_SHARED_W * hz;
+                    }
+                    if tgt_deg_after >= 2 {
+                        priority += CREATE_SHARED_W * hz;
+                    }
+                }
+                // Cut-threat steal (rival-analysis #3: GB's cut bonus / spacebot):
+                // net cut exposure after our move = (enemy cuttable area) - (own cuttable area).
+                // Prefer moves that reduce our exposure and/or increase enemy exposure.
+                if cut_threat && outcome.broken.is_none() {
+                    let our_exposure = cut_exposure(&after, mover);
+                    let opp_exposure = cut_exposure(&after, opp);
+                    priority += CUT_THREAT_W * (opp_exposure - our_exposure) * hz;
                 }
                 // Do-nothing filter.
                 if outcome.broken.is_none()
@@ -772,6 +817,40 @@ fn near_own_count(position: &Position, player: Player, target: Point) -> u32 {
                 && (node.y() - target.y()).abs() <= DENSE_DIST
         })
         .count() as u32
+}
+
+/// Degree of `player`'s node at `point` (number of incident edges).
+fn node_degree(position: &Position, player: Player, point: Point) -> u32 {
+    position
+        .edges(player)
+        .iter()
+        .filter(|edge| edge.origin() == point || edge.far() == point)
+        .count() as u32
+}
+
+/// Cut exposure for `player` at `pos` (player to move is the opponent who can cut).
+/// Sum of area shielded by each legally cuttable edge of `player` from the
+/// opponent's legal move set. An edge is "cuttable" if the opponent has a
+/// legal move that breaks it (and it's not shielded).
+fn cut_exposure(pos: &Position, player: Player) -> f64 {
+    let mut seen: Vec<Edge> = Vec::new();
+    let mut exposure: f64 = 0.0;
+    for mv in pos.legal_moves().iter() {
+        let mut next = pos.clone();
+        let outcome = next.apply_unchecked(mv);
+        if let Some(cut) = outcome.broken {
+            if !seen.contains(&cut) {
+                seen.push(cut);
+                // The cut edge belongs to `player` (the victim).
+                // Area lost by this cut = pos.area(player) - next.area(player).
+                // But we want the area this specific edge shields.
+                // Approximation: the area loss from this cut, assuming it's the only one.
+                let loss = pos.area(player).to_f64() - next.area(player).to_f64();
+                exposure += loss.max(0.0);
+            }
+        }
+    }
+    exposure
 }
 
 /// Whether `target` is within Chebyshev `dist` of any of `player`'s nodes.
