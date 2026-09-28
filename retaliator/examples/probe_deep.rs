@@ -156,10 +156,47 @@ fn main() {
             league(&skips);
         }
         "gauge" => gauge(n1.unwrap_or(6)),
+        "verify" => verify(),
         _ => {
             h2h(4);
             league(&[0, 10, 20, 30]);
             gauge(6);
         }
     }
+}
+
+/// The deep search's draw check must agree with the engine's own movegen at
+/// every position: `has_legal_move` == `!legal_moves().is_empty()`. Walks
+/// diverse games (five openings, then stretches of base / greedy / scout
+/// play) and checks every position along the way.
+fn verify() {
+    let mut checked = 0u64;
+    let mut bad = 0u64;
+    for open in [None, Some(4864usize), Some(5589), Some(9199), Some(11723)] {
+        let mut game = Game::new();
+        if let Some(id) = open {
+            game.play(Move::from_index(id).unwrap()).unwrap();
+        }
+        for stretch in 0..3usize {
+            let player_fn = match stretch {
+                0 => base as fn(&Position) -> Option<Move>,
+                1 => greedy as fn(&Position) -> Option<Move>,
+                _ => scoutbase::best_move as fn(&Position) -> Option<Move>,
+            };
+            for _ in 0..40 {
+                if game.is_over() { break; }
+                let pos = game.position();
+                let engine_says_none = pos.legal_moves().is_empty();
+                let deep_says_none = !retaliator::search_deep::has_legal_move(pos);
+                checked += 1;
+                if engine_says_none != deep_says_none {
+                    bad += 1;
+                    println!("MISMATCH at action {}: engine_empty={engine_says_none} deep_empty={deep_says_none}", pos.actions_played());
+                }
+                let Some(mv) = player_fn(pos) else { break };
+                game.play(mv).unwrap();
+            }
+        }
+    }
+    println!("verify: {checked} positions checked, {bad} mismatches");
 }

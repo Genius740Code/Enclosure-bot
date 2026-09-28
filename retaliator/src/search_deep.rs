@@ -23,7 +23,13 @@
 //! - the beyond-horizon extension is accumulated along the searched line
 //!   (signed, Blue-relative, events-free) and applied at the leaf with the
 //!   leaf's events factor — the same accounting as the baseline's root-level
-//!   extension, correct at any depth.
+//!   extension, correct at any depth;
+//! - `value`'s draw check short-circuits at the first legal move instead of
+//!   generating them all (the baseline generates every legal move just to ask
+//!   whether there are none). Same boolean — a draw is a finished game with
+//!   equal scores, or a live game where the mover has no legal move — and
+//!   legality still comes from the engine only (`check_move`). This runs at
+//!   every node of the deep search, where it was most of the cost.
 
 use std::cmp::Reverse;
 
@@ -56,8 +62,28 @@ pub fn evaluate(position: &Position) -> f64 {
 
 /// [`evaluate`], except that a drawn game is worth 0.
 fn value(position: &Position) -> f64 {
-    let drawn = matches!(position.outcome_given(&position.legal_moves()), Some(Outcome::Draw(_)));
-    if drawn { 0.0 } else { evaluate(position) }
+    // A draw is a finished game with equal scores, or a live game where the
+    // mover has no legal move. `outcome()` is exact for finished games and
+    // free (no movegen); the live-game check stops at the first legal move
+    // instead of generating them all. Same boolean as the baseline's
+    // `outcome_given(&position.legal_moves())` at a fraction of the cost.
+    if position.is_finished() {
+        return if matches!(position.outcome(), Some(Outcome::Draw(_))) { 0.0 } else { evaluate(position) };
+    }
+    if !has_legal_move(position) { 0.0 } else { evaluate(position) }
+}
+
+/// Whether the mover has any legal move: the engine's own rule check
+/// ([`Position::check_move`]) over the mover's nodes and all 48 directions,
+/// stopping at the first legal one. The same set `legal_moves()` generates,
+/// without generating it all — this runs at every node of the deep search.
+pub fn has_legal_move(position: &Position) -> bool {
+    let mover = position.to_move();
+    position.nodes(mover).iter().any(|node| {
+        meridian_engine::geometry::Direction::all().any(|direction| {
+            position.check_move(Move { source: node, direction }).is_ok()
+        })
+    })
 }
 
 /// How many of `player`'s nodes hang by a single edge (capturable).
