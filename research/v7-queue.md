@@ -252,3 +252,13 @@ Each would be a separate dose-swept gate (nodes/position, value-exact, gauge/h2h
 - Composes with move ordering: only order/evaluate representatives; expand scores to siblings after.
 - Gate: nodes/position drops in symmetric positions with zero value change on bench 596.
 - Composes with Q14 (move ordering): representatives ordered by XBot priority, then symmetry-expanded.
+
+## Q19 (USER 2026-09-28): Confidence-based play / adaptive risk
+"When eval variance across legal moves is high, play safer (wider margin); when low, play normally."
+
+- Metric: variance/range of top-N move evaluations (after ordering). High variance = sharp tactical fork or trap nearby; low variance = many similar moves (quiet position).
+- Behavior:
+  - High variance: widen aspiration window, prefer moves with higher *minimum* score (maximin), extend search on top moves.
+  - Low variance: narrow aspiration, trust ordering, snap-reply.
+- Composes with Q6 (budget) + Q16 (quiescence): spend extra time only when variance is high AND it matters.
+- Gate: reduces catastrophic blunders (large swing losses) without lowering average margin.
