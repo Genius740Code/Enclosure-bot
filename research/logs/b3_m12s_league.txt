@@ -1,0 +1,10 @@
+B3 config: mem=12 scale=2
+skip=0 ret=blue rs=828 ss=814 margin=+1.6% diff=+14 (33s)
+skip=0 ret=red rs=1340 ss=978 margin=+27.0% diff=+362 (27s)
+skip=10 ret=blue rs=828 ss=814 margin=+1.6% diff=+14 (33s)
+skip=10 ret=red rs=484 ss=1023 margin=-111.3% diff=-539 (31s)
+skip=20 ret=blue rs=828 ss=814 margin=+1.6% diff=+14 (39s)
+skip=20 ret=red rs=484 ss=1023 margin=-111.3% diff=-539 (32s)
+skip=30 ret=blue rs=1979 ss=1324 margin=+33.1% diff=+655 (37s)
+skip=30 ret=red rs=634 ss=1248 margin=-96.9% diff=-614 (33s)
+AVG margin (ret perspective): -31.8%
