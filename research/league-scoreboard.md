@@ -78,3 +78,10 @@ tiebreak). Probes `opp_blobstyle`/`opp_sacstyle`/`opp_longfarm`, harness
 | blob vs v1 | 8-0, +36.0% (+893) | we sweep; closest game +181 (blob held 114 at the end) |
 | blob vs v2 | 8-0, +38.8% (+1027) | we sweep |
 | blob vs v2+avoid | 8-0, +31.7% (+868) | no regression; avoid arm no better/worse vs a non-farmer |
+| sac (bank-sacrifice: floor-3 banking, pop-vs-bank, never re-closes farmed ground) vs v3 | **5-3, +6.0% (+95)** | **only D2 mimic to beat the shipped search 3x**; loss g5 = pure bank-sacrifice form (both areas ~0, 40-41 cuts, lost on the bank -179) |
+| sac vs v1 | 7-1, +26.5% (+418) | sac cut 34-45x/game in all 32 (site AngelBot 37-46) |
+| sac vs v2 | 7-1, +12.2% (+149) | v2 handles the sacrifice far better than angel's re-closing (3-5) — dead ground is free ground for v2's farm |
+| sac vs v2+avoid | **6-2, +10.2% (+106)** | **avoid arm REGRESSES**: rebuild penalty keyed to our cut points makes v2+avoid avoid sac's ABANDONED (free) ground — enemy-conditioned memory needed (H-B-D2-SAC2) |
+
+D2 running total: blob 0/32, sac 7/32 taken off us. Style ranking so far by
+damage: sac (25-7 for us) >> blob (32-0). Details: `lane-d2-sac.md`.

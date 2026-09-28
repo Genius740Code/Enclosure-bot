@@ -1,0 +1,217 @@
+warning: variable does not need to be mutable
+   --> src/search.rs:189:13
+    |
+189 |         let mut end = position_after_pv(position, &pv);
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/search.rs:209:13
+    |
+209 |         let mut visits = 1 + replies.len();
+    |             ----^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: `retaliator` (lib) generated 2 warnings (run `cargo fix --lib -p retaliator` to apply 2 suggestions)
+   Compiling retaliator v0.1.0 (/tmp/opencode/game-d2/retaliator)
+warning: unnecessary parentheses around pattern
+  --> examples/opp_sacstyle.rs:57:39
+   |
+57 |     if let (Some((popped, cut)), Some(((_, gain, _))) ) = (best_cut, best_close) {
+   |                                       ^            ^
+   |
+   = note: `#[warn(unused_parens)]` (part of `#[warn(unused)]`) on by default
+help: remove these parentheses
+   |
+57 -     if let (Some((popped, cut)), Some(((_, gain, _))) ) = (best_cut, best_close) {
+57 +     if let (Some((popped, cut)), Some((_, gain, _)) ) = (best_cut, best_close) {
+   |
+
+warning: value assigned to `area_after` is never read
+   --> examples/opp_gbstyle.rs:92:30
+    |
+ 92 |         let mut area_after = 0.0;
+    |                              ^^^ this value is reassigned later and never used
+...
+103 |                 area_after = game.position().area(if me_blue { Player::Blue } else { Player::Red }).to_f64();
+    |                 -------------------------------------------------------------------------------------------- `area_after` is overwritten here before the previous value is read
+    |
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/scoutbase.rs:27:9
+   |
+25 | pub struct Analysis {
+   |            -------- fields in this struct
+26 |     /// Blue's lead after the best move and its reply.
+27 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+28 |     /// 2 when replies were searched.
+29 |     pub depth: usize,
+   |         ^^^^^
+30 |     /// Positions searched.
+31 |     pub nodes: usize,
+   |         ^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/scoutbase.rs:41:9
+   |
+36 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+41 |     pub pv: Vec<Move>,
+   |         ^^
+42 |     /// 1, plus the replies searched.
+43 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/v1base.rs:47:9
+   |
+45 | pub struct Analysis {
+   |            -------- fields in this struct
+46 |     /// Blue's lead after the best move and its reply.
+47 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+48 |     /// 2 when replies were searched.
+49 |     pub depth: usize,
+   |         ^^^^^
+50 |     /// Positions searched.
+51 |     pub nodes: usize,
+   |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/v1base.rs:62:9
+   |
+56 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+62 |     pub pv: Vec<Move>,
+   |         ^^
+63 |     /// 1, plus the replies searched.
+64 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/v2base.rs:63:9
+   |
+61 | pub struct Analysis {
+   |            -------- fields in this struct
+62 |     /// Blue's lead after the best move and its reply.
+63 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+64 |     /// 2 when replies were searched.
+65 |     pub depth: usize,
+   |         ^^^^^
+66 |     /// Positions searched.
+67 |     pub nodes: usize,
+   |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/v2base.rs:78:9
+   |
+72 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+78 |     pub pv: Vec<Move>,
+   |         ^^
+79 |     /// 1, plus the replies searched.
+80 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: function `analyze` is never used
+  --> examples/support/v2base.rs:94:8
+   |
+94 | pub fn analyze(position: &Position, budget: usize) -> Analysis {
+   |        ^^^^^^^
+
+warning: function `main` is never used
+  --> examples/opp_gbstyle.rs:87:4
+   |
+87 | fn main() {
+   |    ^^^^
+
+warning: field `visits` is never read
+  --> examples/support/scoutbase.rs:43:9
+   |
+36 | pub struct Candidate {
+   |            --------- field in this struct
+...
+43 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: function `best_move` is never used
+  --> examples/support/scoutbase.rs:46:8
+   |
+46 | pub fn best_move(position: &Position) -> Option<Move> {
+   |        ^^^^^^^^^
+
+warning: function `main` is never used
+  --> examples/opp_vladstyle.rs:65:4
+   |
+65 | fn main() {
+   |    ^^^^
+
+warning: function `main` is never used
+  --> examples/opp_angelstyle.rs:44:4
+   |
+44 | fn main() {
+   |    ^^^^
+
+warning: function `main` is never used
+   --> examples/opp_blobstyle.rs:182:4
+    |
+182 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> examples/opp_sacstyle.rs:125:4
+    |
+125 | fn main() {
+    |    ^^^^
+
+warning: `retaliator` (example "probe_match_d2") generated 16 warnings (run `cargo fix --example "probe_match_d2" -p retaliator` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 3m 08s
+     Running `target/release/examples/probe_match_d2 sac`
+v3 vs sac game 1 base=blue: margin=+149 base[26.0 close=26 cut=33 first=3] sac[24.4 close=18 cut=42 first=2]
+v3 vs sac game 2 base=blue: margin=-136 base[51.8 close=24 cut=27 first=2] sac[35.6 close=26 cut=34 first=2]
+v3 vs sac game 3 base=blue: margin=-424 base[24.7 close=25 cut=28 first=3] sac[36.0 close=22 cut=37 first=2]
+v3 vs sac game 4 base=blue: margin=+79 base[38.2 close=33 cut=34 first=3] sac[27.8 close=22 cut=37 first=2]
+v3 vs sac game 5 base=red: margin=-179 base[5.6 close=21 cut=40 first=2] sac[0.0 close=31 cut=41 first=3]
+v3 vs sac game 6 base=red: margin=+520 base[16.0 close=22 cut=38 first=2] sac[10.0 close=26 cut=41 first=2]
+v3 vs sac game 7 base=red: margin=+610 base[49.5 close=25 cut=39 first=2] sac[44.1 close=26 cut=37 first=3]
+v3 vs sac game 8 base=red: margin=+145 base[12.9 close=25 cut=39 first=2] sac[4.5 close=29 cut=40 first=2]
+== v3 vs sac: W-L 5-3 D0 avg_margin=+6.0% avg_diff=+95 | in 3 losses: base[close=23.3 cut=31.7 first=2.3] | in 3 losses: sac[close=26.3 cut=37.3 first=2.3]
+v1 vs sac game 1 base=blue: margin=+318 base[11.7 close=22 cut=42 first=5] sac[14.5 close=21 cut=44 first=2]
+v1 vs sac game 2 base=blue: margin=+565 base[39.4 close=22 cut=33 first=3] sac[18.9 close=22 cut=38 first=2]
+v1 vs sac game 3 base=blue: margin=+124 base[32.5 close=22 cut=33 first=3] sac[20.2 close=22 cut=37 first=2]
+v1 vs sac game 4 base=blue: margin=-104 base[12.7 close=19 cut=34 first=3] sac[21.5 close=27 cut=37 first=2]
+v1 vs sac game 5 base=red: margin=+351 base[37.0 close=25 cut=34 first=2] sac[38.5 close=22 cut=43 first=3]
+v1 vs sac game 6 base=red: margin=+633 base[26.3 close=20 cut=37 first=2] sac[14.7 close=30 cut=38 first=2]
+v1 vs sac game 7 base=red: margin=+533 base[22.5 close=20 cut=40 first=2] sac[4.5 close=30 cut=37 first=3]
+v1 vs sac game 8 base=red: margin=+927 base[47.5 close=10 cut=40 first=2] sac[28.1 close=43 cut=31 first=2]
+== v1 vs sac: W-L 7-1 D0 avg_margin=+26.5% avg_diff=+418 | in 1 losses: base[close=19.0 cut=34.0 first=3.0] | in 1 losses: sac[close=27.0 cut=37.0 first=2.0]
+v2 vs sac game 1 base=blue: margin=+281 base[16.9 close=24 cut=40 first=5] sac[7.6 close=21 cut=45 first=2]
+v2 vs sac game 2 base=blue: margin=+258 base[35.0 close=25 cut=34 first=2] sac[18.6 close=20 cut=42 first=2]
+v2 vs sac game 3 base=blue: margin=-209 base[20.0 close=23 cut=30 first=3] sac[27.0 close=22 cut=38 first=2]
+v2 vs sac game 4 base=blue: margin=+72 base[13.2 close=18 cut=31 first=2] sac[8.9 close=28 cut=40 first=2]
+v2 vs sac game 5 base=red: margin=+72 base[11.7 close=30 cut=38 first=2] sac[9.3 close=17 cut=41 first=3]
+v2 vs sac game 6 base=red: margin=+458 base[21.6 close=22 cut=34 first=2] sac[10.3 close=25 cut=39 first=2]
+v2 vs sac game 7 base=red: margin=+230 base[22.9 close=17 cut=38 first=2] sac[0.8 close=28 cut=37 first=3]
+v2 vs sac game 8 base=red: margin=+27 base[18.8 close=21 cut=36 first=2] sac[41.4 close=22 cut=41 first=2]
+== v2 vs sac: W-L 7-1 D0 avg_margin=+12.2% avg_diff=+149 | in 1 losses: base[close=23.0 cut=30.0 first=3.0] | in 1 losses: sac[close=22.0 cut=38.0 first=2.0]
+v2+avoid vs sac game 1 base=blue: margin=+349 base[10.2 close=25 cut=38 first=5] sac[8.0 close=18 cut=43 first=2]
+v2+avoid vs sac game 2 base=blue: margin=+175 base[28.3 close=25 cut=37 first=2] sac[21.6 close=20 cut=42 first=2]
+v2+avoid vs sac game 3 base=blue: margin=-130 base[31.9 close=22 cut=36 first=3] sac[32.9 close=28 cut=36 first=2]
+v2+avoid vs sac game 4 base=blue: margin=+84 base[44.1 close=19 cut=35 first=2] sac[15.0 close=22 cut=41 first=2]
+v2+avoid vs sac game 5 base=red: margin=-378 base[22.5 close=20 cut=40 first=2] sac[43.0 close=34 cut=43 first=3]
+v2+avoid vs sac game 6 base=red: margin=+456 base[7.4 close=23 cut=36 first=2] sac[5.9 close=24 cut=40 first=2]
+v2+avoid vs sac game 7 base=red: margin=+230 base[22.9 close=17 cut=38 first=2] sac[0.8 close=28 cut=37 first=3]
+v2+avoid vs sac game 8 base=red: margin=+65 base[2.1 close=19 cut=36 first=2] sac[5.0 close=21 cut=40 first=2]
+== v2+avoid vs sac: W-L 6-2 D0 avg_margin=+10.2% avg_diff=+106 | in 2 losses: base[close=21.0 cut=38.0 first=2.5] | in 2 losses: sac[close=31.0 cut=39.5 first=2.5]

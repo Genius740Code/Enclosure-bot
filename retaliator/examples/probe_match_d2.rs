@@ -25,6 +25,8 @@ mod opp_vladstyle;
 mod opp_angelstyle;
 #[path = "opp_blobstyle.rs"]
 mod opp_blobstyle;
+#[path = "opp_sacstyle.rs"]
+mod opp_sacstyle;
 
 use std::collections::HashMap;
 
@@ -185,6 +187,7 @@ fn matchup(name: &str, ret: Engine, opp: Engine, opp_name: &str) {
 fn main() {
     let mut styles: HashMap<&str, Engine> = HashMap::new();
     styles.insert("blob", &|pos, _| opp_blobstyle::best_move(pos) as Option<Move>);
+    styles.insert("sac", &|pos, avoid| opp_sacstyle::best_move(pos, avoid));
     let mut old: Vec<(&str, Engine)> = vec![
         ("gb", &|pos, _| opp_gbstyle::best_move(pos)),
         ("vlad", &|pos, _| opp_vladstyle::best_move(pos)),
@@ -192,9 +195,11 @@ fn main() {
         ("scout", &|pos, _| scoutbase::best_move(pos)),
     ];
     // Add each new mimic here as it lands:
-    // ("sac", &|pos, avoid| opp_sacstyle::best_move(pos, avoid)),
     // ("longfarm", &|pos, avoid| opp_longfarm::best_move(pos, avoid)),
-    let d2: Vec<(&str, Engine)> = vec![("blob", &|pos, _| opp_blobstyle::best_move(pos))];
+    let d2: Vec<(&str, Engine)> = vec![
+        ("blob", &|pos, _| opp_blobstyle::best_move(pos)),
+        ("sac", &|pos, avoid| opp_sacstyle::best_move(pos, avoid)),
+    ];
     let mut chosen: Vec<(&str, Engine)> = Vec::new();
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.is_empty() {
