@@ -147,3 +147,28 @@ Full log: /tmp/opencode/aut-wall.log (also: our 6 breaks vs their 15).
 - Composes with Q4 (deny early) + Q1 (their bank scores EVERY event after).
 - Falsifiable: prevention attempts must convert (wall never closes) at a
   rate beating the tempo cost; if contests just donate necks, kill it.
+
+## Q12 (USER 2026-09-28): reinforce vs prevent-reinforce on thick lines
+"Sometimes bot should reinforce its lines OR deny opponent reinforcement,
+because the line is already impossible to break (2+ touches = no legal cut)."
+
+- Tactical corollary of Q2/Q4: when a line already has 2+ touches (unbreakable
+  by single cut), the decision is:
+  - FOR US: reinforce (add thickness, extend ends) — we WANT this line to
+    bank every event.
+  - VS OPP: contest their reinforcement (early contest of the corridor
+    root, pre-build to deny the second wall) — we want to STOP them from
+    reaching unbreakable thickness.
+- Already partially in shipped code:
+  - DENSE_BONUS (bonus for 2+ own-node adjacency on first action)
+  - REBUILD_PENALTY / CUT_RADIUS (avoid re-closing near recent cuts)
+  - But no explicit "line is thick → reinforce; opponent thickens → contest"
+    evaluation term.
+- Proposed: eval term that detects `thick_lines_us` (shared-node count ≥ 2
+  per wall segment) and `thick_lines_opp`, then:
+  - +bonus for our moves that extend/anchor thick lines
+  - +bonus for our moves that contest opponent's near-thick lines
+    (frontier pair 1 move from 2+ touches)
+- Gate: area lifetime rises (our thick lines bank longer) AND opponent's
+  thick-line completion rate drops.
+- Composes with Q2 (build), Q4 (deny), Q11 (prevent close).
