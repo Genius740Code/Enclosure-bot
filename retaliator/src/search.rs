@@ -22,8 +22,9 @@
 //!    reinforced it looks. Penalized, so the bot expands instead.
 
 use std::cmp::Reverse;
+use std::sync::LazyLock;
 
-use meridian_engine::{Move, MoveKind, Outcome, Player, Point, Position};
+use meridian_engine::{Move, MoveKind, Outcome, Player, Point, Position, notation};
 
 /// Positions searched for a move in a game. Analysis asks for its own number, up to this.
 pub const MOVE_BUDGET: usize = 4096;
@@ -68,6 +69,145 @@ fn blue_opener(position: &Position) -> Option<Move> {
     position.check_move(mv).ok().map(|_| mv)
 }
 
+/// Mesh opening prefix (Lane H mesh8, v6 candidate 2026-09-28): capybara
+/// center mesh as forced prefix, 8 own-moves per color. Built with
+/// Move::between (canonical king-step encoding), EXACTLY like the probe —
+/// integer ids are NOT used for selection because Direction::index is not
+/// injective (from_index can decode a different edge variant with the same
+/// id; found 2026-09-28: from_index(4867) prints D10-G8 but fails
+/// check_move where between(D10,G8) succeeds). h2h: v1 Blue 5-0/Red 4-1,
+/// v2 5-0/5-0, scout Blue 5-0/Red 4-1, gauge 6/6, GB mega-loop 4.5.
+/// League gate PENDING (H-verify) — do not ship rated on this alone.
+/// Blue: D10-D13 D10-G8 G8-J10 J10-G13 G8-J11 G13-J11 G13-D10 J11-M13
+const MESH_B_TXT: [[&str; 2]; 8] = [
+    ["D10", "D13"],
+    ["D10", "G8"],
+    ["G8", "J10"],
+    ["J10", "G13"],
+    ["G8", "J11"],
+    ["G13", "J11"],
+    ["G13", "D10"],
+    ["J11", "M13"],
+];
+/// Red mirror: P10-M8 M8-J10 J10-M13 M8-J11 M13-J11 M13-P11 M13-P10 P11-M8
+const MESH_R_TXT: [[&str; 2]; 8] = [
+    ["P10", "M8"],
+    ["M8", "J10"],
+    ["J10", "M13"],
+    ["M8", "J11"],
+    ["M13", "J11"],
+    ["M13", "P11"],
+    ["M13", "P10"],
+    ["P11", "M8"],
+];
+
+fn decode_pair(pair: [&str; 2]) -> Move {
+    let (a, b) = (pair[0], pair[1]);
+    Move::between(
+        notation::parse_square(a).expect("mesh prefix source square"),
+        notation::parse_square(b).expect("mesh prefix target square"),
+    )
+    .expect("mesh prefix is 1-3 king steps")
+}
+
+fn decode_prefix(txt: [[&str; 2]; 8]) -> [Move; 8] {
+    txt.map(decode_pair)
+}
+
+static MESH_B: LazyLock<[Move; 8]> = LazyLock::new(|| decode_prefix(MESH_B_TXT));
+static MESH_R: LazyLock<[Move; 8]> = LazyLock::new(|| decode_prefix(MESH_R_TXT));
+
+/// Turn structure (read off probe ply logs): Blue opens with a single action,
+/// then sides alternate in PAIRS starting with Red: totals 1-2 Red, 3-4 Blue,
+/// 5-6 Red, ... Never assume strict alternation.
+fn side_to_move(total: usize) -> Player {
+    if total == 0 {
+        Player::Blue
+    } else if ((total - 1) / 2) % 2 == 0 {
+        Player::Red
+    } else {
+        Player::Blue
+    }
+}
+
+/// Forced-prefix routing with probe Bot::forced semantics, stateless via
+/// history. Our color is whoever is to move; our slots are the history
+/// indices whose turn-side is ours (pair-turn aware, NOT parity). Onset: the
+/// first own slot holding prefix[0] — earlier own slots may hold anything
+/// (site-forced openings delay the prefix, never skip entries: the probe v1
+/// off-by-one lesson). After onset, continuation must be exact; any
+/// deviation (illegal entry stall, or a searched move in our slot) truncates
+/// the prefix permanently, because history never un-deviates. The frontier
+/// entry plays when legal, else search takes this turn (and the resulting
+/// deviation truncates all later turns).
+pub fn mesh_prefix(position: &Position, history: &[Move]) -> Option<Move> {
+    let total = position.actions_played() as usize;
+    if history.len() != total {
+        return None;
+    }
+    let us = position.to_move();
+    if side_to_move(total) != us {
+        return None;
+    }
+    let prefix: &[Move; 8] = match us {
+        Player::Blue => &MESH_B,
+        _ => &MESH_R,
+    };
+    let slots: Vec<usize> = (0..total).filter(|&m| side_to_move(m) == us).collect();
+    // Onset: first own slot holding prefix[0].
+    let mut onset: Option<usize> = None;
+    for (j, &m) in slots.iter().enumerate() {
+        if history[m] == prefix[0] {
+            onset = Some(j);
+            break;
+        }
+    }
+    let verified: usize = match onset {
+        None => 0,
+        Some(o) => {
+            let mut len = 0;
+            while o + len < slots.len()
+                && len < prefix.len()
+                && history[slots[o + len]] == prefix[len]
+            {
+                len += 1;
+            }
+            // Any own slot past onset+len that exists means deviation...
+            // (only possible when the frontier was skipped, which never
+            // happens: frontier plays whenever legal, else this call is None
+            // and the search move written to history truncates next call).
+            if o + len < slots.len() {
+                return None;
+            }
+            len
+        }
+    };
+    if verified >= prefix.len() {
+        return None;
+    }
+    let mv = prefix[verified];
+    position.check_move(mv).ok().map(|_| mv)
+}
+
+/// Deployed entry: mesh prefix, then the legacy game-start opener, then search.
+/// Keeps [`best_move_with_avoid`] untouched for probes and back-compat.
+pub fn best_move_routed(
+    position: &Position,
+    history: &[Move],
+    avoid: &[Point],
+) -> Option<Move> {
+    if let Some(prefix) = mesh_prefix(position, history) {
+        return Some(prefix);
+    }
+    if let Some(open) = blue_opener(position) {
+        return Some(open);
+    }
+    analyze_with_avoid(position, MOVE_BUDGET, avoid)
+        .candidates
+        .first()
+        .map(|candidate| candidate.mv)
+}
+
 /// How many of the latest actions count as "recent" for cut avoidance.
 pub const CUT_MEMORY: usize = 6;
 /// Fresh/shielded-wall avoidance: enemy edges placed last turn can't be
@@ -98,12 +238,19 @@ const REMOTE_BONUS: f64 = 1.0;
 const DENSE_DIST: i8 = 1;
 const DENSE_COUNT: u32 = 2;
 const DENSE_BONUS: f64 = 1.0;
-/// Doom discount: area we hold that the enemy pops in one action is false
-/// credit in the static eval (it counts area x 12 events as if it banks).
-/// For each candidate, the worst one-action pop of our area, times the
-/// capped horizon, is subtracted at selection. Doomed megaloops net to ~0,
-/// so the bot builds split/remote/dense ground instead of one big grazeable
-/// balloon. Computed only where the enemy is to move (their legal set).
+/// Doom discount: DISABLED (V5, 2026-09-28). Lane B ablations: the discount
+/// prices the enemy's one-action pop at ×12, but the re-make is shield-delayed
+/// two turns (the pop's placed edge crosses the re-place path and shields it),
+/// so the popped area misses exactly two scoring events — ×12 overcharges by
+/// ~6x and the bot avoids healthy ground. Measured in eval_phases rig (control
+/// faithful 0/239): doom OFF = league -9.9% vs -20.0%, v1 h2h 5/10 vs 4/10,
+/// collapse -55.9% vs -111.4%, gauge 8/8 equal; cost as-Blue 2/5 -> 1/5.
+/// Doom discount: ENABLED (V6, 2026-09-28). V5 disabled it on rig evidence
+/// (league -9.9% vs -20.0%) but the rig bypassed the avoid path and the site
+/// verdict was catastrophic (v5: 1349 Elo, 4W-36L/40 vs v3 1477 13-11 and
+/// v4 1428 11-21, both doom-ON). V6 league gate with mesh8: doom-ON +21.6%
+/// worst -57.6% vs doom-OFF +18.3% worst -71.7% — ON wins locally too.
+/// Restored to 1.0; the OFF dose lives in git history (v6-mesh variant A).
 const DOOM_W: f64 = 1.0;
 /// Capture exposure: nodes held by a single edge can be captured outright.
 /// Counts ours vs theirs; each such node is a discrete, hard-to-reverse
