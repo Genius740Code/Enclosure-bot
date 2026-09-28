@@ -22,6 +22,35 @@ Collapse line persists: skip=10/20 red -111.2%, skip=30 red -111.4%
 (single 30+ pop ~t=60 + erosion — needs depth or vulnerability pricing).
 `gauge` (greedy, 6 games): **6/6** (deterministic repeat of 2 lines).
 
+## Probe — Lane H-verify: genuine probe_league gate with mesh8 wired in — 2026-09-28
+Instrument: `probe_mesh_league` (probe-only, bf3c9aa+ba11a79). The genuine 8-game league
+structure (skip=0/10/20/30 × both colors, scoutbase) with the mesh8 forced-start prefix
+injected on OUR side both colors (`Bot::forced` from `probe_mesh.rs`; our side's play =
+mesh8 from our side's first own move in the game — own moves 1-8 — then v3; the
+opponent's pre-moves stay bare v3 per the genuine league structure, post-skip scoutbase).
+Control reproduced EXACTLY on this box first (AVG -20.0%, genuine blue +29.4/red +38.1,
+collapse red -111.2/-111.2/-111.4). **All inj=8/8, 0 stalls** — clean injection on every
+row; the opponent's v3 pre-moves never killed a prefix entry.
+
+| skip | ret=blue | ret=red |
+|------|----------|---------|
+| 0    | +14.3% (1854-1588) | +37.0% (2118-1335) |
+| 10   | +14.3% (1854-1588) | +52.8% (2032-958)  |
+| 20   | +14.3% (1854-1588) | +52.8% (2032-958)  |
+| 30   | +14.3% (1854-1588) | +60.5% (1648-651)  |
+
+**AVG margin: +32.6%** vs -20.0% control (+52.6pp) and vs the -9.9% ACCEPT bar (+42.5pp).
+COLLAPSE LINE GONE: red skip rows -111.2/-111.2/-111.4 -> +52.8/+52.8/+60.5 (+498.8pp
+across the 4 red rows) — the mesh8 opening as Red avoids the collapse trajectory
+entirely. Blue rows identical across all skips (the mesh opening dominates the blue
+trajectory; the control shows the same convergence, skip=10 ≡ skip=20). Genuine-blue
+caveat: +14.3% vs control +29.4% (-15.1pp) — mesh8 on the EMPTY start as Blue
+underperforms the D10-F7 opener, confirming lane-h2's "KEEP blue_opener D10-F7 on the
+empty start"; the league flip is carried by the red rows.
+Verdict: **league-confirmed** — ACCEPT bar met (AVG +32.6% > -9.9%; worst row +14.3%,
+no row near -300). mesh8 stands as adopted (bf3c9aa); keep blue_opener D10-F7 on the
+empty start in production.
+
 ## Experiment V5-1 — patience-off ablation (Blue-chair first-close timing) — 2026-09-27
 Hypothesis: PATIENCE_PENALTY (no sub-2.0 closes before action 12) misfires on
 forced openings as Blue, delaying closes v1 snatches.
