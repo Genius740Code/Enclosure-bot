@@ -29,3 +29,10 @@ Change: `PATIENCE_PENALTY` 2.0 -> 0.0 in `retaliator/src/search.rs`.
 Result: byte-identical lines in every gate — v3all v1 4/10 / v2 7/10,
 league -20.0%, gauge 6/6. Term never flips a pick in any measured line.
 Verdict: **REJECTED (no effect)**. Reverted to 2.0 with provenance comment.
+
+## 2026-09-28 — V5 (doom OFF port, DOOM_W 1.0 -> 0.0) — main session
+Port of Lane B's rig result into search.rs (one constant + provenance comment).
+Rig numbers: league -9.9% vs -20.0%, v1 5/10 vs 4/10, collapse -55.9% vs -111.4%.
+Port gate: gauge 6/6 (deterministic repeat of 2 lines, margins +53.5%/+69.3%).
+Caveats: ties (not beats) v1; as-Blue 2/5 -> 1/5; rig ran without avoid path.
+Verdict: SHIP (best measured config; site Elo decides).

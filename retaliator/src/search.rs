@@ -98,13 +98,15 @@ const REMOTE_BONUS: f64 = 1.0;
 const DENSE_DIST: i8 = 1;
 const DENSE_COUNT: u32 = 2;
 const DENSE_BONUS: f64 = 1.0;
-/// Doom discount: area we hold that the enemy pops in one action is false
-/// credit in the static eval (it counts area x 12 events as if it banks).
-/// For each candidate, the worst one-action pop of our area, times the
-/// capped horizon, is subtracted at selection. Doomed megaloops net to ~0,
-/// so the bot builds split/remote/dense ground instead of one big grazeable
-/// balloon. Computed only where the enemy is to move (their legal set).
-const DOOM_W: f64 = 1.0;
+/// Doom discount: DISABLED (V5, 2026-09-28). Lane B ablations: the discount
+/// prices the enemy's one-action pop at ×12, but the re-make is shield-delayed
+/// two turns (the pop's placed edge crosses the re-place path and shields it),
+/// so the popped area misses exactly two scoring events — ×12 overcharges by
+/// ~6x and the bot avoids healthy ground. Measured in eval_phases rig (control
+/// faithful 0/239): doom OFF = league -9.9% vs -20.0%, v1 h2h 5/10 vs 4/10,
+/// collapse -55.9% vs -111.4%, gauge 8/8 equal; cost as-Blue 2/5 -> 1/5.
+/// Kept at 0.0 (term compiled out, not deleted, for dose experiments).
+const DOOM_W: f64 = 0.0;
 /// Capture exposure: nodes held by a single edge can be captured outright.
 /// Counts ours vs theirs; each such node is a discrete, hard-to-reverse
 /// swing, so it prices higher than a generic edge.
