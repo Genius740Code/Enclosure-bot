@@ -36,3 +36,18 @@ Rig numbers: league -9.9% vs -20.0%, v1 5/10 vs 4/10, collapse -55.9% vs -111.4%
 Port gate: gauge 6/6 (deterministic repeat of 2 lines, margins +53.5%/+69.3%).
 Caveats: ties (not beats) v1; as-Blue 2/5 -> 1/5; rig ran without avoid path.
 Verdict: SHIP (best measured config; site Elo decides).
+
+## 2026-09-28 — V6 (mesh8 prefix + doom-ON) — UPLOADED
+Port of Lane H mesh8 (pair-turn slots, onset scan, permanent truncation,
+between()-built moves) + doom discount restored to 1.0 (site lineage:
+v3 1477/v4 1428 doom-ON vs v5 1349 4-36 doom-OFF).
+Gates (on port): league_mesh +21.6% worst -57.6% (bar: >-9.9%, no row <-300);
+gauge_mesh 6/6 (+74-75%); v1/v2/scout h2h probe-side doom-ON base
+(v1 B5-0/R4-1, v2 5-0/5-0, scout B5-0/R4-1); mesh_verify + site_check green
+(opening reply 16058, 12 legal site-path replies, analysis depth 2).
+Site bot "Riposte v6" 853d805d-8aaa-4061-a0bf-816fedd3e4c9 (fresh provisional),
+version 93cbc665b8ab5b885983bec02d2969917f421ed916d3a23a0581095616a8cedd (290011 bytes).
+Rated evals queued pairs=1: v5 (6ea13d3e), v4 (a68f64de), GB (daf1be99),
+GB2.0 (5e7dbc71), VladNet (ddd08831), AngelBot (0b6220f8). Site forces
+action-1 per pair: prefix onset-scan delays (inj may read 7/8 there).
+Verdict: PENDING site Elo.
