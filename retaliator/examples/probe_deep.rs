@@ -142,6 +142,118 @@ fn gauge(games: usize) {
     println!("==> deep wins: {wins_r}/{games}");
 }
 
+/// CPU time (utime + stime) of this process, from /proc/self/stat. Clock ticks
+/// are 100/s, so the resolution is 10 ms; load-independent, unlike wall time.
+fn cpu_seconds() -> f64 {
+    let stat = std::fs::read_to_string("/proc/self/stat").unwrap_or_default();
+    let Some(rest) = stat.rsplit_once(')').map(|(_, rest)| rest) else { return 0.0 };
+    let fields = rest.split_whitespace().collect::<Vec<_>>();
+    // fields[0] is /proc's field 3 (state), so field 14 is fields[11].
+    let utime: u64 = fields.get(11).and_then(|s| s.parse().ok()).unwrap_or(0);
+    let stime: u64 = fields.get(12).and_then(|s| s.parse().ok()).unwrap_or(0);
+    f64::from(u32::try_from(utime + stime).unwrap_or(0)) / 100.0
+}
+
+/// Baseline cost: one real `analyze(3)` per position (arg 2 = runs per
+/// position, default 1). Positions come from baseline (`search::best_move`)
+/// play, as in the gates. Reports nodes, wall, CPU and CPU nodes/sec.
+fn bench(runs: usize) {
+    println!("== bench: one analyze(3) per position (wall + cpu), {runs} run(s) ==");
+    for open in [None, Some(4864usize)] {
+        let mut game = Game::new();
+        if let Some(id) = open {
+            game.play(Move::from_index(id).unwrap()).unwrap();
+        }
+        for target in [12usize, 24] {
+            while !game.is_over() && usize::from(game.position().actions_played()) < target {
+                let mv = base(game.position()).unwrap();
+                game.play(mv).unwrap();
+            }
+            if game.is_over() {
+                break;
+            }
+            let pos = game.position();
+            for _ in 0..runs.max(1) {
+                let w0 = std::time::Instant::now();
+                let c0 = cpu_seconds();
+                let analysis = retaliator::search_deep::analyze(&pos, 3);
+                let wall = w0.elapsed().as_secs_f64();
+                let cpu = cpu_seconds() - c0;
+                let ns = if cpu > 0.0 { analysis.nodes as f64 / cpu / 1000.0 } else { 0.0 };
+                println!(
+                    "  t={} open={open:?}: nodes={} wall={wall:.1}s cpu={cpu:.1}s ({ns:.1}k n/s cpu)",
+                    pos.actions_played(),
+                    analysis.nodes
+                );
+            }
+        }
+    }
+}
+
+/// Which per-node components dominate: calls the pieces of the `negamax`
+/// children loop in isolation, N iterations each (arg 2 = N, default 20000),
+/// and reports CPU ns/call. Run at a t=24 baseline position.
+fn profile(iterations: usize) {
+    let mut game = Game::new();
+    game.play(Move::from_index(4864usize).unwrap()).unwrap();
+    while !game.is_over() && game.position().actions_played() < 24 {
+        let mv = base(game.position()).unwrap();
+        game.play(mv).unwrap();
+    }
+    let pos = game.position();
+    let legal: Vec<Move> = pos
+        .legal_moves()
+        .iter()
+        .filter(|&mv| !retaliator::search_deep::repeats_a_connection(pos, mv))
+        .collect();
+    let n = iterations.max(1);
+    println!(
+        "== profile at t={} (nodes {}/{} per side, {n} iterations each) ==",
+        pos.actions_played(),
+        pos.nodes(Player::Blue).len(),
+        pos.nodes(Player::Red).len()
+    );
+    let timed = |label: &str, iterations: usize, run: &dyn Fn()| {
+        let c0 = cpu_seconds();
+        for _ in 0..iterations {
+            run();
+        }
+        let per = (cpu_seconds() - c0) * 1e9 / iterations.max(1) as f64;
+        println!("  {label}: {per:.0} ns/call");
+    };
+    let per_child = (n / legal.len().max(1)).max(1);
+    let b = legal.len();
+    let apply_all = move || {
+        for &mv in &legal {
+            let mut after = pos.clone();
+            after.apply_unchecked(mv);
+            std::hint::black_box(&after);
+        }
+    };
+    timed("legal_moves()", n, &|| {
+        std::hint::black_box(pos.legal_moves().len());
+    });
+    timed("evaluate()", n, &|| {
+        std::hint::black_box(retaliator::search_deep::evaluate(&pos));
+    });
+    timed("has_legal_move()", n, &|| {
+        std::hint::black_box(retaliator::search_deep::has_legal_move(&pos));
+    });
+    timed("room() both", n, &|| {
+        std::hint::black_box(retaliator::search_deep::room(&pos, Player::Blue));
+        std::hint::black_box(retaliator::search_deep::room(&pos, Player::Red));
+    });
+    timed("one_edge_nodes() both", n, &|| {
+        std::hint::black_box(retaliator::search_deep::one_edge_nodes(&pos, Player::Blue));
+        std::hint::black_box(retaliator::search_deep::one_edge_nodes(&pos, Player::Red));
+    });
+    timed("clone+apply, per child", per_child, &apply_all);
+    timed("cheap eval (score+area)", n, &|| {
+        std::hint::black_box(retaliator::search_deep::cheap_value(&pos));
+    });
+    println!("  branching b = {b}");
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mode = args.get(1).cloned().unwrap_or_else(|| "all".into());
@@ -157,6 +269,8 @@ fn main() {
         }
         "gauge" => gauge(n1.unwrap_or(6)),
         "verify" => verify(),
+        "bench" => bench(n1.unwrap_or(1)),
+        "profile" => profile(n1.unwrap_or(20000)),
         _ => {
             h2h(4);
             league(&[0, 10, 20, 30]);

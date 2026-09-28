@@ -89,7 +89,7 @@ pub fn has_legal_move(position: &Position) -> bool {
 /// How many of `player`'s nodes hang by a single edge (capturable).
 /// Fixed array instead of a HashMap: same counts, no allocation — this runs
 /// at every node of the deep search.
-fn one_edge_nodes(position: &Position, player: Player) -> u32 {
+pub fn one_edge_nodes(position: &Position, player: Player) -> u32 {
     const NUM_POINTS: usize = meridian_engine::geometry::NUM_POINTS;
     let mut degree = [0u8; NUM_POINTS];
     for edge in position.edges(player).iter() {
@@ -101,7 +101,7 @@ fn one_edge_nodes(position: &Position, player: Player) -> u32 {
 }
 
 /// The area of the convex hull of a player's nodes: room to grow into.
-fn room(position: &Position, player: Player) -> f64 {
+pub fn room(position: &Position, player: Player) -> f64 {
     let mut points: Vec<Point> = position.nodes(player).iter().collect();
     points.sort_by_key(|point| (point.x(), point.y()));
     if points.len() < 3 {
@@ -346,9 +346,21 @@ fn near_enemy_node(position: &Position, player: Player, target: Point, dist: i8)
 }
 
 /// A connection between two of the mover's nodes is listed from both ends. This is the second.
-fn repeats_a_connection(position: &Position, mv: Move) -> bool {
+pub fn repeats_a_connection(position: &Position, mv: Move) -> bool {
     let target = mv.target().expect("legal moves end on the board");
     position.nodes(position.to_move()).contains(target) && target < mv.source
+}
+
+/// The cheap evaluation used below the root: banked scores plus enclosed area
+/// at the capped horizon. Skips the room hull, the capture-degree scan and the
+/// draw check — the parts that dominate per-node cost at depth. The full
+/// [`evaluate`] runs at the root and the first ply only.
+pub fn cheap_value(position: &Position) -> f64 {
+    let events_left = f64::from(position.scoring_events_left());
+    let worth = |player| {
+        position.score(player).to_f64() + position.area(player).to_f64() * events_left.min(HORIZON)
+    };
+    worth(Player::Blue) - worth(Player::Red)
 }
 
 fn length(mv: Move) -> i8 {
