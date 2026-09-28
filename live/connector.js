@@ -31,6 +31,20 @@ const TOURNAMENT = process.env.ENC_TOURNAMENT || 'mt5x4j77';
 const DIRECT_GAME = process.env.ENC_GAME || null;
 const SPECTATE = process.env.ENC_SPECTATE === '1';
 const LOBBY = process.env.LOBBY === '1';
+// Lobby queue state: server closes idle lobby connections that never enter
+// matchmaking. lobby_join only subscribes to lobby feed; lobby_quick_play is
+// what actually queues. The server may drop a quick_play sent in the same
+// tick as lobby_join, so we ALSO re-queue on every lobby_state/queue_state
+// that reports queued:false (throttled), plus a watchdog while unqueued.
+let lobbyQueued = false, lastQuickPlayAt = 0;
+function queueLobby(reason) {
+  if (!LOBBY) return;
+  const now = Date.now();
+  if (now - lastQuickPlayAt < 3000) return; // throttle: max 1 per 3s
+  lastQuickPlayAt = now;
+  say(`lobby queueing (quick_play, reason=${reason})`);
+  send({ action: 'lobby_quick_play' });
+}
 const log = fs.createWriteStream(process.env.CONN_LOG || 'connector.log', { flags: 'a' });
 const DRY_RUN = process.env.DRY_RUN === '1';
 const BUDGET = parseInt(process.env.BUDGET_MS || '8000', 10);
@@ -191,7 +205,7 @@ function onState(F) {
   if (over) {
     thinking = false; pendingPlan = []; clockMs = 60000;
     say(`GAME-OVER logged. winner=${F.winner} reason=${F.winReason} final=${JSON.stringify(F.scores)}`);
-    if (LOBBY) { gameID = null; say('re-queueing lobby…'); send({ action: 'lobby_join' }); send({ action: 'lobby_quick_play' }); }
+    if (LOBBY) { gameID = null; lobbyQueued = false; say('re-queueing lobby…'); send({ action: 'lobby_join' }); queueLobby('game-over'); }
     return;
   }
   // If we just moved: turn advanced or actions decreased -> update clock, maybe send action 2.
@@ -269,7 +283,7 @@ function connect() {
     try { F = JSON.parse(data); } catch (e) { return; }
     if (F.type === 'syn_ack') {
       say('<< syn_ack');
-      if (LOBBY) { send({ action: 'lobby_join' }); send({ action: 'lobby_quick_play' }); }
+      if (LOBBY) { lobbyQueued = false; send({ action: 'lobby_join' }); queueLobby('syn_ack'); }
       else if (DIRECT_GAME) { gameID = DIRECT_GAME; send({ action: 'join', gameID, ...(SPECTATE ? { spectate: true } : {}) }); }
       else send({ action: 'tournament_subscribe', tournamentID: TOURNAMENT });
     } else if (F.type === 'tournament_user_state') {
@@ -304,11 +318,29 @@ function connect() {
       say(`<< ERROR: ${F.message} (resyncing)`);
       thinking = false; // release; fresh state will retrigger think
       send({ action: 'request_game_history' });
-    } else if (F.type === 'match_found') {
+    } else if (F.type === 'match_found' || F.type === 'lobby_match_found') {
       say(`<< match_found ${F.gameID}`);
+      lobbyQueued = false;
       gameID = F.gameID; mirror = E.createInitialState(); serverRev = -1;
       clockMs = 60000; thinking = false; pendingPlan = []; joinRetries = 0;
       send({ action: 'join', gameID: F.gameID });
+    } else if (F.type === 'lobby_state' || F.type === 'lobby_queue_state' ||
+               F.type === 'queue_state' || F.type === 'lobby_challenge_state') {
+      // Mandatory fix: idle lobby connections get Close-framed. Any lobby
+      // snapshot reporting queued:false must trigger lobby_quick_play.
+      // Observed shapes: {type:lobby_state, queued:false},
+      // {type:lobby_queue_state, queued:false}, {type:lobby_challenge_state,...}.
+      const q = F.queued ?? F.inQueue ?? F.in_queue ?? (F.queue && F.queue.queued);
+      say(`<< ${F.type} queued=${q} ${JSON.stringify(F).slice(0, 200)}`);
+      if (F.type !== 'lobby_challenge_state') {
+        lobbyQueued = !!q;
+        if (LOBBY && !lobbyQueued) queueLobby(F.type + ' not-queued');
+      }
+    } else if (typeof F.type === 'string' && /lobby|queue/i.test(F.type)) {
+      // Future-proof: any other lobby/queue message reporting not-queued re-queues.
+      const q = F.queued ?? F.inQueue ?? F.in_queue;
+      say(`<< ${F.type} (generic lobby) ${JSON.stringify(F).slice(0, 200)}`);
+      if (LOBBY && (q === false || q === undefined)) queueLobby(F.type + ' generic');
     } else {
       say('<<', JSON.stringify(F).slice(0, 300));
     }
@@ -330,8 +362,13 @@ function connect() {
 process.on('SIGINT', () => { say('shutting down'); closed = true; try { ws.close(); } catch (e) {} process.exit(0); });
 // Stream-theft watchdog: if a live game goes quiet >30s, the updates are
 // probably going to another same-account connection (browser tab). Say so LOUD.
+// Lobby watchdog: idle lobby connections get Close-framed — if LOBBY and not
+// queued and no live game, re-queue every 15s.
 setInterval(() => {
   if (closed) return;
+  if (LOBBY && !gameID && !lobbyQueued && Date.now() - lastQuickPlayAt > 15000) {
+    queueLobby('watchdog-unqueued');
+  }
   if (gameID && (!serverState || serverState.gameID !== gameID) && Date.now() - lastJoinAt > 30000 && lastJoinAt > 0) {
     say('\x07WATCHDOG: joined ' + gameID + ' 30s+ ago, no state — re-joining');
     send({ action: 'join', gameID });
