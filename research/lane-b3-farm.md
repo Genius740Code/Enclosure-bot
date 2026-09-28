@@ -115,12 +115,29 @@ ground. Fixed site trajectory, per-action comparison.
   (the gain-scaled penalty re-ranks cut-ground closes by size), a
   subset land off the ground entirely.
 
+### Form B run (full credit factor; `research/logs/b3_farm_confirm_full.txt`)
+
+- **Both C2 confirm targets flip under ScaledAll** (and only under it):
+  act 51 -> 16127 (+0.0, **off** cut ground) at every memory 6/12/20/40;
+  act 112 -> 15669 (+0.0, still on own ground, but the farmed +10.5
+  re-close is no longer picked). The flat forms and ScaledExempt keep
+  both — the exemption misses the disease (both farmed re-closes are
+  close+cut combis).
+- Whole-game scorecards (control wants 23 / 18 farmed re-closes):
+  ScaledAll flips **17/23, 21/23, 21/23, 23/23** (mem 6/12/20/40) in
+  446956a1 and **14/18, 16/18, 18/18, 18/18** in f9c819ed — vs flat
+  8-10 and 1-3. The flips route AWAY (+0.0 moves), i.e. deny the farm
+  rather than re-rank it: routing, not re-sizing.
+- Deployed fidelity re-verified: 60/60 (446956a1), 53/60 (f9c819ed —
+  a v3-era game, deployed diverges there per C2 §0).
+
 ## Results
 
 | config | v1 h2h (blue/red) | league (collapse rows, diff) | gauge | notes |
 |---|---|---|---|---|
 | control (no avoid) | 5/10 (1/5 -16.7% / 4/5 +9.2%) | -9.9% (-94.5% -1038 / -94.5% -1038 / -55.9% -472) | 8/8 | baseline, reproduced exactly |
 | mem 12 flat | 4/10 (1/5 -19.6% / 3/5 +7.8%) | **-6.8%** (blue +37.1 x3, +38.9; red -80.5 -901 / -80.5 -901 / -83.5 -664) | 8/8 (blue +52.4, red +69.3) | league +3.1pp but v1 -1 win (as-red 4864 flips to a loss, as-blue 9199 -804); gauge blue -1.1pp |
+| mem 20 flat | pending | -9.3% (blue +30.4 x3, +38.9; red rows identical to mem 12: -901 / -901 / -664) | pending | league +0.6pp only — blue-row improvement is non-monotone in memory (mem 12 +37.1 > mem 20 +30.4 > ctrl +29.0); red collapse rows identical mem 12/20 |
 
 ## Sweep table
 

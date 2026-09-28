@@ -1,0 +1,58 @@
+=== 446956a1 act51 re-close 16013 (capybara v4): us=red 120 site moves ===
+confirm act 50 (0-based): site move 16013 gain +4.5 on-ground mem6/12/20/40: YYYY | deployed picks it: YES | control picks: 16013
+  config  pick  gain  on-own-ground  flipped-off-site-move
+  m6f     16013  +4.5  YES  kept   
+  m12f    16013  +4.5  YES  kept   
+  m20f    16013  +4.5  YES  kept   
+  m40f    16013  +4.5  YES  kept   
+  m6se    16013  +4.5  YES  kept   
+  m12se   16013  +4.5  YES  kept   
+  m20se   16013  +4.5  YES  kept   
+  m40se   16013  +4.5  YES  kept   
+  m6s     16127  +0.0  no   FLIPPED
+  m12s    16127  +0.0  no   FLIPPED
+  m20s    16127  +0.0  no   FLIPPED
+  m40s    16127  +0.0  no   FLIPPED
+deployed fidelity: 60/60 our-actions re-picked
+farmed re-closes the control wants (Connect gain>0 on ground-40): 23; per config: flips/off-ground
+  m6f   : 8/3 off-ground
+  m12f  : 9/2 off-ground
+  m20f  : 7/1 off-ground
+  m40f  : 10/2 off-ground
+  m6se  : 9/3 off-ground
+  m12se : 12/3 off-ground
+  m20se : 12/2 off-ground
+  m40se : 15/3 off-ground
+  m6s   : 17/5 off-ground
+  m12s  : 21/4 off-ground
+  m20s  : 21/3 off-ground
+  m40s  : 23/4 off-ground
+=== f9c819ed act113 re-close 16970 (H3 cluster): us=blue 120 site moves ===
+confirm act 112 (0-based): site move 16970 gain +10.5 on-ground mem6/12/20/40: YYYY | deployed picks it: YES | control picks: 16970
+  config  pick  gain  on-own-ground  flipped-off-site-move
+  m6f     16970  +10.5  YES  kept   
+  m12f    16970  +10.5  YES  kept   
+  m20f    16970  +10.5  YES  kept   
+  m40f    16970  +10.5  YES  kept   
+  m6se    16970  +10.5  YES  kept   
+  m12se   16970  +10.5  YES  kept   
+  m20se   16970  +10.5  YES  kept   
+  m40se   16970  +10.5  YES  kept   
+  m6s     15669  +0.0  YES  FLIPPED
+  m12s    15669  +0.0  YES  FLIPPED
+  m20s    15669  +0.0  YES  FLIPPED
+  m40s    15669  +0.0  YES  FLIPPED
+deployed fidelity: 53/60 our-actions re-picked
+farmed re-closes the control wants (Connect gain>0 on ground-40): 18; per config: flips/off-ground
+  m6f   : 1/0 off-ground
+  m12f  : 2/0 off-ground
+  m20f  : 3/0 off-ground
+  m40f  : 3/0 off-ground
+  m6se  : 1/0 off-ground
+  m12se : 2/0 off-ground
+  m20se : 3/0 off-ground
+  m40se : 3/0 off-ground
+  m6s   : 14/7 off-ground
+  m12s  : 16/3 off-ground
+  m20s  : 18/4 off-ground
+  m40s  : 18/4 off-ground
