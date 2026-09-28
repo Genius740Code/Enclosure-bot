@@ -69,4 +69,32 @@ isolates the search itself.
 
 ## Results
 
-(numbers appended as gates complete)
+**No gate completed** (2026-09-28). The gates are not runnable on this box:
+
+- h2h (deep=blue, open=None): killed at action 60-80/120 after ~2.1 hrs CPU —
+  the game was ~50% done. league (skip 0,30): killed at ~40%. gauge: killed
+  early. No W/L numbers.
+- Cost (bench, one real `analyze(3)` per position): ~10k-16k nodes searched per
+  move; ~10-30s CPU/move mid-game, rising to ~165-450s late-game (tactical
+  positions prune worse). A full game (~115 deep searches) is ~3-6 hrs CPU —
+  1.5-22x OVER the site's ~20s/move budget. The brief's "1000x time headroom"
+  claim is falsified for depth 3: the headroom is NEGATIVE at this depth.
+- Sanity: the search is correct — finite, plausible evaluations (-141.1,
+  -174.9, +6.4 on baseline-played positions); the draw-check optimization is
+  exact (596 positions, 0 mismatches vs the engine's own movegen).
+- The draw-check optimization (the one keeper): `value` generated every legal
+  move at every node just to ask whether there were none — ~50-80% of the
+  search cost. Replaced with a short-circuit `has_legal_move` (the engine's
+  own `check_move` over the mover's nodes x 48 directions): same boolean,
+  ~2-3x faster (t=12: 67s vs 214s; t=24: 571s vs 991s wall). Committed on
+  lane-a-search.
+
+## Verdict
+
+**REJECTED (over budget; W/L unmeasurable on this box).** The depth-3
+full-width search cannot deploy within the site's ~20s/move budget, and the
+gates cannot complete overnight (~3-6 hrs CPU per game, and the box gives
+Lane A ~0.4-0.6 core). The lineage's -58% caution stands unrefuted. If depth
+is pursued further, it needs a time-budget/iterative-deepening layer
+(outside Lane A's file scope) or a much faster box — the search itself is
+sound and the draw-check optimization carries over.
