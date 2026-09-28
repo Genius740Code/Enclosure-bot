@@ -145,7 +145,7 @@ fn h2h_budget(openings: usize) {
 
 fn h2h_capped_budget(openings: usize) {
     println!("== h2h_capped_budget: search_deep (depth 3, 2s budget, DEFAULT_WIDTH) vs search baseline, {openings} openings x 2 colors ==");
-    let opens = [None, Some(4864usize), Some(5589), Some(9199)];
+    let opens = [None, Some(4864usize), Some(5589), Some(11723), Some(9199)];
     let (mut w, mut n) = (0, 0);
     let (mut w_blue, mut n_blue, mut w_red, mut n_red) = (0, 0, 0, 0);
     for open in opens.into_iter().take(openings.max(1)) {
@@ -193,6 +193,30 @@ fn league(skips: &[usize]) {
         }
     }
     println!("==> league AVG margin (ret perspective): {:+.1}% over {n} games", sum / n.max(1) as f64);
+}
+
+fn league_capped_budget(skips: &[usize]) {
+    println!("== league_capped_budget: search_deep (depth 3, 2s budget, DEFAULT_WIDTH) vs scoutbase, skips {skips:?}, both colors ==");
+    let mut sum = 0.0;
+    let mut n = 0;
+    for skip in skips {
+        for ret_blue in [true, false] {
+            let mut game = Game::new();
+            for _ in 0..*skip {
+                if game.is_over() { break; }
+                let mv = base(game.position()).unwrap();
+                game.play(mv).unwrap();
+            }
+            if game.is_over() { continue; }
+            let t = std::time::Instant::now();
+            let (rs, ss) = play(game, ret_blue, deep_capped_budget, scoutbase::best_move);
+            let m = (rs - ss) / rs * 100.0;
+            println!("skip={skip} ret={} rs={rs:.0} ss={ss:.0} margin={m:+.1}% ({:.0}s)", if ret_blue { "blue" } else { "red" }, t.elapsed().as_secs_f64());
+            sum += m;
+            n += 1;
+        }
+    }
+    println!("==> league_capped_budget AVG margin (ret perspective): {:+.1}% over {n} games", sum / n.max(1) as f64);
 }
 
 fn gauge(games: usize) {
@@ -545,6 +569,13 @@ fn main() {
         "h2h_budget" => h2h_budget(n1.unwrap_or(5)),
         "gauge_capped_budget" => gauge_capped_budget(n1.unwrap_or(6)),
         "h2h_capped_budget" => h2h_capped_budget(n1.unwrap_or(5)),
+        "league_capped_budget" => {
+            let skips: Vec<usize> = args
+                .get(2)
+                .map(|s| s.split(',').filter_map(|p| p.parse().ok()).collect())
+                .unwrap_or_else(|| vec![0, 10, 20, 30]);
+            league_capped_budget(&skips);
+        }
         "profile" => profile(n1.unwrap_or(20000)),
         _ => {
             h2h(4);
