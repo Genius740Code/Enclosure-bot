@@ -131,26 +131,110 @@ ground. Fixed site trajectory, per-action comparison.
 - Deployed fidelity re-verified: 60/60 (446956a1), 53/60 (f9c819ed —
   a v3-era game, deployed diverges there per C2 §0).
 
-## Results
+## Results — full ablation matrix (every cell: v1 h2h 10, league 8, gauge 8; collapse diffs are the score diffs of the red skip=10/20/30 league rows)
 
-| config | v1 h2h (blue/red) | league (collapse rows, diff) | gauge | notes |
+cols: v1 = W/L (as-blue W/5 avg / as-red W/5 avg); lg = league AVG margin (blue rows; red rows incl. collapse diffs); gg = gauge (blue margin, red +69.3 in every config — the greedy never cuts us as red there); worst = worst collapse diff.
+
+| config | v1 | lg | gg | collapse worst |
 |---|---|---|---|---|
-| control (no avoid) | 5/10 (1/5 -16.7% / 4/5 +9.2%) | -9.9% (-94.5% -1038 / -94.5% -1038 / -55.9% -472) | 8/8 | baseline, reproduced exactly |
-| mem 12 flat | 4/10 (1/5 -19.6% / 3/5 +7.8%) | **-6.8%** (blue +37.1 x3, +38.9; red -80.5 -901 / -80.5 -901 / -83.5 -664) | 8/8 (blue +52.4, red +69.3) | league +3.1pp but v1 -1 win (as-red 4864 flips to a loss, as-blue 9199 -804); gauge blue -1.1pp |
-| mem 20 flat | 4/10 (1/5 -19.7% / 3/5 +7.8%) | -9.3% (blue +30.4 x3, +38.9; red rows identical to mem 12: -901 / -901 / -664) | 8/8 (blue +52.1, red +69.3) | league +0.6pp only — blue-row improvement is non-monotone in memory (mem 12 +37.1 > mem 20 +30.4 > ctrl +29.0); red collapse rows identical mem 12/20 |
-| mem 6 ScaledAll (W=1.0 full factor) | **3/10** (1/5 -45.1% / 2/5 -11.0%) | **-25.4%** (blue +14.5 x3, +33.7; red +11.1, -92.6 -561, -92.6 -561, -106.1 -764) | **8/8 (blue +73.1, red +69.3)** | WORSE on league+v1: over-avoidance — ~30 cuts/game in normal play poisons half the board at full credit; the genuine rows lose 15-29pp; the as-blue 9199 blowout -1251. Gauge BETTER (blue +19.6pp vs ctrl): against the greedy blob the routing denies the blob's farm. Flips the disease (confirm probe) but loses normal play |
-| mem 40 flat | pending | **-11.7%** (blue +24.5 x3, +38.9; red +38.4, then collapse rows identical to mem 12/20: -901 / -901 / -664) | pending | WORSE than control: the flat-memory blue-row effect is non-monotone (12: +37.1, 20: +30.4, 40: +24.5 vs ctrl +29.0); red collapse rows flat across 12/20/40 — the collapse-line farming is caught within 12 actions already |
+| **control (no avoid; doom OFF)** | **5/10** (1/5 -16.7% / 4/5 +9.2%) | **-9.9%** (blue +29.0 x3, +38.9; red +39.8, -94.5%, -94.5%, -55.9%) | **8/8** (blue +53.5) | **-1038** (-1038/-1038/-472) |
+| mem 12 flat | 4/10 (1/5 -19.6% / 3/5 +7.8%) | -6.8% (blue +37.1 x3, +38.9; red +39.8, -80.5%, -80.5%, -83.5%) | 8/8 (blue +52.4) | -901 (-901/-901/-664) |
+| mem 20 flat | 4/10 (1/5 -19.7% / 3/5 +7.8%) | -9.3% (blue +30.4 x3, +38.9; red rows identical to mem 12) | 8/8 (blue +52.1) | -901 |
+| mem 40 flat | 4/10 (1/5 -19.7% / 3/5 +7.3%) | -11.7% (blue +24.5 x3, +38.9; red +38.4, then identical) | 8/8 (blue +52.1) | -901 |
+| mem 6 ScaledAll, form B (full factor) | 3/10 (1/5 -45.1% / 2/5 -11.0%) | -25.4% (blue +14.5 x3, +33.7; red +11.1, -92.6%, -92.6%, -106.1%) | 8/8 (blue +73.1) | -764 (-561/-561/-764) |
+| mem 12 ScaledAll, form B | 2/10 (1/5 -83.8% / 1/5 -28.6%) | -31.8% (blue +1.6 x3, +33.1 — the skip0/10/20 blue wins collapse to near-draws) | 8/8 (blue +44.5) | -614 (-539/-539/-614) |
+| mem 20 ScaledAll, form B | 3/10 (1/5 -94.0% / 2/5 -21.5%) | -47.6% (blue -19.5 x3 — genuine wins flip to LOSSES; +47.2; red -135.1% x2, -123.3%) | 8/8 (blue +44.3) | -763 (-662/-662/-763) |
+| mem 40 ScaledAll, form B | 2/10 (1/5 -75.3% / 1/5 -28.4%) | -70.7% (blue -40.0 x3 losses; +47.0; red -204.4% x2, -101.7%) | 8/8 (blue +46.9) | -804 (-804/-804/-612) |
+| **mem 6 ScaledAll, form A (capped hz — the task-literal own_gain x hz)** | **4/10** (1/5 -30.4% / 3/5 -6.0%) | **+1.2%** (blue +16.7 x3, +43.7; red +11.1, **-31.7%, -31.7%, -32.1%**) | **8/8 (blue +76.0)** | **-306** (-270/-270/-306) |
 
-## Sweep table
+Dose-response reading:
 
-| config | v1 h2h (blue/red) | league margin (collapse rows, diff) | gauge | verdict vs control |
-|---|---|---|---|---|
-| control (no avoid) | 5/10 (1/5 -16.7% / 4/5 +9.2%) | -9.9% (-94.5% -1038 / -94.5% -1038 / -55.9% -472) | 8/8 | baseline |
-| mem 12 flat | | | | |
-| mem 20 flat | | | | |
-| mem 40 flat | | | | |
-| scaled @ chosen mem | | | | |
+- **Form B (full factor)** is monotone-catastrophic in memory: league
+  -25.4 / -31.8 / -47.6 / -70.7% at mem 6/12/20/40, v1 3/2/3/2 of 10,
+  as-blue averages -45..-94%. At E>12 the full factor is up to 3x the
+  capped one (36 vs 12 at 60 events left), and ~30 cuts/game of NORMAL
+  play means the penalty starves ordinary consolidation everywhere, not
+  just on farm cycles. It flips both C2 confirm targets (below) — and
+  still loses: the mechanism is right, the discrimination is missing.
+- **Form A (capped hz)** at the shipped memory 6 is the session's one
+  big positive: league **+1.2%** (+11.1pp), the collapse line FIXED
+  (-270/-270/-306 vs -1038/-1038/-472; two of three rows inside the -300
+  target), gauge 8/8 with blue +76.0 (+22.5pp). The cost: v1 4/10 vs
+  5/10 — the as-red 11723 win flips to a -36 loss, as-blue margins
+  worsen (1/5 kept). It does NOT flip the mid-game act-51 confirm
+  target (the farmed re-close keeps its beyond-horizon credit there),
+  but flips act-112 exactly (E<=12, no extension credit) and flips
+  12-14 of the 23/18 whole-game farmed re-closes (form-A confirm run).
+- **Flat memory extension alone** (12/20/40) is a nothing-burger: league
+  -6.8 / -9.3 / -11.7 (non-monotone), v1 4/10 at every depth, gauge
+  equal. The collapse rows are byte-identical across 12/20/40 — the
+  collapse-line farm is already caught within 12 actions; what the
+  flat penalty cannot do is make the re-close lose (36 < 54-198), which
+  is exactly the scaled term's job.
+- Nobody reaches v1 >= 6/10 (the control itself is 5/10); nobody gets
+  all three collapse rows inside -300 (form-A m6s misses by 6 points on
+  skip=30).
+
+## Confirm targets (C2 H1) — the mechanism, measured on the site losses
+
+- Deployed fidelity on the probe's avoid reconstruction: **60/60**
+  our-actions re-picked on 446956a1 (v4 == master), 53/60 on f9c819ed
+  (v3-era game — deployed diverges there per C2 §0). The probe matches
+  `lib.rs` replay exactly.
+- act 51 (446956a1, re-close 16013 +4.5, on cut ground at every memory,
+  picked by the deployed bot AND the doom-OFF control): flipped ONLY by
+  form B (-> 16127, +0.0, off ground, at every memory); form A and the
+  flat/ScaledExempt forms keep it. Arithmetic: form B penalty 4.5 x
+  (12 + 0.5x23) = 106 cancels the whole credit; form A penalty 54 leaves
+  the ~52-point extension credit on top.
+- act 112 (f9c819ed, re-close 16970 +10.5, ~4 events left): flipped by
+  every ScaledAll form (A and B — identical at E<=12), to a +0.0 move;
+  flat and ScaledExempt keep it. **The shipped counter-cut exemption
+  misses both targets** — the farmed re-closes are close+cut combis
+  (`BREAK(opp+0.0)`); ScaledAll is required.
+- Whole-game scorecards (control wants 23 / 18 farmed re-closes):
+  flat mem 6/12/20/40 flip 8/9/7/10 and 1/2/3/3; form-B ScaledAll flips
+  17/21/21/23 and 14/16/18/18 — routing AWAY (+0.0 moves), i.e. denying
+  the farm rather than re-ranking it; most flips land on other cut
+  ground, a subset off the ground entirely.
+
+## Faithfulness
+
+Re-verified after every restructure, including the final state:
+`probe_b_h2h` control (all terms off, doom ON = shipped) vs shipped
+`search.rs` — **0 mismatches in 239 positions** (logs
+`research/logs/b3_h2h_final.txt`). The control gates reproduce the
+published doom-OFF control byte-for-byte (league rows, v1 scores, gauge
+margins — `research/logs/b3_ctrl_*.txt`).
 
 ## MERGE/REJECT vs the doom-OFF control on ALL gates
 
-(to be written after the sweep)
+- **ScaledAll form B (any memory): REJECT.** Worse on league (by 15-61pp)
+  and v1 (by 2-3 wins, as-blue -28..-77pp); gauge 8/8-equal is the only
+  non-loss. The dose that flips both C2 targets kills normal play.
+- **ScaledAll form A at mem 6: REJECT as a merge, KEEP as the
+  documented near-miss.** League +11.1pp (best of the session), collapse
+  line fixed (-270/-270/-306, two rows inside -300), gauge 8/8 with
+  blue +22.5pp — but v1 4/10 vs 5/10 (the as-red 11723 razor-thin flip
+  and worse as-blue margins) fails the "no regression" bar that got
+  doom-off its recommendation, and it does not flip the mid-game act-51
+  target. The main session may still weigh league+collapse vs v1 (the
+  same trade lane-b's DOOM 0.5 alternative poses) — the numbers are all
+  above and in `research/logs/b3_*`.
+- **Flat memory extension (12/20/40): REJECT.** v1 -1 at every depth,
+  league non-monotone (-6.8 best), gauge equal; the collapse rows it
+  improves are byte-identical to what form-A m6s achieves while also
+  fixing the margins.
+- **Root cause (for the next lane): the avoid slice cannot carry
+  COUNTS.** A single recent cut and a 4x-re-popped farm cycle are priced
+  identically; ~30 cuts/game is field-normal, so any "recently cut"
+  penalty big enough to flip the farm also starves normal consolidation.
+  C2 H1's original form — per-edge cut COUNTERS (decay >= 30 or none) —
+  discriminates them; it needs an API change (counts into the avoid set,
+  or repeat-cut detection), which is outside this lane's term form.
+  The confirm probe (`probe_b_farm`) is the harness to gate it: fidelity
+  60/60, both targets, whole-game scorecard.
+
+All 9 treatment configs + control measured on all 3 gates (26 gate
+runs); every config committed + pushed to `lane-b-eval` as it landed.
+`search.rs` / `lib.rs` untouched; nothing merged to master from here.

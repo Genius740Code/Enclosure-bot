@@ -68,3 +68,34 @@ as-blue chair 2/5 kept) BUT league **-27.3%** (worst) and collapse rows
 **-137.7%** (worst) — non-monotone, no config dominates. 0.5 = the
 v1-threshold alternative for the main session; 0.0 = the league-best
 default. 0.25 untested.
+
+## Experiment B-3 — farm-cycle detector + scaled rebuild routing (C2 H1) — 2026-09-28
+Hypothesis (c-site-losses-2 H1): farm cycles run 20-40 actions, far beyond
+CUT_MEMORY 6, and the flat rebuild penalty (3.0 x hz = 36 full-horizon
+points) can never flip a farmed re-close banking own_gain x hz (54-198);
+the farmed re-closes are close+cut combis, exempt under the shipped
+non-breaking condition. Term (eval_phases.rs, gated `Rebuild` +
+`REBUILD_GAIN_W=1.0`): scale the cut-ground penalty by own_gain x credit
+factor, in ranking AND selection; the gate probes feed OUR avoid set live
+(lib.rs replay semantics, memory generalized, `B3_MEM`/`B3_SCALE`).
+Faithfulness control re-verified 0/239 after every restructure; the
+no-avoid control reproduced the doom-OFF rows byte-for-byte. All 9
+treatment configs on all 3 gates; `research/lane-b3-farm.md` has the
+full matrix + confirm-probe evidence.
+| variant | v1 W/L | league margin % | gauge W/L | verdict |
+|---|---|---|---|---|
+| control = doom OFF, no avoid | 5/10 (blue 1/5 -16.7%, red 4/5 +9.2%) | -9.9% (collapse diffs -1038/-1038/-472) | 8/8 (blue +53.5) | baseline |
+| mem 12/20/40 flat routing | 4/10 each | -6.8 / -9.3 / -11.7% (collapse -901/-901/-664 all depths) | 8/8 each | REJECT (v1 -1 at every depth; league non-monotone) |
+| ScaledAll form B, mem 6/12/20/40 | 3/2/3/2 of 10 | -25.4 / -31.8 / -47.6 / **-70.7%** | 8/8 each | REJECT (monotone-catastrophic in memory; flips BOTH C2 confirm targets but starves normal consolidation: ~30 cuts/game is field-normal) |
+| **ScaledAll form A (own_gain x hz), mem 6** | **4/10** (blue 1/5 -30.4%, red 3/5 -6.0%) | **+1.2%** (collapse **-270/-270/-306**) | **8/8 (blue +76.0)** | REJECT as merge, KEEP as documented near-miss |
+Note: form A at the shipped memory is the session's one big positive —
+league +11.1pp, the collapse line FIXED (two of three rows inside the
+-300 target), gauge blue +22.5pp — but v1 4/10 vs 5/10 (as-red 11723
+flips on a -36 diff; as-blue margins worse) fails the no-regression bar,
+and it does not flip the mid-game act-51 site target (the farmed
+re-close keeps its beyond-horizon credit; form B flips both targets and
+loses every gate). Root cause for the next lane: the avoid slice cannot
+carry COUNTS — one recent cut and a 4x-re-popped cycle price the same;
+C2 H1's original per-edge cut-counter form discriminates them (needs an
+API change). Confirm harness: `probe_b_farm` (deployed fidelity 60/60 on
+446956a1; act-51/act-113 checks; whole-game scorecard).

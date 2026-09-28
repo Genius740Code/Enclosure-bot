@@ -191,23 +191,33 @@ const CLOSE_W: f64 = 1.0;
 /// extension credit (0.5 x max(0, events-12)) is left in place and
 /// measured.
 ///
-/// **Dose correction after the first confirm run (probe_b_farm, form A):**
-/// with the capped factor alone the act-51 target (446956a1, ~35 events
-/// left) does NOT flip — the re-close keeps its beyond-horizon extension
-/// credit (4.5 x 0.5 x 23 ~= 52 points) on top of the penalty-capped
-/// remainder, and no fresh move outscores it; at the act-113 target
-/// (f9c819ed, ~4 events left) form A flips exactly as predicted. So the
-/// scaled penalty runs with the FULL credit factor
-/// (`min(E,12) + 0.5 x max(0, E-12)`, `REBUILD_FULL` below) — the same
-/// units the eval itself pays a close — which cancels the whole area
-/// credit of a cut-ground re-close at W=1.0.
+/// **Dose response (both forms measured; see `REBUILD_FULL` and
+/// `research/lane-b3-farm.md`):** the capped factor (form A) does not
+/// flip the mid-game act-51 confirm target (the re-close keeps its
+/// beyond-horizon credit, 4.5 x 0.5 x ~23 ~= 52 points) but is the
+/// gate-best dose; the full credit factor (form B) flips BOTH C2
+/// targets but loses every gate — early-game the full factor is 3x the
+/// capped one (36 vs 12 at 60 events left), and ~30 cuts/game of normal
+/// play means the penalty starves ordinary consolidation, not just the
+/// farm. Neither dose reaches v1 >= 6/10; the disease needs
+/// discrimination (per-edge cut COUNTERS, C2 H1's original form), not
+/// only a bigger penalty — the avoid slice cannot carry counts.
 const REBUILD_GAIN_W: f64 = 1.0;
 
 /// Whether the scaled penalty uses the full credit factor
-/// `min(E,12) + 0.5 x max(0, E-12)` (true — the dose correction above)
-/// or only the capped `min(E,12)` (form A, measured insufficient at the
-/// act-51 confirm target).
-const REBUILD_FULL: bool = true;
+/// `min(E,12) + 0.5 x max(0, E-12)` (form B) or only the capped `min(E,12)`
+/// (form A — the task-literal "own_gain x hz"). Both doses measured
+/// (research/lane-b3-farm.md): form B flips BOTH C2 confirm targets
+/// (act-51 + act-112) but loses every gate catastrophically (league -25.4%
+/// at mem 6, v1 3/10; -70.7%/2-3/10 at deeper memories — the E>12 factor is
+/// 3x the capped one early-game, poisoning normal consolidation); form A
+/// does NOT flip the mid-game act-51 target (the re-close keeps its
+/// beyond-horizon credit) but is the gate-best dose: league +1.2% at mem 6
+/// (+11.1pp vs the -9.9% control), collapse line fixed to -270/-270/-306
+/// (vs -1038/-1038/-472), gauge 8/8 blue +76.0 — the cost is v1 4/10 vs
+/// 5/10. Left at `false` (form A) so the gate-best config is reproducible
+/// from HEAD; flip to `true` only to reproduce the form-B rows.
+const REBUILD_FULL: bool = false;
 
 /// The full-horizon factor the eval pays a close's gained area at:
 /// the capped static part plus the horizon extension's beyond-cap part
