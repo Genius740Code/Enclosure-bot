@@ -65,3 +65,20 @@ Verdict: control recorded. FAILS h2h (needs >=6/10) and league (>-9.9%, no row<-
 Red-only collapse + full-window-correct code path implicates the aspiration window:
 center passed Blue-relative into a mover-perspective window (wrong side as Red).
 Next: V7-S0 aspiration-perspective fix, then Q14/Q16/Q6.
+
+## Experiment V7-S0 — aspiration window mover-perspective fix — 2026-09-28
+Root cause (found while confirming the control): `analyze_capped` passed the
+previous depth's Blue-relative `evaluation` as the aspiration center, but the
+root window lives in the mover's perspective — as Red the search opened on the
+wrong side of the true value and burned the ~2s budget on widening re-searches
+(delta 50->150->450->1350->4050->12150) instead of searching.
+Change (search_deep.rs only): center = `sign(to_move) * evaluation` in both
+budget arms; window-hit check compares the mover-perspective best value.
+`probe_deep h2h_capped_budget` (10): **2/10** (blue 2/5, red 0/5 — same W/L as
+control, changed lines: red losses 871-3469, 719-2251, 950-4293, 1482-4062,
+924-4060; blue wins open=None 1243-727, 5589 1452-1246).
+`probe_deep league_capped_budget` (8): AVG **-108.1%** (blue rows +37.0/+37.0/
+-27.7/+45.0; red rows -149.1/-237.3/-177.5/-392.1).
+`probe_deep gauge_capped_budget` (6): **6/6**.
+Verdict: real bug, fixed — but NOT the red-collapse root cause (W/L unchanged).
+Red still concedes 2000-4000 to the 2-ply baseline as Blue. Next: Q14 ordering.
