@@ -152,7 +152,7 @@ const PATIENCE_PENALTY: f64 = 2.0;
 /// REBUILD/FRESH; the opponent's reply model is the shipped skeleton's.
 /// CLOSE_B2 sweep (doom OFF, CLOSE_W=1.0, n=8-10 both colors per gate,
 /// faithfulness control re-verified first): see research/lane-b2-close.md.
-const CLOSE_T: f64 = 2.0;
+const CLOSE_T: f64 = 1.0;
 const CLOSE_W: f64 = 1.0;
 
 /// Legal-cuts-only vulnerability (V4d2 field rule): the doom discount subtracts
@@ -217,7 +217,7 @@ pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move
     // every added term off (vuln rejected, re-make never fires). The
     // gain-scaled close priority (CLOSE) is swept from here: flip the last
     // argument + CLOSE_T per config run (the lane-b dose precedent).
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, true)
 }
 
 /// The shipped `search::best_move` exactly: the doom discount ON, no added

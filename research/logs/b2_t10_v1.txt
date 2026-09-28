@@ -1,0 +1,11 @@
+laneB vs v1 open=None a=blue 1016-870 margin=+14.3% A WINS (16s)
+laneB vs v1 open=None a=red 1049-960 margin=+8.5% A WINS (15s)
+laneB vs v1 open=Some(4864) a=blue 1192-1847 margin=-55.0% b wins (17s)
+laneB vs v1 open=Some(4864) a=red 1843-1471 margin=+20.2% A WINS (14s)
+laneB vs v1 open=Some(5589) a=blue 1062-1559 margin=-46.8% b wins (15s)
+laneB vs v1 open=Some(5589) a=red 1369-1654 margin=-20.8% b wins (16s)
+laneB vs v1 open=Some(11723) a=blue 1626-1930 margin=-18.7% b wins (13s)
+laneB vs v1 open=Some(11723) a=red 2187-2039 margin=+6.8% A WINS (14s)
+laneB vs v1 open=Some(9199) a=blue 1588-2203 margin=-38.7% b wins (11s)
+laneB vs v1 open=Some(9199) a=red 1548-1804 margin=-16.6% b wins (15s)
+==> laneB vs v1: 4/10 | as blue 1/5 avg margin -29.0% | as red 3/5 avg margin -0.4%

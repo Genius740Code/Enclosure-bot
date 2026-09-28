@@ -47,7 +47,7 @@ skip=10/20/30 red **-94.5% (1098/2136) / -94.5% (1098/2136) / -55.9%
 | CLOSE_T | v1 h2h W/L (blue/red) | league margin % | collapse rows (red, margin % / score diff) | gauge W/L | verdict |
 |---|---|---|---|---|---|
 | off (control) | 5/10 (1/5 -16.7% / 4/5 +9.2%) | -9.9% | -94.5 -1038 / -94.5 -1038 / -55.9 -472 | 8/8 | baseline |
-| 1.0 | (pending) | | | | |
+| 1.0 | 4/10 (1/5 -29.0% / 3/5 -0.4%) | **-32.3%** (blue 1/4: skip0/10/20 **-13.0%** losses vs control +29.0% wins) | **-124.3 -1215 / -124.3 -1215 / -17.5 -177** (two worse, one better) | 8/8 (blue +60.0, red +69.4) | worse on league + v1 + as-Blue genuine |
 | 1.5 | (pending) | | | | |
 | 2.0 | (pending) | | | | |
 | 3.0 | (pending) | | | | |
