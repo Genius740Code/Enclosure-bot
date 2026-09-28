@@ -67,3 +67,43 @@ blobs, thickets, nested loops...), not just the double-wall corridor.
 - Required coverage: validate any shape term across GB + capybara + AngelBot
   + blob-mimic lines. If it helps vs one family and hurts vs others, it fails
   generality and dies (no family-specific carve-outs without their own gates).
+
+## Q5 (USER 2026-09-28): connect timing — space first, close late (Angel lesson)
+"Angel wastes 3 turns then connects big; early you have time; Angel took
+loads of space and waited to connect. Stop early connects that could wait
+50 moves — space-grabbing matters more."
+- Tension with V5 ablation (patience term "never flips a pick", kept at 2.0/12):
+  user OBSERVES early connects. Either they happen after act 12, or the gain
+  threshold misfires. Re-open with user data, not the old verdict.
+- Routed to: Lane E. Dose: PATIENCE window/gain + delayed-close bonus scaled
+  by open-space available (close late ONLY while space remains). Metric:
+  mean close-action per game must shift later AND banked area must not fall.
+- Falsifiable: if later closes lose area to snipers, revert to 2.0/12.
+
+## Q6 (USER 2026-09-28, DIRECTIVE): think budget raised — up to ~2s, position-dependent
+"Avg move 33ms — it can spend more thinking. Doesn't have to be instant;
+longer depending on position."
+- Site envelope: 5s requested, 20-25s lease (hard forfeit after Oct 4).
+  v7 budget: soft cap ~2s, POSITION-DEPENDENT (spend on volatile/open lines,
+  snap-reply quiet shuffles). No more 33ms guilt.
+- Routed to: Lane S (owns the budget/deepening machinery).
+
+## Q7 (USER 2026-09-28): math-ify it — line-set area eval, break taxonomy, keep-alive line
+(a) "Group-caught moves: sets of moves evaluated together for optimal area
+    by 2-6 lines" — evaluate small move-SETS (not single moves) for area
+    yield; a lot of this can be closed-form math, not search.
+(b) "Some types of moves break area" — build the BREAK TAXONOMY (neck cut,
+    loop pop, corridor sever, bank raid...) with per-type frequency x damage
+    from autopsies; price/avoid per type, not one flat break term.
+(c) "Keep one line alive at the opposite side in the middle — when we move
+    they can re-break the line" — a mid-board opposite-side presence line,
+    maintained (repaired) as a standing threat/anchor, not abandoned.
+- Routed to: (a) Lane S (math inside search), (b) Lane C2 census then Lane E
+  pricing, (c) Lane E as presence-line bonus dose.
+
+## Q8 (USER 2026-09-28): some lines are STRONGER than others — rank them
+Not all our lines deserve equal defense. Rank live lines by strength
+(structural: thickness, touches, bank-rate, repair cost) and: reinforce the
+strong, abandon the weak early (don't good-money-after-bad a doomed line).
+- Gated by: does strength-ranking predict which lines survive? (C2 first,
+  then E prices it.) Kills the sunk-cost rebuilds that farmers exploit.
