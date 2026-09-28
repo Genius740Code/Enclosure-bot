@@ -113,4 +113,16 @@ metrics). Gates per dose: h2h >= 6/10, league > -9.9% with no row < -300
 a dose that helps one shape family and hurts others is killed with numbers.
 | dose (E_UNBREAK) | h2h W/L | league margin % | gauge W/L | life (variant vs shipped) | verdict |
 |---|---|---|---|---|---|
-| E0 control (OFF) | 5/10 (blue 1/5 -18.8%, red 4/5 -2.1%) | -9.9% (skip0 +29.0/+39.8, skip10 +29.0/-94.5, skip20 +29.0/-94.5, skip30 +38.9/-55.9; diffs +313/+776/+313/-1038/+313/-1038/+830/-472) | 6/6 (blue +53.5 x3, red +69.3 x3; breaks R=20/3, G=16/2) | life 9.7 vs 12.2, bpb 5.00 vs 6.43, breaks 283 vs 254 | baseline (faithfulness 0/239; league/gauge byte-identical to B-3 control rows) |
+| E0 control (OFF) | 5/10 (blue 1/5 -18.8%, red 4/5 -2.1%) | -9.9% (skip0 +29.0/+39.8, skip10 +29.0/-94.5, skip20 +29.0/-94.5, skip30 +38.9/-55.9; diffs +313/+776/+313/-1038/+313/-1038/+830/-472) | 6/6 (blue +53.5 x3, red +69.3 x3; breaks R=20/3, G=16/2) | life 9.7 vs 12.2, bpb 5.00 vs 6.43, breaks 283 vs 254 | baseline (faithfulness 0/239; league/gauge re-verified byte-identical this lane) |
+| E1 rescue dose (1,1), v1 form (all first actions) | 6/10 (blue 2/5 +3.9%, red 4/5 -3.0%) | -24.9% (skip0 -30.3/+19.5, skip10 +18.1/-99.2, skip20 +18.1/-99.2, skip30 +38.5/-64.5) | n/g (league fail) | n/g | REJECT (league -15.0pp; skip0-blue collapses +29.0 -> -30.3; no row < -300 diff) |
+| E2 create-only (0,1) | 5/10 (blue 1/5 -11.6%, red 4/5 -0.4%) | n/g (h2h fail) | n/g | n/g | REJECT (control-level; CREATE rarely flips a pick — several lines byte-identical to E0; junction-creating moves already bank DENSE_BONUS, so the marginal bonus only flips near-ties) |
+| E3 extend-only (1,0) | 6/10 (blue 2/5 +4.0%, red 4/5 -6.0%) | -25.9% (skip0 -33.9/+15.9, skip10 +18.1/-99.2, skip20 +18.1/-99.2, skip30 +37.7/-64.5) | n/g (league fail) | n/g | REJECT (EXTEND carries E1's h2h gain AND the league collapse; CREATE was mildly mitigating in league) |
+| E4 half-extend (0.5,0), v1 form | 6/10 (blue 2/5 -3.7%, red 4/5 -6.8%) | -20.6% (skip0 -19.4/+27.2, skip10 +26.5/-99.2, skip20 +26.5/-99.2, skip30 +37.3/-64.5) | n/g (league fail) | life 10.8 vs 12.8, bpb 5.57 vs 6.65, breaks 281 vs 257 (variant +11% life, +11% bpb, breaks flat vs E0) | REJECT (mechanism fires directionally but league dose-response monotone-negative: 0.0 -> -9.9, 0.5 -> -20.6, 1.0 -> -25.9) |
+| E5 v2 non-breaking-only (0.5,0) | 6/10 (blue 2/5 -9.2%, red 4/5 +2.1%) | -15.3% (skip0 -7.4/+39.8, skip10 +29.7/-98.7, skip20 +29.7/-98.7, skip30 +38.9/-55.9) | n/g (league fail) | n/g | REJECT (best league of the sweep: 4 rows back to control-identical, skip0-blue damage halved — but still -36pp there; v1 rewarded cuts launched from shared nodes, v2 removes those flips) |
+| E6 v2 quarter (0.25,0) | n/g (league screen fail) | -19.1% (every row control-identical EXCEPT skip0-blue +29.0 -> -46.0) | n/g | n/g | REJECT (non-monotone single-row attractor flip: skip0-blue reads +29.0/ -46.0/ -7.4/ -33.9 across doses 0/0.25/0.5/1.0 — one early pick-flip vs scoutbase swings +/-40pp; the endpoint-bonus form is dead) |
+Q2 verdict: REJECT the endpoint-bonus form on all gates — no dose beats control on
+h2h + league jointly (best: E5 v2-half, h2h 6/10 + league -15.3%). The life probe
+confirms the mechanism direction (lifetime +11%, bpb +11%, breaks flat at half
+dose) but the bonus steers early wall play into lines scoutbase punishes and
+shipped does not (h2h pass + league fail at every positive dose). Next: Q1
+break-fix valuation (charge only missed scoring events, ~2-event doom).
