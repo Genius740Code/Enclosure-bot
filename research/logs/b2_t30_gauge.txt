@@ -1,0 +1,9 @@
+game 1: laneb=blue blue=2716.4 red=796.6 margin=+70.7% breaks R=34 G=18 (11s)
+game 2: laneb=red blue=1359.6 red=4437.4 margin=+69.4% breaks R=4 G=2 (15s)
+game 3: laneb=blue blue=2716.4 red=796.6 margin=+70.7% breaks R=34 G=18 (8s)
+game 4: laneb=red blue=1359.6 red=4437.4 margin=+69.4% breaks R=4 G=2 (16s)
+game 5: laneb=blue blue=2716.4 red=796.6 margin=+70.7% breaks R=34 G=18 (9s)
+game 6: laneb=red blue=1359.6 red=4437.4 margin=+69.4% breaks R=4 G=2 (11s)
+game 7: laneb=blue blue=2716.4 red=796.6 margin=+70.7% breaks R=34 G=18 (7s)
+game 8: laneb=red blue=1359.6 red=4437.4 margin=+69.4% breaks R=4 G=2 (8s)
+laneb wins: 8/8

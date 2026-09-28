@@ -50,6 +50,25 @@ skip=10/20/30 red **-94.5% (1098/2136) / -94.5% (1098/2136) / -55.9%
 | 1.0 | 4/10 (1/5 -29.0% / 3/5 -0.4%) | **-32.3%** (blue 1/4: skip0/10/20 **-13.0%** losses vs control +29.0% wins) | **-124.3 -1215 / -124.3 -1215 / -17.5 -177** (two worse, one better) | 8/8 (blue +60.0, red +69.4) | worse on league + v1 + as-Blue genuine |
 | 1.5 | 4/10 (1/5 -30.8% / 3/5 -1.6%) | **-33.0%** (blue 1/4: skip0/10/20 **-13.0%** losses; skip30 +9.8%) | **-124.3 -1215 / -124.3 -1215 / -17.5 -177** (identical rows to 1.0) | 8/8 (blue +60.7, red +69.4) | worse on league + v1 + as-Blue genuine |
 | 2.0 | 4/10 (1/5 -23.7% / 3/5 -1.3%) | **-46.1%** (blue 1/4: skip0/10/20 **-24.7%** losses, -236 diff; league W/L 2/8) | **-160.4 -1412 / -160.4 -1412 / -17.5 -177** (worst collapse diff) | 8/8 (blue +60.7, red +69.4) | worst league of the sweep so far |
+| 3.0 | 3/10 (1/5 -21.2% / 2/5 -4.5%) | **-33.6%** (blue 4/4 but weaker: +10.3/+10.3/+10.3/+15.2 vs control +29.0..+38.9) | **-153.8 -1361 / -153.8 -1361 / -45.9 -354** (all worse than control) | 8/8 (blue +70.7, red +69.4) | worst v1 of the sweep; still worse than control |
+
+## Sweep verdict: the continuous close-size weight FAILS at every threshold
+
+All four CLOSE_T doses are worse than the close-off control on league and v1
+(dose response non-monotone in league: -32.3 / -33.0 / -46.1 / -33.6; v1
+4/4/4/3 vs control 5/10). The uniform damage pattern: the as-Blue genuine
+league games (skip 0/10/20) flip from +29.0% wins to -13.0%/-24.7% losses
+(the (gain - T) bonus double-counts area on normal closes — our typical
+close banks ~+7, so it gets +4..+6 x hz extra on top of the area x hz the
+eval already counts — and the bot closes too eagerly as Blue), and the red
+collapse rows get worse, not better (the term does NOT fix the tiny-close
+disease it targets — the tiny re-closes are already below threshold and get
+penalized, but the farmed losses come from cut geometry, not close choice).
+gauge 8/8 equal at every threshold (the blob archetype is beaten either
+way). The control (close OFF) is the best config of the sweep. The
+one-sided form (tiny-close penalty only, no big-close bonus) is untested;
+the two-sided form's bonus side dominates its behavior. See the dose test
+below for the doom-0.5 interaction.
 | 1.5 | (pending) | | | | |
 | 2.0 | (pending) | | | | |
 | 3.0 | (pending) | | | | |
