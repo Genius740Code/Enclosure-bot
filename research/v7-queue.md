@@ -132,3 +132,18 @@ time, which will be fixed."
   lanes E/S implement only where C2's split clears significance (n>=8 per
   color, no small-sample theater).
 - Falsifiable: if splits regress to 50/50 with sample size, delete the note.
+
+## Q11 (USER 2026-09-28): prevent-the-wall — contest enemy big-close BEFORE it shuts
+Exhibit A: game adfb6cf5 (v6 blue vs xmybot red, LOSS). Moves 10-60 we lead
+everything (area 73-8, score 1018-131). Moves 60-70 xmybot closes ONE
+114-area wall (8->122) that never breaks again; banks 131->5484 and wins.
+During construction our moves were +3/+9 pottering connects and zero-contest
+Extends — we never touched their building site while our eval peaked.
+Full log: /tmp/opencode/aut-wall.log (also: our 6 breaks vs their 15).
+- Mechanism needed: closure-progress trigger — when the enemy's live-area
+  growth / frontier-pair count says a big close is 2-4 turns out, STOP
+  banking small stuff and contest the corridor root. After it shuts,
+  Q2-shapes say it is unbreakable: the ONLY winning window is before.
+- Composes with Q4 (deny early) + Q1 (their bank scores EVERY event after).
+- Falsifiable: prevention attempts must convert (wall never closes) at a
+  rate beating the tempo cost; if contests just donate necks, kill it.
