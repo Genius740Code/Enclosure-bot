@@ -274,3 +274,34 @@ Each would be a separate dose-swept gate (nodes/position, value-exact, gauge/h2h
 - Time allocation: iterative deepening with hard ~2s cap; if depth N completes in <2s, start depth N+1.
 - Gate: avg move time > 1.5s (not 33ms); gauge/h2h must improve vs 33ms baseline.
 - Composes with Q15 (LMR) to keep deeper search affordable, Q13 (TT) to avoid re-search.
+
+## O-Lane Findings (2026-09-28): Collapser Root Cause & Lane Implications
+
+**Collapser confirmed** (7/8 repro at skip=0 ret=Blue: 1-7, -11.1%). Closes at own actions 2-3, 30+ pop ~t=60 + erosion.
+
+**Defense Ablation (11 terms):**
+- **CAPTURE_W: CRITICAL** (removing drops -11.1% → -31.6%, -20.5pp swing)
+- DOOM_W: helpful (-11.1% → -14.0%)
+- HORIZON_WEIGHT: **hurts** (-11.1% → -7.4%)
+- DENSE_BONUS: **hurts** (-11.1% → -4.2%)
+- FRESH_PENALTY: **hurts** (-11.1% → -5.3%)
+- Others: neutral/no effect
+
+**Shape-Breaking Counters (Q3b):** All failed (corridor contest -22.7%, pre-build -8.9%, price-denial no effect)
+
+**PREVENT-THE-WALL (Q11):** Failed (-22.3%)
+
+**ROOT CAUSE: 2-ply horizon mismatch**
+- Collapser closes at own actions 2-3 for 60+ events
+- Our search caps area value at HORIZON=12 events
+- No eval term or search modification at 2-ply bridges this
+
+**Implications for v7 lanes:**
+- **Lane S (search)**: Must reach 3+ ply to see closure coming. Iterative deepening to 3+ ply within 2s budget is necessary.
+- **Lane E (eval)**: Phase system with game-history tracking needed. Static eval cannot price "this closure will happen in 3 opponent moves and bank for 60 events."
+- **Lane O**: Dedicated contest move generation needed (not just eval tweaks).
+
+**Next viable v7 paths:**
+1. **Lane S**: 3+ ply search_deep with iterative deepening within 2s budget
+2. **Lane B/E**: Phase system with game-history tracking + dedicated contest move generation
+3. **Combined**: Phase-aware search + history-aware eval = see closure coming + price it correctly
