@@ -172,3 +172,71 @@ because the line is already impossible to break (2+ touches = no legal cut)."
 - Gate: area lifetime rises (our thick lines bank longer) AND opponent's
   thick-line completion rate drops.
 - Composes with Q2 (build), Q4 (deny), Q11 (prevent close).
+
+## Q13–Q17 (USER 2026-09-28): Chess programming techniques adapted for Enclosure
+
+### Q13: Transposition Table Expansion (beyond Lane A's depth-1)
+Lane A has depth-1 exact entries + best-move ordering. Full TT would store:
+- **Depth-preferred** (replace if new depth ≥ stored depth, or always-replace for cut-nodes)
+- **Bound types** (EXACT, LOWER, UPPER) for correct cutoff logic
+- **Aging/bucket eviction** instead of Lane A's simple overwrite
+- **PV-node storage** (principal variation reconstruction)
+Gate: TT hit rate > 40% on mid/late game, value-exact vs no-TT.
+
+### Q14: Killer Moves + History Heuristic (move ordering beyond XBot)
+XBot orders captures > cuts > closes by static priority. Chess adds:
+- **Killer moves** (2 per ply: moves that caused beta-cutoffs at same depth)
+- **History heuristic** (move -> score table, updated on cutoffs)
+- **Countermoves** (response to opponent's last move)
+- **Capture history** (victim/attacker pair tables)
+Combined with XBot static order: dynamic > static. Gate: nodes/position drops > 20% vs XBot alone.
+
+### Q15: Late Move Reductions (LMR) + Probcut
+After ordering, reduce depth for late moves (assumed bad):
+- **LMR**: reduce depth by 1–2 for moves 4+ after first few full-width
+- **Probcut**: at high depths, probe with reduced window before full search
+Risky for Enclosure (no "pass"), but captures/breaks likely safe to keep full.
+Gate: nodes/position drops > 15% with zero value change on bench 596.
+
+### Q16: Quiescence Search (critical for Enclosure)
+v6 stops at fixed 2-ply. Chess quiescence: extend volatile lines until "quiet":
+- Extend on: captures, breaks, scoring events (area gain/loss), pending banks
+- Stop on: quiet extends, shuffles, remote builds
+This IS Q6+Q9 combined — the "selective depth" IS quiescence.
+Gate: no horizon blunders (missed close / missed break) on 596 bench.
+
+### Q17: Principal Variation Search (PVS) / NegaScout
+Instead of full alpha-beta on all moves:
+- First move: full window
+- Subsequent moves: null-window (beta = alpha+1) probe
+- If probe fails high, re-search full window
+Typically 10% faster than standard alpha-beta with same result.
+Gate: nodes/position drops > 10% vs standard alpha-beta, value-exact.
+
+---
+
+**Already in v6/v7 queue:**
+- Iterative Deepening (v6, Lane A) → Q6
+- Aspiration Windows (v7 Q6) → Q6
+- Move Ordering (XBot captures>cuts>closes) → Q14
+- Selective Depth / Quiescence (Q6+Q9) → Q16
+- Mesh8 Opening Book (v6) → opening book
+- Time Management (Q6) → time management
+
+**Not applicable to Enclosure:**
+- Null Move Pruning (no pass move)
+- SMP/Parallel (single-threaded WASM)
+- Tablebases / Syzygy (no endgame DB)
+- Pondering (no opponent clock)
+- Syzygy/EGTB (no endgame DB)
+
+---
+
+**Priority for v7 (beyond Q1–Q12):**
+1. **Q16 (Quiescence)** — already covered by Q6+Q9, highest impact
+2. **Q14 (Killer/History)** — low risk, high reward for move ordering
+3. **Q13 (Full TT)** — Lane A has skeleton; expand if LMR needs it
+4. **Q15 (LMR/Probcut)** — only after Q14 stable
+5. **Q17 (PVS)** — marginal gain, last
+
+Each would be a separate dose-swept gate (nodes/position, value-exact, gauge/h2h).
