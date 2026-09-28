@@ -262,3 +262,15 @@ Each would be a separate dose-swept gate (nodes/position, value-exact, gauge/h2h
   - Low variance: narrow aspiration, trust ordering, snap-reply.
 - Composes with Q6 (budget) + Q16 (quiescence): spend extra time only when variance is high AND it matters.
 - Gate: reduces catastrophic blunders (large swing losses) without lowering average margin.
+
+## Q6-amendment (USER 2026-09-28): No snap-reply — spend the budget on EVERY move
+"v7 should NOT snap-reply at 30ms on quiet moves. It should spend the full ~2s on EVERY move, calculating more lines, deeper variations, more strategic alternatives. Not scared of using time."
+
+- Revised Q6: **uniform base depth increase + selective extensions**.
+  - Base search: iterative deepening to max depth within ~2s budget (not 2-ply base).
+  - Quiet positions: still search deeper (strategic maneuvering, prophylaxis, space control).
+  - Critical lines: selective extensions on top (Q16 quiescence).
+- Rationale: "quiet" in Enclosure often means "space race" or "prophylaxis" — deeper search finds better space control, better prophylactic moves, better long-term shape building.
+- Time allocation: iterative deepening with hard ~2s cap; if depth N completes in <2s, start depth N+1.
+- Gate: avg move time > 1.5s (not 33ms); gauge/h2h must improve vs 33ms baseline.
+- Composes with Q15 (LMR) to keep deeper search affordable, Q13 (TT) to avoid re-search.
