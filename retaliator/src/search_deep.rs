@@ -202,6 +202,14 @@ const PATIENCE_MAX_GAIN: f64 = 2.0;
 const PATIENCE_WINDOW: u8 = 12;
 const PATIENCE_PENALTY: f64 = 2.0;
 
+/// XBot move ordering (captures > cuts > closes) — ported from XBot search.rs:34-55.
+/// Captures (+100) > cuts (+50) > own-loop closes (+30). Added to priority as the
+/// primary move-ordering seed. Toggle for ablation: on vs off at fixed depth/budget.
+const USE_XBOT_ORDERING: bool = true;
+const XBOT_CAPTURE_BONUS: f64 = 100.0;
+const XBOT_CUT_BONUS: f64 = 50.0;
+const XBOT_CLOSE_BONUS: f64 = 30.0;
+
 /// Blue's forced first action: D10-F7. Measured over 12 games vs three
 /// opponents (v1, v2, scout-class): +20% to +41% margins, 12/12 positive.
 /// Kept identical to the baseline so the deep-search probes share the opener
@@ -223,6 +231,7 @@ struct Ranked {
     after: Position,
     value: f64,
     priority: f64,
+    mv_ty: i8, // TT/ID ordering seed: 3=capture, 2=cut, 1=close, 0=regular
 }
 
 /// The mover's actions, best first, with the position after each and its value. All of them are
@@ -306,10 +315,26 @@ fn ranked(position: &Position, avoid: &[Point]) -> Vec<Ranked> {
             {
                 priority -= DEADWOOD_PENALTY * hz;
             }
-            Ranked { mv, after, value, priority }
+            // TT/ID move-ordering seed (captures > cuts > closes): only reorders
+            // within the same priority tier, so it is FREE w.r.t. playing strength.
+            let mv_ty = if outcome.kind == MoveKind::Capture {
+                3i8
+            } else if outcome.broken.is_some() && outcome.kind != MoveKind::Capture {
+                2i8
+            } else if outcome.kind == MoveKind::Connect {
+                1i8
+            } else {
+                0i8
+            };
+            Ranked { mv, after, value, priority, mv_ty }
         })
         .collect();
-    tried.sort_by(|a, b| b.priority.total_cmp(&a.priority).then(a.mv.index().cmp(&b.mv.index())));
+    tried.sort_by(|a, b| {
+        b.priority
+            .total_cmp(&a.priority)
+            .then(b.mv_ty.cmp(&a.mv_ty))
+            .then(a.mv.index().cmp(&b.mv.index()))
+    });
     tried
 }
 
