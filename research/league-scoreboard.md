@@ -30,23 +30,7 @@ Result: byte-identical lines in every gate — v3all v1 4/10 / v2 7/10,
 league -20.0%, gauge 6/6. Term never flips a pick in any measured line.
 Verdict: **REJECTED (no effect)**. Reverted to 2.0 with provenance comment.
 
-## Experiment V5-2 — Lane A deep search: negamax alpha-beta, depth 3 (`search_deep.rs`) — 2026-09-28
-Hypothesis: fixed 3-ply NAIVE deepening scored -58% league; real alpha-beta with
-move ordering (turn-aware negation, ordered children, beyond-horizon extension
-along the line, no doom discount) fixes it. Evaluation, D10-F7 opener and root
-priority verbatim from `search.rs`, so the h2h isolates the search itself.
-Change: `pub mod search_deep;` (lib.rs, one-line addition) + `search_deep.rs`
-(lane-a-search state capture; one compile fix: an unbound `outcome` at line 543;
-one exact optimization: `value`'s draw check short-circuits at the first legal
-move instead of generating them all — 596 positions checked, 0 mismatches vs
-engine movegen, ~2-3x faster: t=12 67s vs 214s, t=24 571s vs 991s wall).
-Result: **NO GATE COMPLETED** — h2h W/L n/a, league margin n/a, gauge n/a.
-h2h game 1 (deep=blue, open=None) left running at action 60-80/120, ~2.1 hrs CPU,
-game ~50% done; league (skip 0,30) killed at ~40%; gauge killed early.
-Cost (bench): ~10k-16k nodes/move, ~10-30s CPU/move mid-game rising to ~165-450s
-late; a full game ~3-6 hrs CPU = 1.5-22x OVER the site's ~20s/move budget. The
-brief's "1000x time headroom" is falsified for depth 3.
-Verdict: **REJECTED (over budget; W/L unmeasurable on this box)**. The exact
-draw-check optimization is kept on lane-a-search for future search work; depth
-needs a time-budget/iterative-deepening layer (outside Lane A scope) or a much
-faster box before these gates can run.
+## Experiment V5-2 — probe_deep depth-3 UNBOUNDED re-confirmation — 2026-09-28
+Hypothesis: re-measure whether depth-3 alpha-beta (unbounded `analyze()`, XBot ordering) is league-viable at 8 games (lane protocol).
+Run: `probe_deep 3 8` on lane-a-search working tree — KILLED after 27 CPU-minutes with **0 of 8 games completed** (not one game finished; ≈27s+/deep-move). Confirms Lane A's prior verdict ("depth-3 over budget 1.5–22× site move time") at unbounded width: dead on cost, never mind league.
+Verdict: **REJECTED (cost — re-confirmed)**. Only the width-capped deep path (benchcap 0.00–0.16s/move, Lane A2(d)) remains viable; its league gate is the open item (parallel session probing `benchbudget 2000` in game-s workspace — do not duplicate).
