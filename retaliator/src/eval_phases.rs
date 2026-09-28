@@ -140,6 +140,21 @@ const PATIENCE_MAX_GAIN: f64 = 2.0;
 const PATIENCE_WINDOW: u8 = 12;
 const PATIENCE_PENALTY: f64 = 2.0;
 
+/// Gain-scaled close priority (Lane D H-B-VLAD1): a first-action close is
+/// priced by its gained area against CLOSE_T, all game (no opening window —
+/// the difference from PATIENCE). Closes below the threshold are tiny (they
+/// bank ~0.2-0.9/close in the farmed losses while the mimic's greedy close
+/// banks ~2-4) and lose (CLOSE_T - gain) x hz; closes at or above it gain
+/// (gain - CLOSE_T) x hz, so a 0.5-area close never outranks a wall that
+/// leads to a 3+ area close. Continuous in gain, full-horizon units
+/// (area x min(events, 12)), deterministic tiebreak by move index. Applied
+/// to our candidates only (first-action ranking + selection), like
+/// REBUILD/FRESH; the opponent's reply model is the shipped skeleton's.
+/// CLOSE_B2 sweep (doom OFF, CLOSE_W=1.0, n=8-10 both colors per gate,
+/// faithfulness control re-verified first): see research/lane-b2-close.md.
+const CLOSE_T: f64 = 2.0;
+const CLOSE_W: f64 = 1.0;
+
 /// Legal-cuts-only vulnerability (V4d2 field rule): the doom discount subtracts
 /// the worst one-action pop; the term adds the EROSION GAP — the total area the
 /// enemy can legally cut from the evaluated position BEYOND that worst pop, per
@@ -199,8 +214,10 @@ pub fn best_move(position: &Position) -> Option<Move> {
 pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move> {
     // The verified recommendation: the doom discount OFF (see REM_W's doc —
     // league +10.1pp, v1 h2h 5/10 vs 4/10, collapse +16.7pp, gauge equal),
-    // every added term off (vuln rejected, re-make never fires).
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false)
+    // every added term off (vuln rejected, re-make never fires). The
+    // gain-scaled close priority (CLOSE) is swept from here: flip the last
+    // argument + CLOSE_T per config run (the lane-b dose precedent).
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false)
 }
 
 /// The shipped `search::best_move` exactly: the doom discount ON, no added
@@ -209,7 +226,16 @@ pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move
 /// the gate keeps per-example dead-code quiet.)
 #[allow(dead_code)]
 pub fn baseline_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, true)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false)
+}
+
+/// The CLOSE_B2 ablation control: doom OFF (the B-2 recommendation) with the
+/// close priority OFF — the same doom setting as the sweep, so
+/// `probe_b_close`'s pick-flip count and the control gates isolate the close
+/// term alone.
+#[allow(dead_code)]
+pub fn ablation_best_move(position: &Position) -> Option<Move> {
+    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false)
 }
 
 /// The skeleton's selection loop, with the doom discount and the added terms
@@ -222,6 +248,7 @@ fn best_move_features(
     vuln: bool,
     remake: bool,
     doom: bool,
+    close: bool,
 ) -> Option<Move> {
     if let Some(open) = blue_opener(position) {
         return Some(open);
@@ -229,7 +256,7 @@ fn best_move_features(
     let mover = position.to_move();
     let opp = mover.opponent();
     let budget = budget.clamp(SMALLEST_BUDGET, MOVE_BUDGET);
-    let first_actions = ranked(position, budget / 2, true, avoid);
+    let first_actions = ranked(position, budget / 2, true, avoid, close);
     let nodes = first_actions.len();
     let width = first_actions.len().min(WIDTH);
     let reply_budget = (budget - nodes) / width.max(1);
@@ -237,7 +264,7 @@ fn best_move_features(
     // (adjusted score for ordering, the move it belongs to).
     let mut scored: Vec<(f64, Move)> = Vec::new();
     for (mv, after, _, _) in first_actions.into_iter().take(width) {
-        let replies = ranked(&after, reply_budget, false, &[]);
+        let replies = ranked(&after, reply_budget, false, &[], false);
         let mut pv = vec![mv];
         let mut evaluation = value(&after);
         if let Some((reply, _, reply_value, _)) = replies.first() {
@@ -261,6 +288,14 @@ fn best_move_features(
                 }
                 if near_fresh_enemy(position, tgt) {
                     adjusted -= FRESH_PENALTY * hz_sel;
+                }
+                // Gain-scaled close priority at selection (Lane D H-B-VLAD1,
+                // gated): the same term as in ranking, so the pick itself
+                // weighs closes by gained area x hz against CLOSE_T.
+                if close && oc.kind == MoveKind::Connect {
+                    let gain_sel =
+                        probe.area(mover).to_f64() - position.area(mover).to_f64();
+                    adjusted += CLOSE_W * (gain_sel - CLOSE_T) * hz_sel;
                 }
             }
         }
@@ -449,6 +484,7 @@ fn ranked(
     budget: usize,
     first: bool,
     avoid: &[Point],
+    close: bool,
 ) -> Vec<(Move, Position, f64, f64)> {
     let mover = position.to_move();
     let opp = mover.opponent();
@@ -516,6 +552,15 @@ fn ranked(
                     && position.actions_played() < PATIENCE_WINDOW
                 {
                     priority -= PATIENCE_PENALTY * hz;
+                }
+                // Gain-scaled close priority (Lane D H-B-VLAD1, gated): a
+                // close is priced by its gained area against CLOSE_T, all
+                // game. Tiny closes (the farmed 0.2-0.9/close) lose
+                // (CLOSE_T - gain) x hz; big closes gain (gain - CLOSE_T) x
+                // hz, so a 0.5-area close never outranks a wall that leads to
+                // a 3+ area close. Continuous in gain; full-horizon units.
+                if close && outcome.kind == MoveKind::Connect {
+                    priority += CLOSE_W * (own_gain - CLOSE_T) * hz;
                 }
                 // Fix 2: don't graze the enemy frontier for free.
                 if outcome.broken.is_none()
