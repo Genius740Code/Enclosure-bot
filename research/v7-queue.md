@@ -119,3 +119,16 @@ time, which will be fixed."
 - Test: positions where the best 1-ply move and the best 5-turn plan differ;
   v7 must pick the plan. If longer thought just ranks the same move higher,
   the budget is wasted and we cut it back.
+
+## Q10 (USER 2026-09-28): color asymmetry — some bots only exist as one color
+"Stompy/Scout win all as red, lose all as blue."
+- If a rival's strength is color-conditional, our prep should be too:
+  separate responses per color (different prefix handling, different risk
+  posture), and exploit their weak color deliberately rather than playing
+  both colors the same way.
+- Routed to: Lane C2 first — color-split W/L for every tracked rival
+  (Stompy, Scout, GB family, VladNet, AngelBot, xmybot, Atlas, john.fun).
+  Any rival with >=75% of wins in one color gets a color-specific prep note;
+  lanes E/S implement only where C2's split clears significance (n>=8 per
+  color, no small-sample theater).
+- Falsifiable: if splits regress to 50/50 with sample size, delete the note.
