@@ -99,3 +99,18 @@ carry COUNTS — one recent cut and a 4x-re-popped cycle price the same;
 C2 H1's original per-edge cut-counter form discriminates them (needs an
 API change). Confirm harness: `probe_b_farm` (deployed fidelity 60/60 on
 446956a1; act-51/act-113 checks; whole-game scorecard).
+
+## Experiment E (Lane E v7 Q2) — unbreakable-shape dose sweep — 2026-09-28
+Term (`eval_phases.rs` `Unbreak{extend_w,create_w}` + `unbreak_best_move_with_avoid`):
+bonus for OUR first actions that EXTEND shared-node walls (source degree >= 2)
+or CREATE 2+ touch thickets (target degree >= 2 post-move), full-horizon units
+(area x min(events,12)), deterministic tiebreak by move index. Dose via
+`E_UNBREAK=e,c`; (0,0)/absent = OFF = the doom-OFF control. Probes take
+`E_UNBREAK` in `probe_b_h2h`/`league_b`/`gauge_b`; new `probe_b_life` reports
+area lifetime / banked-per-built / break counts over the h2h set (Q2 + Q1
+metrics). Gates per dose: h2h >= 6/10, league > -9.9% with no row < -300
+(diff), gauge 6/6. Structural generality only (no named-pattern matching):
+a dose that helps one shape family and hurts others is killed with numbers.
+| dose (E_UNBREAK) | h2h W/L | league margin % | gauge W/L | life (variant vs shipped) | verdict |
+|---|---|---|---|---|---|
+| E0 control (OFF) | 5/10 (blue 1/5 -18.8%, red 4/5 -2.1%) | -9.9% (skip0 +29.0/+39.8, skip10 +29.0/-94.5, skip20 +29.0/-94.5, skip30 +38.9/-55.9; diffs +313/+776/+313/-1038/+313/-1038/+830/-472) | 6/6 (blue +53.5 x3, red +69.3 x3; breaks R=20/3, G=16/2) | life 9.7 vs 12.2, bpb 5.00 vs 6.43, breaks 283 vs 254 | baseline (faithfulness 0/239; league/gauge byte-identical to B-3 control rows) |
