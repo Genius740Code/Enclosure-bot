@@ -245,8 +245,13 @@ const DENSE_BONUS: f64 = 1.0;
 /// ~6x and the bot avoids healthy ground. Measured in eval_phases rig (control
 /// faithful 0/239): doom OFF = league -9.9% vs -20.0%, v1 h2h 5/10 vs 4/10,
 /// collapse -55.9% vs -111.4%, gauge 8/8 equal; cost as-Blue 2/5 -> 1/5.
-/// Kept at 0.0 (term compiled out, not deleted, for dose experiments).
-const DOOM_W: f64 = 0.0;
+/// Doom discount: ENABLED (V6, 2026-09-28). V5 disabled it on rig evidence
+/// (league -9.9% vs -20.0%) but the rig bypassed the avoid path and the site
+/// verdict was catastrophic (v5: 1349 Elo, 4W-36L/40 vs v3 1477 13-11 and
+/// v4 1428 11-21, both doom-ON). V6 league gate with mesh8: doom-ON +21.6%
+/// worst -57.6% vs doom-OFF +18.3% worst -71.7% — ON wins locally too.
+/// Restored to 1.0; the OFF dose lives in git history (v6-mesh variant A).
+const DOOM_W: f64 = 1.0;
 /// Capture exposure: nodes held by a single edge can be captured outright.
 /// Counts ours vs theirs; each such node is a discrete, hard-to-reverse
 /// swing, so it prices higher than a generic edge.
