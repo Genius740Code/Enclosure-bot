@@ -5,6 +5,11 @@
 //! varying only its first action); every other move is engine-vs-engine with
 //! the move-index tiebreak inside each engine. Own-action numbers are
 //! 1-based: solo = 1, then two per 2-action turn.
+//!
+//! A second arm runs v2 with the shipped anti-rebuild wiring (endpoints of
+//! our edges cut in the last 6 actions, fed live from the game — the
+//! `lib.rs` `replay()` behavior) against every style; the same solos/colors
+//! make the difference vs the plain `v2` rows isolate the routing alone.
 
 #[path = "support/scoutbase.rs"]
 mod scoutbase;
@@ -20,7 +25,7 @@ mod opp_vladstyle;
 mod opp_angelstyle;
 
 use meridian_engine::notation::parse_square;
-use meridian_engine::{Game, Move, MoveKind, Player, Position};
+use meridian_engine::{Edge, Game, Move, MoveKind, Player, Point, Position};
 
 /// Reasonable Blue solos (only the starting edge's ENDPOINTS A10/D10 can
 /// extend — moves from interior nodes B10/C10 are struck out); one per game.
@@ -28,7 +33,7 @@ const SOLOS: [&str; 8] = [
     "D10-F11", "D10-C7", "A10-C11", "A10-D13", "D10-E12", "A10-B13", "D10-G10", "A10-C7",
 ];
 
-type Engine = fn(&Position) -> Option<Move>;
+type Engine<'a> = &'a dyn Fn(&Position, &[Point]) -> Option<Move>;
 
 #[derive(Default, Clone, Copy)]
 struct Stats {
@@ -58,22 +63,46 @@ fn solo_move(game: &Game, text: &str) -> Option<Move> {
     }
 }
 
+/// The endpoints of `mover`'s edges cut in the last [`CUT_MEMORY`] actions:
+/// the shipped anti-rebuild wiring (`lib.rs` `replay()`).
+fn avoid_points(cuts: &[(u16, Player, Edge)], mover: Player, played: u16) -> Vec<Point> {
+    let mut avoid = Vec::new();
+    for &(action, owner, cut) in cuts.iter().rev() {
+        if played - action > v2base::CUT_MEMORY as u16 {
+            break;
+        }
+        if owner == mover {
+            avoid.push(cut.origin());
+            avoid.push(cut.far());
+        }
+    }
+    avoid
+}
+
 fn play(ret_blue: bool, solo: &str, ret: Engine, opp: Engine) -> GameOut {
     let mut game = Game::new();
     let (mut ret_stats, mut opp_stats) = (Stats::default(), Stats::default());
+    // (action index, owner of the broken edge, the broken edge).
+    let mut cuts: Vec<(u16, Player, Edge)> = Vec::new();
     let mut first = true;
     while !game.is_over() {
-        let ret_moves = (game.position().to_move() == Player::Blue) == ret_blue;
-        let own = (u16::from(game.position().actions_played()) + 2) / 2;
+        let mover = game.position().to_move();
+        let ret_moves = (mover == Player::Blue) == ret_blue;
+        let played = u16::from(game.position().actions_played());
+        let own = (played + 2) / 2;
+        let avoid = avoid_points(&cuts, mover, played);
         let mv = if first {
             first = false;
             solo_move(&game, solo)
         } else if ret_moves {
-            ret(game.position())
+            ret(game.position(), &avoid)
         } else {
-            opp(game.position())
+            opp(game.position(), &avoid)
         };
         let outcome = game.play(mv.unwrap()).unwrap();
+        if let Some(cut) = outcome.broken {
+            cuts.push((played, mover.opponent(), cut));
+        }
         let stats = if ret_moves { &mut ret_stats } else { &mut opp_stats };
         if outcome.kind == MoveKind::Connect {
             stats.closes += 1;
@@ -151,20 +180,25 @@ fn matchup(name: &str, ret: Engine, opp: Engine, opp_name: &str) {
 
 fn main() {
     let styles: [(&str, Engine); 4] = [
-        ("gb", opp_gbstyle::best_move),
-        ("vlad", opp_vladstyle::best_move),
-        ("angel", opp_angelstyle::best_move),
-        ("scout", scoutbase::best_move),
+        ("gb", &|pos, _| opp_gbstyle::best_move(pos)),
+        ("vlad", &|pos, _| opp_vladstyle::best_move(pos)),
+        ("angel", &|pos, _| opp_angelstyle::best_move(pos)),
+        ("scout", &|pos, _| scoutbase::best_move(pos)),
     ];
     let baselines: [(&str, Engine); 3] = [
-        ("v3", retaliator::search::best_move),
-        ("v1", v1base::best_move),
-        ("v2", v2base::best_move),
+        ("v3", &|pos, _| retaliator::search::best_move(pos)),
+        ("v1", &|pos, _| v1base::best_move(pos)),
+        ("v2", &|pos, _| v2base::best_move(pos)),
     ];
     for (style_name, style) in styles {
         for (base_name, base) in baselines {
             // Baseline as `ret`: margin and W-L read from our perspective.
             matchup(base_name, base, style, style_name);
         }
+    }
+    // Anti-rebuild arm (rival-analysis steal #1, unproven): v2 with the
+    // shipped avoid wiring fed live from the game, vs every style.
+    for (style_name, style) in styles {
+        matchup("v2+avoid", &|pos, avoid| v2base::best_move_with_avoid(pos, avoid), style, style_name);
     }
 }
