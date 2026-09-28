@@ -63,3 +63,18 @@ Style gradient by opponent close-size floor (our avg margin): Scout 0 →
 opponent pops tiny loops, the worse we do; the GB-style book is harmless at
 2-ply.** Details + hypotheses per style: `lane-d-scout.md`, `lane-d-angel.md`,
 `lane-d-vlad.md`, `lane-d-gb.md`.
+
+## Lane D2 next-gen mimics (C2 site signatures) — 2026-09-28 (branch `lane-d2-opp`)
+
+Round-robin of the C2-signature style mimics vs shipped `search::best_move`
+(v3) + v1base + v2base, plus the v2+avoid arm. Same protocol as the Lane D
+tournament (8 games/matchup, 4 per color, verified solos, move-index
+tiebreak). Probes `opp_blobstyle`/`opp_sacstyle`/`opp_longfarm`, harness
+`probe_match_d2`, per-style analyses `lane-d2-*.md`.
+
+| variant (matchup) | margins (W-L, avg) | verdict + note |
+|---|---|---|
+| blob (far-band ring 108, closes own a16, repair+thicket hold) vs v3 | 8-0, +31.3% (+904) | we sweep; cuts 24-33/game keep the ring at ~50-60% banking duty |
+| blob vs v1 | 8-0, +36.0% (+893) | we sweep; closest game +181 (blob held 114 at the end) |
+| blob vs v2 | 8-0, +38.8% (+1027) | we sweep |
+| blob vs v2+avoid | 8-0, +31.7% (+868) | no regression; avoid arm no better/worse vs a non-farmer |

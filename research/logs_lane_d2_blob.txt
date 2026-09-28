@@ -1,0 +1,197 @@
+warning: variable does not need to be mutable
+   --> src/search.rs:189:13
+    |
+189 |         let mut end = position_after_pv(position, &pv);
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/search.rs:209:13
+    |
+209 |         let mut visits = 1 + replies.len();
+    |             ----^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: `retaliator` (lib) generated 2 warnings (run `cargo fix --lib -p retaliator` to apply 2 suggestions)
+warning: value assigned to `area_after` is never read
+   --> examples/opp_gbstyle.rs:92:30
+    |
+ 92 |         let mut area_after = 0.0;
+    |                              ^^^ this value is reassigned later and never used
+...
+103 |                 area_after = game.position().area(if me_blue { Player::Blue } else { Player::Red }).to_f64();
+    |                 -------------------------------------------------------------------------------------------- `area_after` is overwritten here before the previous value is read
+    |
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/scoutbase.rs:27:9
+   |
+25 | pub struct Analysis {
+   |            -------- fields in this struct
+26 |     /// Blue's lead after the best move and its reply.
+27 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+28 |     /// 2 when replies were searched.
+29 |     pub depth: usize,
+   |         ^^^^^
+30 |     /// Positions searched.
+31 |     pub nodes: usize,
+   |         ^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/scoutbase.rs:41:9
+   |
+36 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+41 |     pub pv: Vec<Move>,
+   |         ^^
+42 |     /// 1, plus the replies searched.
+43 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/v1base.rs:47:9
+   |
+45 | pub struct Analysis {
+   |            -------- fields in this struct
+46 |     /// Blue's lead after the best move and its reply.
+47 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+48 |     /// 2 when replies were searched.
+49 |     pub depth: usize,
+   |         ^^^^^
+50 |     /// Positions searched.
+51 |     pub nodes: usize,
+   |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/v1base.rs:62:9
+   |
+56 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+62 |     pub pv: Vec<Move>,
+   |         ^^
+63 |     /// 1, plus the replies searched.
+64 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/v2base.rs:63:9
+   |
+61 | pub struct Analysis {
+   |            -------- fields in this struct
+62 |     /// Blue's lead after the best move and its reply.
+63 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+64 |     /// 2 when replies were searched.
+65 |     pub depth: usize,
+   |         ^^^^^
+66 |     /// Positions searched.
+67 |     pub nodes: usize,
+   |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/v2base.rs:78:9
+   |
+72 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+78 |     pub pv: Vec<Move>,
+   |         ^^
+79 |     /// 1, plus the replies searched.
+80 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: function `analyze` is never used
+  --> examples/support/v2base.rs:94:8
+   |
+94 | pub fn analyze(position: &Position, budget: usize) -> Analysis {
+   |        ^^^^^^^
+
+warning: function `main` is never used
+  --> examples/opp_gbstyle.rs:87:4
+   |
+87 | fn main() {
+   |    ^^^^
+
+warning: field `visits` is never read
+  --> examples/support/scoutbase.rs:43:9
+   |
+36 | pub struct Candidate {
+   |            --------- field in this struct
+...
+43 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: function `best_move` is never used
+  --> examples/support/scoutbase.rs:46:8
+   |
+46 | pub fn best_move(position: &Position) -> Option<Move> {
+   |        ^^^^^^^^^
+
+warning: function `main` is never used
+  --> examples/opp_vladstyle.rs:65:4
+   |
+65 | fn main() {
+   |    ^^^^
+
+warning: function `main` is never used
+  --> examples/opp_angelstyle.rs:44:4
+   |
+44 | fn main() {
+   |    ^^^^
+
+warning: function `main` is never used
+   --> examples/opp_blobstyle.rs:182:4
+    |
+182 | fn main() {
+    |    ^^^^
+
+warning: `retaliator` (example "probe_match_d2") generated 14 warnings
+    Finished `release` profile [optimized] target(s) in 0.30s
+     Running `target/release/examples/probe_match_d2 blob`
+v3 vs blob game 1 base=blue: margin=+888 base[83.2 close=19 cut=24 first=3] blob[10.2 close=20 cut=21 first=16]
+v3 vs blob game 2 base=blue: margin=+829 base[70.1 close=16 cut=26 first=2] blob[2.9 close=12 cut=28 first=16]
+v3 vs blob game 3 base=blue: margin=+1061 base[70.6 close=15 cut=31 first=3] blob[3.9 close=22 cut=30 first=16]
+v3 vs blob game 4 base=blue: margin=+344 base[82.2 close=19 cut=27 first=3] blob[69.4 close=18 cut=23 first=16]
+v3 vs blob game 5 base=red: margin=+1395 base[64.5 close=18 cut=30 first=2] blob[108.5 close=21 cut=32 first=17]
+v3 vs blob game 6 base=red: margin=+1015 base[63.0 close=20 cut=30 first=2] blob[6.6 close=18 cut=32 first=17]
+v3 vs blob game 7 base=red: margin=+625 base[49.5 close=21 cut=32 first=2] blob[0.0 close=20 cut=31 first=9]
+v3 vs blob game 8 base=red: margin=+1075 base[60.6 close=21 cut=31 first=2] blob[0.0 close=14 cut=29 first=17]
+== v3 vs blob: W-L 8-0 D0 avg_margin=+31.3% avg_diff=+904 | in 0 losses: base[close=0.0 cut=0.0 first=0.0] | in 0 losses: blob[close=0.0 cut=0.0 first=0.0]
+v1 vs blob game 1 base=blue: margin=+615 base[46.0 close=17 cut=32 first=5] blob[1.1 close=17 cut=37 first=16]
+v1 vs blob game 2 base=blue: margin=+1130 base[56.8 close=20 cut=33 first=3] blob[29.0 close=20 cut=35 first=16]
+v1 vs blob game 3 base=blue: margin=+938 base[51.5 close=23 cut=32 first=3] blob[0.3 close=12 cut=31 first=16]
+v1 vs blob game 4 base=blue: margin=+1025 base[78.5 close=21 cut=30 first=3] blob[1.1 close=16 cut=29 first=16]
+v1 vs blob game 5 base=red: margin=+961 base[53.8 close=15 cut=30 first=2] blob[110.1 close=19 cut=32 first=17]
+v1 vs blob game 6 base=red: margin=+506 base[59.6 close=16 cut=32 first=2] blob[3.0 close=21 cut=28 first=17]
+v1 vs blob game 7 base=red: margin=+365 base[51.5 close=18 cut=34 first=2] blob[26.8 close=18 cut=36 first=9]
+v1 vs blob game 8 base=red: margin=+1604 base[45.4 close=17 cut=29 first=2] blob[0.0 close=11 cut=32 first=17]
+== v1 vs blob: W-L 8-0 D0 avg_margin=+36.0% avg_diff=+893 | in 0 losses: base[close=0.0 cut=0.0 first=0.0] | in 0 losses: blob[close=0.0 cut=0.0 first=0.0]
+v2 vs blob game 1 base=blue: margin=+1121 base[59.8 close=12 cut=30 first=5] blob[40.7 close=18 cut=32 first=16]
+v2 vs blob game 2 base=blue: margin=+1294 base[37.0 close=15 cut=34 first=2] blob[0.0 close=16 cut=35 first=16]
+v2 vs blob game 3 base=blue: margin=+701 base[52.4 close=18 cut=31 first=3] blob[4.5 close=23 cut=31 first=16]
+v2 vs blob game 4 base=blue: margin=+577 base[74.8 close=16 cut=23 first=2] blob[3.0 close=14 cut=29 first=16]
+v2 vs blob game 5 base=red: margin=+1325 base[68.0 close=19 cut=27 first=2] blob[1.4 close=13 cut=29 first=17]
+v2 vs blob game 6 base=red: margin=+1143 base[61.8 close=15 cut=30 first=2] blob[5.8 close=20 cut=31 first=17]
+v2 vs blob game 7 base=red: margin=+606 base[64.9 close=21 cut=34 first=2] blob[110.7 close=21 cut=31 first=9]
+v2 vs blob game 8 base=red: margin=+1449 base[60.2 close=18 cut=29 first=2] blob[114.0 close=12 cut=31 first=17]
+== v2 vs blob: W-L 8-0 D0 avg_margin=+38.8% avg_diff=+1027 | in 0 losses: base[close=0.0 cut=0.0 first=0.0] | in 0 losses: blob[close=0.0 cut=0.0 first=0.0]
+v2+avoid vs blob game 1 base=blue: margin=+1208 base[58.3 close=15 cut=33 first=5] blob[6.4 close=18 cut=30 first=16]
+v2+avoid vs blob game 2 base=blue: margin=+1232 base[65.1 close=17 cut=30 first=2] blob[58.1 close=15 cut=34 first=16]
+v2+avoid vs blob game 3 base=blue: margin=+614 base[49.5 close=18 cut=30 first=3] blob[5.1 close=22 cut=33 first=16]
+v2+avoid vs blob game 4 base=blue: margin=+671 base[50.3 close=16 cut=33 first=2] blob[2.8 close=20 cut=35 first=16]
+v2+avoid vs blob game 5 base=red: margin=+1562 base[65.2 close=15 cut=29 first=2] blob[107.1 close=16 cut=29 first=17]
+v2+avoid vs blob game 6 base=red: margin=+298 base[66.0 close=17 cut=30 first=2] blob[88.8 close=15 cut=28 first=17]
+v2+avoid vs blob game 7 base=red: margin=+181 base[65.8 close=22 cut=30 first=2] blob[8.6 close=14 cut=31 first=9]
+v2+avoid vs blob game 8 base=red: margin=+1177 base[67.5 close=15 cut=30 first=2] blob[50.7 close=17 cut=27 first=17]
+== v2+avoid vs blob: W-L 8-0 D0 avg_margin=+31.7% avg_diff=+868 | in 0 losses: base[close=0.0 cut=0.0 first=0.0] | in 0 losses: blob[close=0.0 cut=0.0 first=0.0]
