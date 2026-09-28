@@ -231,7 +231,6 @@ struct Ranked {
     after: Position,
     value: f64,
     priority: f64,
-    mv_ty: i8, // TT/ID ordering seed: 3=capture, 2=cut, 1=close, 0=regular
 }
 
 /// The mover's actions, best first, with the position after each and its value. All of them are
@@ -315,26 +314,34 @@ fn ranked(position: &Position, avoid: &[Point]) -> Vec<Ranked> {
             {
                 priority -= DEADWOOD_PENALTY * hz;
             }
-            // TT/ID move-ordering seed (captures > cuts > closes): only reorders
-            // within the same priority tier, so it is FREE w.r.t. playing strength.
-            let mv_ty = if outcome.kind == MoveKind::Capture {
-                3i8
-            } else if outcome.broken.is_some() && outcome.kind != MoveKind::Capture {
-                2i8
-            } else if outcome.kind == MoveKind::Connect {
-                1i8
-            } else {
-                0i8
-            };
-            Ranked { mv, after, value, priority, mv_ty }
+            // XBot move-ordering seed: captures (+100) > cuts (+50) > own-loop closes (+30).
+            // Added to priority so it acts as the primary ordering key. Toggle with USE_XBOT_ORDERING.
+            if USE_XBOT_ORDERING {
+                let xbot_bonus = match outcome.kind {
+                    MoveKind::Capture => XBOT_CAPTURE_BONUS,
+                    MoveKind::Connect => {
+                        if own_gain > 0.0 && outcome.broken.is_none() {
+                            XBOT_CLOSE_BONUS
+                        } else if outcome.broken.is_some() {
+                            XBOT_CUT_BONUS
+                        } else {
+                            0.0
+                        }
+                    }
+                    _ => {
+                        if outcome.broken.is_some() {
+                            XBOT_CUT_BONUS
+                        } else {
+                            0.0
+                        }
+                    }
+                };
+                priority += xbot_bonus;
+            }
+            Ranked { mv, after, value, priority }
         })
         .collect();
-    tried.sort_by(|a, b| {
-        b.priority
-            .total_cmp(&a.priority)
-            .then(b.mv_ty.cmp(&a.mv_ty))
-            .then(a.mv.index().cmp(&b.mv.index()))
-    });
+    tried.sort_by(|a, b| b.priority.total_cmp(&a.priority).then(a.mv.index().cmp(&b.mv.index())));
     tried
 }
 
@@ -1093,6 +1100,7 @@ fn negamax(
         let Some(facts) = child_facts(pos, mv, danger[mv.source.index()]) else {
             // This child needs the engine: it connects or captures, cuts an
             // enemy edge, or may close a loop of the mover's.
+            let target_owner = pos.node_owner(mv.target().expect("legal moves end on the board"));
             let mut after = pos.clone();
             after.apply_unchecked(mv);
             let gained = (after.area(mover).to_f64() - pos.area(mover).to_f64()).max(0.0);
@@ -1101,7 +1109,27 @@ fn negamax(
             let swing = gained + destroyed;
             let finished = after.is_finished();
             let factor_c = extension_factor(f64::from(after.scoring_events_left()));
-            let priority = sign(mover) * cheap_value(&after) + swing * factor_c;
+            let mut priority = sign(mover) * cheap_value(&after) + swing * factor_c;
+            // XBot move-ordering seed for child moves (captures > cuts > closes).
+            if USE_XBOT_ORDERING {
+                let xbot_bonus = match target_owner {
+                    Some(owner) if owner == mover.opponent() => XBOT_CAPTURE_BONUS, // Capture
+                    Some(_) => {
+                        // Connect: own-loop close only if gained area and didn't cut.
+                        let cut = after.edges(mover.opponent()).len() < pos.edges(mover.opponent()).len();
+                        if gained > 0.0 && !cut { XBOT_CLOSE_BONUS } else if cut { XBOT_CUT_BONUS } else { 0.0 }
+                    }
+                    None => {
+                        // Extend: cut if it broke enemy edges.
+                        if after.edges(mover.opponent()).len() < pos.edges(mover.opponent()).len() {
+                            XBOT_CUT_BONUS
+                        } else {
+                            0.0
+                        }
+                    }
+                };
+                priority += xbot_bonus;
+            }
             // A finished child's leaf has 0 events left: the extension vanishes.
             let leaf_factor = if finished { 0.0 } else { factor_c };
             children.push((priority, mv, leaf_factor, swing, finished));
@@ -1109,6 +1137,7 @@ fn negamax(
         };
         let factor_c = extension_factor(f64::from(facts.events));
         let priority = sign(mover) * facts.val + facts.swing * factor_c;
+        // Fast-path moves (Extend, no cut, no close) have XBot bonus = 0.
         // A finished child's leaf has 0 events left: the extension vanishes.
         let leaf_factor = if facts.finished { 0.0 } else { factor_c };
         children.push((priority, mv, leaf_factor, facts.swing, facts.finished));
