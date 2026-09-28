@@ -79,3 +79,27 @@ measures the terms, not drift.
   the re-make-aware correction (never fires), mobility (no disease).
 - Not merged to master from this lane; `lane-b-eval` carries the rig, the
   probes, and the evidence.
+
+## Provenance + landing (2026-09-28, this continuation)
+
+Correction to the header line above: the work did NOT live on `lane-b-eval`
+during the session — the continuation session ran in worktree game-e on
+`lane-v7-eval`, died at 429 with the final delta uncommitted, and the main
+session rescued that delta as `e4b7ec5` ("Unreviewed, NOT gated"). This
+continuation fast-forwarded `lane-b-eval` to that commit (its ancestor
+`eb100e9` was the branch tip) and pushed, which makes the header claim true
+as of now.
+
+Re-verification before pushing (same box, byte-identical tree): faithfulness
+**0/239**, gauge **8/8** (blue +53.5, red +69.3), v1 h2h **5/10** (blue
+1/5 -16.7%, red 4/5 +9.2%), league **-9.9%** (collapse -94.5/-94.5/-55.9) —
+every recorded number reproduced exactly.
+
+NEW: the v2 gap the lane left is filled — `probe_b_v3all` (the plan's v1/v2
+gate, 5 openings x 2 colors): **laneB (doom OFF) vs v2 6/10** (blue 1/5
+-6.9%, red 5/5 +23.3%) vs the shipped control's 7/10. So the doom-OFF
+recommendation now has v1 +v2 evidence: +1 on v1 (crosses the plan-v4 ship
+threshold), -1 on v2, +10.1pp league, collapse improved on all three rows,
+gauge equal. The as-Blue chair (0/4 from forced openings vs v1) is
+untouched by everything this lane tested — it needs Lane A depth or a
+different mechanism, not eval terms.

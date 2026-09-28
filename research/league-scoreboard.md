@@ -99,3 +99,23 @@ carry COUNTS — one recent cut and a 4x-re-popped cycle price the same;
 C2 H1's original per-edge cut-counter form discriminates them (needs an
 API change). Confirm harness: `probe_b_farm` (deployed fidelity 60/60 on
 446956a1; act-51/act-113 checks; whole-game scorecard).
+
+## Verification + landing — Lane B final state re-verified on `lane-b-eval` — 2026-09-28
+Provenance: the lane's work lived on `lane-v7-eval` through the 429 death
+(worktree game-e); the main session rescued the final delta as `e4b7ec5`
+("Unreviewed, NOT gated"); this continuation fast-forwarded `lane-b-eval`
+to that commit and re-verified every headline gate on this box before
+pushing — all reproduce the recorded numbers byte-for-byte:
+- faithfulness control **0/239** positions (probe_b_h2h, control vs shipped)
+- gauge **8/8** (blue +53.5, red +69.3 — exact)
+- v1 h2h **5/10** (blue 1/5 -16.7%, red 4/5 +9.2% — exact, probe_b_v3all)
+- league **-9.9%** (collapse rows -94.5/-94.5/-55.9 — exact; genuine blue
+  +29.0, red +39.8)
+NEW evidence (the gap the lane left): **v2 h2h 6/10** (blue 1/5 -6.9%, red
+5/5 sweep +23.3%) via `probe_b_v3all` (the plan's v1/v2 gate) — doom OFF
+beats v1 +1 (4->5, crosses the plan-v4 ship threshold) and gives back -1
+on v2 (7->6); the as-Blue chair from forced openings stays 0/4 vs v1 (the
+open problem, unchanged by every term this lane tested).
+| variant | league avg margin | gauge W-L | one-line verdict |
+|---|---|---|---|
+| lane-b-eval final (doom OFF, VULN 0.0, Rebuild off) | **-9.9%** (shipped control -20.0%) | **8/8** | **VERIFIED merge candidate: remove the doom discount (+10.1pp league, v1 5/10, collapse +16.7/+55.5pp, v2 6/10, chair cost 2/5->1/5); vulnerability/re-make/mobility/shield-expiry/phase terms all REJECTED or SKIPPED with numbers — main session gates the search.rs merge** |
