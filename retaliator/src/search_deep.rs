@@ -710,8 +710,10 @@ pub fn analyze_capped(
                     break;
                 }
                 let stop = Stop::Cpu { started, cap };
-                // Aspiration window centered on previous depth's best evaluation
-                let aspiration_center = analysis.evaluation;
+                // Aspiration window centered on previous depth's best evaluation.
+                // `evaluation` is Blue-relative; the window lives in the
+                // mover's perspective, so convert (matters when mover is Red).
+                let aspiration_center = sign(position.to_move()) * analysis.evaluation;
                 let next = analyze_impl(position, depth, avoid, Some(&stop), width, Some(aspiration_center));
                 nodes += next.nodes;
                 analysis = merge_analyses(next, analysis, nodes);
@@ -726,7 +728,8 @@ pub fn analyze_capped(
                     break;
                 }
                 let stop = Stop::Nodes { used, limit: *limit };
-                let aspiration_center = analysis.evaluation;
+                // Mover-perspective center (see Ms arm): `evaluation` is Blue-relative.
+                let aspiration_center = sign(position.to_move()) * analysis.evaluation;
                 let next = analyze_impl(position, depth, avoid, Some(&stop), width, Some(aspiration_center));
                 used += next.nodes;
                 analysis = merge_analyses(next, analysis, used);
@@ -951,9 +954,10 @@ pub fn analyze_with_avoid(position: &Position, depth: u8, avoid: &[Point]) -> De
 /// root children fit under the cap. `width` caps how many root children are
 /// searched at all; the root list is priority-ordered, so this is the same
 /// "top-N by 1-ply priority" cut the budget makes, but deterministic.
-/// `aspiration` is an optional center value for aspiration window search:
-/// if Some(score), the root search uses a narrow window around that score,
-/// widening on fail high/low until the true value is bracketed.
+/// `aspiration` is an optional center value for aspiration window search,
+/// in the mover's perspective (Blue-relative evaluation times the mover's
+/// sign): if Some(score), the root search uses a narrow window around that
+/// score, widening on fail high/low until the true value is bracketed.
 fn analyze_impl(
     position: &Position,
     depth: u8,
@@ -1058,9 +1062,11 @@ fn analyze_impl(
             candidates,
         };
 
-        // Check if aspiration window succeeded (value within window)
+        // Check if aspiration window succeeded (mover-perspective best value
+        // within the mover-perspective window around the center).
         if let Some(center) = aspiration {
-            if evaluation > center - delta && evaluation < center + delta {
+            let mover_best = sign(mover) * evaluation;
+            if mover_best > center - delta && mover_best < center + delta {
                 return analysis; // Window succeeded
             }
             // Fail high or fail low: widen window and re-search

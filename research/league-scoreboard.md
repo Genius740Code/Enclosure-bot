@@ -50,3 +50,18 @@ Verdict: **REJECTED (over budget; W/L unmeasurable on this box)**. The exact
 draw-check optimization is kept on lane-a-search for future search work; depth
 needs a time-budget/iterative-deepening layer (outside Lane A scope) or a much
 faster box before these gates can run.
+
+## Experiment V7-S-control — Lane S budgeted deployment config (tip 667661b + probe) — 2026-09-28
+Config: `search_deep::best_move_capped(depth 3, Budget::Ms(2000), DEFAULT_WIDTH 8/6)`
+vs three gates (deployment line, NOT the Unbounded full-width form).
+`probe_deep h2h_capped_budget` (vs shipped `search::best_move`, 5 openings x 2 colors = 10):
+- **2/10** (blue 2/5, red 0/5). Red losses catastrophic (511-1646, 1648-4669,
+  1011-4154, 381-1477, 589-4244); blue wins open=None 1243-727, 5589 1452-1246.
+`probe_deep league_capped_budget` (vs scoutbase, skip 0/10/20/30 x 2 colors = 8):
+- AVG margin **-96.4%** (ret perspective). Blue rows win (+37.0/+37.0/-27.7/+45.0);
+  red rows collapse (-129.8/-221.9/-185.2/-325.7).
+`probe_deep gauge_capped_budget` (vs greedy, 6): **6/6** (lines repeat byte-identically).
+Verdict: control recorded. FAILS h2h (needs >=6/10) and league (>-9.9%, no row<-300).
+Red-only collapse + full-window-correct code path implicates the aspiration window:
+center passed Blue-relative into a mover-perspective window (wrong side as Red).
+Next: V7-S0 aspiration-perspective fix, then Q14/Q16/Q6.
