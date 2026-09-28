@@ -120,7 +120,7 @@ ground. Fixed site trajectory, per-action comparison.
 | config | v1 h2h (blue/red) | league (collapse rows, diff) | gauge | notes |
 |---|---|---|---|---|
 | control (no avoid) | 5/10 (1/5 -16.7% / 4/5 +9.2%) | -9.9% (-94.5% -1038 / -94.5% -1038 / -55.9% -472) | 8/8 | baseline, reproduced exactly |
-| mem 12 flat | 4/10 (1/5 -19.6% / 3/5 +7.8%) | **-6.8%** (blue +37.1 x3, +38.9; red -80.5 -901 / -80.5 -901 / -83.5 -664) | pending | league +3.1pp but v1 -1 win (as-red 4864 flips to a loss, as-blue 9199 -804) |
+| mem 12 flat | 4/10 (1/5 -19.6% / 3/5 +7.8%) | **-6.8%** (blue +37.1 x3, +38.9; red -80.5 -901 / -80.5 -901 / -83.5 -664) | 8/8 (blue +52.4, red +69.3) | league +3.1pp but v1 -1 win (as-red 4864 flips to a loss, as-blue 9199 -804); gauge blue -1.1pp |
 
 ## Sweep table
 
