@@ -68,3 +68,26 @@ as-blue chair 2/5 kept) BUT league **-27.3%** (worst) and collapse rows
 **-137.7%** (worst) — non-monotone, no config dominates. 0.5 = the
 v1-threshold alternative for the main session; 0.0 = the league-best
 default. 0.25 untested.
+
+## Experiment X — XBot one_move_potential (Steal 1) — 2026-09-28
+Port XBot's `one_move_potential` (frontier-node pairs within king-step-3,
+one action from closing) as `POT_W * (pot_me - pot_opp) * hz` in full-horizon
+points. Cheap global "about to score" proxy — both sides, every node, not
+triangle-specific like `loop_bonus`. Sweep `POT_W` with doom-OFF base.
+
+| variant | v1 W/L (10 games) | league margin % | gauge W/L (6 games) | laneB missed-closes/game | verdict |
+|---|---|---|---|---|---|
+| POT_W=0.0 (control, doom-OFF) | **5/10** (blue 1/5 -16.7%, red 4/5 +9.2%) | **-9.9%** | **6/6** | 11.56 | baseline |
+| POT_W=0.25 | 3/10 (blue 1/5 -20.4%, red 2/5 -12.3%) | -21.9% | 6/6 | 23.81 | **REJECT** |
+| POT_W=0.5 | 3/10 (blue 1/5 -48.5%, red 2/5 -24.8%) | -34.7% | 6/6 | 72.15 | **REJECT** |
+| POT_W=1.0 | 2/10 (blue 0/5 -169.7%, red 2/5 -23.6%) | -70.0% | 6/6 | 192.75 | **REJECT** |
+| POT_W=2.0 | 0/10 (blue 0/5 -218.0%, red 0/5 -213.0%) | -135.1% | 3/6 | 349.39 | **REJECT** |
+
+All POT_W > 0 strictly worse than control on ALL gates — monotonic
+degradation. v1: 5→3→3→2→0. League: -9.9→-21.9→-34.7→-70.0→-135.1.
+Gauge wins 6/6 at low doses but margins degrade; collapses to 3/6 at 2.0.
+Missed-closes/game rises at every dose (11.6→23.8→72.2→192.8→349.4).
+Term causes over-chasing of node proximity without converting to actual
+closes — bot builds dense clusters that get farmed. **VERDICT: REJECTED**.
+`POT_W` left at 0.0 with provenance comment in `eval_phases.rs`.
+Numbers: `research/lane-x-potential.md`.

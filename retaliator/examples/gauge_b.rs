@@ -13,7 +13,7 @@
 
 #[path = "../src/eval_phases.rs"]
 mod eval_phases;
-use meridian_engine::{Edge, Game, Move, Player, Point, Position};
+use meridian_engine::{Edge, Game, Move, MoveKind, Player, Point, Position};
 
 /// 1-ply greedy: maximize own enclosed area after the move, ties by move id.
 fn greedy(position: &Position) -> Option<Move> {
@@ -51,15 +51,37 @@ fn avoid_points(cuts: &[(u16, Player, Edge)], me: Player, played: u16, mem: usiz
     avoid
 }
 
-fn play_game(laneb_blue: bool, mem: usize, scale: u8) -> (f64, f64, u32, u32) {
+#[derive(Default)]
+struct MissedCloses {
+    laneb_pot_sum: u32,
+    laneb_turns: u32,
+    laneb_closes: u32,
+    greedy_pot_sum: u32,
+    greedy_turns: u32,
+    greedy_closes: u32,
+}
+
+fn play_game(laneb_blue: bool, mem: usize, scale: u8) -> (f64, f64, u32, u32, MissedCloses) {
     let mut game = Game::new();
     let (mut breaks_r, mut breaks_g) = (0u32, 0u32);
     let mut cuts: Vec<(u16, Player, Edge)> = Vec::new();
+    let mut mc = MissedCloses::default();
     while !game.is_over() {
         let to_move = game.position().to_move();
         let played = u16::from(game.position().actions_played());
         let laneb_moves =
             to_move == Player::Blue && laneb_blue || to_move == Player::Red && !laneb_blue;
+        
+        // Track one-move potential at start of turn
+        let pot_me = eval_phases::one_move_potential(game.position(), to_move);
+        if laneb_moves {
+            mc.laneb_pot_sum += pot_me;
+            mc.laneb_turns += 1;
+        } else {
+            mc.greedy_pot_sum += pot_me;
+            mc.greedy_turns += 1;
+        }
+        
         let mv = if laneb_moves {
             if mem == 0 {
                 eval_phases::best_move(game.position())
@@ -83,7 +105,20 @@ fn play_game(laneb_blue: bool, mem: usize, scale: u8) -> (f64, f64, u32, u32) {
             greedy(game.position())
         };
         let Some(mv) = mv else { break };
+        let area_before = game.position().area(to_move).to_f64();
         let oc = game.play(mv).expect("bot moves are legal");
+        let area_after = game.position().area(to_move).to_f64();
+        let gain = area_after - area_before;
+        
+        // Count area-gaining Connect moves as "closes"
+        if oc.kind == MoveKind::Connect && gain > 0.0 {
+            if laneb_moves {
+                mc.laneb_closes += 1;
+            } else {
+                mc.greedy_closes += 1;
+            }
+        }
+        
         if let Some(cut) = oc.broken {
             cuts.push((played, to_move.opponent(), cut));
         }
@@ -97,7 +132,7 @@ fn play_game(laneb_blue: bool, mem: usize, scale: u8) -> (f64, f64, u32, u32) {
     }
     let b = game.position().score(Player::Blue).to_f64();
     let r = game.position().score(Player::Red).to_f64();
-    (b, r, breaks_r, breaks_g)
+    (b, r, breaks_r, breaks_g, mc)
 }
 
 fn main() {
@@ -107,17 +142,25 @@ fn main() {
     let scale: u8 = std::env::var("B3_SCALE").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
     println!("B3 config: mem={mem} scale={scale}");
     let mut wins_r = 0;
+    let mut total_laneb_missed = 0.0;
+    let mut total_greedy_missed = 0.0;
     for g in 0..games {
         let laneb_blue = g % 2 == 0;
         let t = std::time::Instant::now();
-        let (b, r, breaks_r, breaks_g) = play_game(laneb_blue, mem, scale);
+        let (b, r, breaks_r, breaks_g, mc) = play_game(laneb_blue, mem, scale);
         let (rs, gs) = if laneb_blue { (b, r) } else { (r, b) };
         let margin = (rs - gs) / rs * 100.0;
         if rs > gs {
             wins_r += 1;
         }
+        let laneb_avg_pot = if mc.laneb_turns > 0 { mc.laneb_pot_sum as f64 / mc.laneb_turns as f64 } else { 0.0 };
+        let greedy_avg_pot = if mc.greedy_turns > 0 { mc.greedy_pot_sum as f64 / mc.greedy_turns as f64 } else { 0.0 };
+        let laneb_missed = laneb_avg_pot - mc.laneb_closes as f64;
+        let greedy_missed = greedy_avg_pot - mc.greedy_closes as f64;
+        total_laneb_missed += laneb_missed;
+        total_greedy_missed += greedy_missed;
         println!(
-            "game {}: laneb={} blue={:.1} red={:.1} margin={:+.1}% breaks R={} G={} ({:.0}s)",
+            "game {}: laneb={} blue={:.1} red={:.1} margin={:+.1}% breaks R={} G={} | missed: laneb={laneb_missed:.1} greedy={greedy_missed:.1} (pot: laneb={laneb_avg_pot:.1} greedy={greedy_avg_pot:.1}, closes: laneb={} greedy={}) ({:.0}s)",
             g + 1,
             if laneb_blue { "blue" } else { "red" },
             b,
@@ -125,8 +168,11 @@ fn main() {
             margin,
             breaks_r,
             breaks_g,
+            mc.laneb_closes,
+            mc.greedy_closes,
             t.elapsed().as_secs_f64()
         );
     }
     println!("laneb wins: {wins_r}/{games}");
+    println!("==> missed-closes/game: laneb={:.2} greedy={:.2}", total_laneb_missed / games as f64, total_greedy_missed / games as f64);
 }

@@ -171,6 +171,20 @@ const PATIENCE_PENALTY: f64 = 2.0;
 const CLOSE_T: f64 = 3.0;
 const CLOSE_W: f64 = 1.0;
 
+/// XBot one_move_potential weight (Lane X Steal 1): POT_W * (pot_me - pot_opp)
+/// * hz in full-horizon points (area x min(events, 12)). Sweep POT_W.
+/// 0.0 = control (off). Cheap global proxy for "about to score" — counts
+/// unordered pairs of own nodes within Chebyshev distance ≤ 3 (one legal
+/// action could join them). Differs from loop_bonus: global, both sides,
+/// every node, not triangle-specific or first-action-only.
+/// X sweep 2026-09-28 (n=10 v1, n=8 league, n=6 gauge, both colors):
+/// ALL DOSES WORSE than control — monotonic degradation on every gate.
+/// v1: 5/10 → 3/10 → 3/10 → 2/10 → 0/10. League: -9.9% → -21.9% → -34.7% → -70.0% → -135.1%.
+/// Gauge: 6/6 all doses but margins degrade; 2.0 drops to 3/6.
+/// Missed-closes/game rises at every dose. Term causes over-chasing of node
+/// proximity without converting to actual closes. VERDICT: REJECTED.
+const POT_W: f64 = 0.0;
+
 /// B-3 farm-cycle routing: the gain-scaled part of the anti-rebuild
 /// penalty. The flat `REBUILD_PENALTY` is 3.0 x hz = 36 full-horizon points
 /// at hz 12, but the farmed re-close it must beat banks own_gain x hz —
@@ -497,15 +511,20 @@ struct Ranked {
 /// Blue's lead as Scout sees it. Positive favours Blue.
 pub fn evaluate(position: &Position) -> f64 {
     let events_left = f64::from(position.scoring_events_left());
+    let hz = events_left.min(HORIZON);
     let worth = |player| {
         position.score(player).to_f64()
-            + position.area(player).to_f64() * events_left.min(HORIZON)
+            + position.area(player).to_f64() * hz
             + room(position, player) * ROOM_WEIGHT * events_left.min(1.0)
     };
     worth(Player::Blue) - worth(Player::Red)
         + CAPTURE_W
             * (one_edge_nodes(position, Player::Red) as f64
                 - one_edge_nodes(position, Player::Blue) as f64)
+        + POT_W
+            * (one_move_potential(position, Player::Blue) as f64
+                - one_move_potential(position, Player::Red) as f64)
+            * hz
 }
 
 /// The worst one-action pop of `victim`'s area, the total area the enemy
@@ -833,4 +852,23 @@ fn cross(a: Point, b: Point, c: Point) -> i32 {
 /// 1 for Blue and -1 for Red, to turn Blue's lead into the mover's.
 fn sign(player: Player) -> f64 {
     if player == Player::Blue { 1.0 } else { -1.0 }
+}
+
+/// XBot one_move_potential (Steal 1): count unordered pairs of `player`'s nodes
+/// within Chebyshev distance ≤ 3 (a single legal action could join them).
+/// Cheap "about to score" proxy — global, both sides, every node (not triangle-
+/// specific like `loop_bonus`). Returns count of close pairs.
+pub fn one_move_potential(position: &Position, player: Player) -> u32 {
+    let nodes: Vec<Point> = position.nodes(player).iter().collect();
+    let mut count = 0u32;
+    for i in 0..nodes.len() {
+        for j in i + 1..nodes.len() {
+            let dx = (nodes[i].x() - nodes[j].x()).abs();
+            let dy = (nodes[i].y() - nodes[j].y()).abs();
+            if dx <= 3 && dy <= 3 {
+                count += 1;
+            }
+        }
+    }
+    count
 }
