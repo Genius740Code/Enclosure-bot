@@ -729,7 +729,11 @@ fn ranked(
                 // EXTENDING: source is already a shared node (degree >= 2 before the move).
                 // CREATING: target becomes a shared node (will connect to 2+ existing own nodes).
                 // Doses in `unbreak`; OFF (0,0) skips the degree walks entirely.
-                if unbreak.on() {
+                // Form v2 (2026-09-28): non-breaking moves only. v1 rewarded cuts
+                // launched from shared nodes (+w x hz for destroying), which is
+                // not wall-building and flipped fight responses into cuts;
+                // league dose-response was monotone-negative at all v1 doses.
+                if unbreak.on() && outcome.broken.is_none() {
                     if unbreak.extend_w != 0.0 && node_degree(position, mover, mv.source) >= 2 {
                         priority += unbreak.extend_w * hz;
                     }
