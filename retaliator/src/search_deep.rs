@@ -550,6 +550,135 @@ fn length(mv: Move) -> i8 {
     mv.direction.dx().abs().max(mv.direction.dy().abs())
 }
 
+/// This process's CPU time in seconds (utime + stime from `/proc/self/stat`):
+/// the load-independent "native" clock a [`Budget::Ms`] runs on. 10 ms
+/// resolution — plenty for caps of hundreds of milliseconds.
+fn cpu_now() -> f64 {
+    let stat = std::fs::read_to_string("/proc/self/stat").unwrap_or_default();
+    let Some(rest) = stat.rsplit_once(')').map(|(_, rest)| rest) else { return 0.0 };
+    let fields = rest.split_whitespace().collect::<Vec<_>>();
+    // fields[0] is /proc's field 3 (state), so utime is fields[11].
+    let utime: u64 = fields.get(11).and_then(|s| s.parse().ok()).unwrap_or(0);
+    let stime: u64 = fields.get(12).and_then(|s| s.parse().ok()).unwrap_or(0);
+    (utime + stime) as f64 / 100.0
+}
+
+/// A per-move budget for [`analyze_with_budget`].
+pub enum Budget {
+    /// Native CPU milliseconds, soft: a new depth starts only while under the
+    /// cap, and a running depth additionally stops between root children once
+    /// the cap is spent (partial, priority-ordered root coverage — the same
+    /// shape as a width-capped search). NOT deterministic across runs.
+    Ms(u64),
+    /// Total nodes across iterations, checked between root children:
+    /// deterministic — the same budget searches the same tree every time.
+    Nodes(u64),
+    /// No budget: the full depth, complete root coverage. The gates run this.
+    Unbounded,
+}
+
+/// The deployment default: 2000 ms native per move.
+pub const DEFAULT_BUD_MS: u64 = 2000;
+
+/// When a running search stops: the root loop checks between children.
+enum Stop {
+    Cpu { started: f64, cap: f64 },
+    Nodes { used: u64, limit: u64 },
+}
+
+impl Stop {
+    fn exceeded(&self, ctx: &Ctx) -> bool {
+        match self {
+            Stop::Cpu { started, cap } => cpu_now() - started >= *cap,
+            Stop::Nodes { used, limit } => used + ctx.nodes >= *limit,
+        }
+    }
+}
+
+/// Keep the deeper iteration's candidates, filling root moves it did not
+/// reach from the shallower one. Deeper values are the informed ones;
+/// shallower values only fill gaps, so a budget that reaches few root
+/// children degrades towards the previous depth rather than to noise.
+fn merge_analyses(mut deeper: DeepAnalysis, shallower: DeepAnalysis, nodes: u64) -> DeepAnalysis {
+    let have: std::collections::HashSet<usize> =
+        deeper.candidates.iter().map(|c| c.mv.index()).collect();
+    for candidate in shallower.candidates {
+        if !have.contains(&candidate.mv.index()) {
+            deeper.candidates.push(candidate);
+        }
+    }
+    deeper
+        .candidates
+        .sort_by(|a, b| b.evaluation.total_cmp(&a.evaluation).then(a.mv.index().cmp(&b.mv.index())));
+    if let Some(best) = deeper.candidates.first() {
+        deeper.evaluation = best.evaluation;
+    }
+    deeper.nodes = nodes;
+    deeper
+}
+
+/// Iterative deepening under a budget: depth 1, 2, ..., `max_depth`, keeping
+/// the deepest analysis that completed (or, under `Ms`, the deepest whose
+/// root loop got at least one child in).
+pub fn analyze_with_budget(
+    position: &Position,
+    max_depth: u8,
+    avoid: &[Point],
+    budget: &Budget,
+) -> DeepAnalysis {
+    match budget {
+        Budget::Unbounded => analyze_with_avoid(position, max_depth, avoid),
+        Budget::Ms(cap_ms) => {
+            let started = cpu_now();
+            let cap = *cap_ms as f64 / 1000.0;
+            let mut analysis = analyze_impl(position, 1, avoid, None);
+            let mut nodes = analysis.nodes;
+            for depth in 2..=max_depth {
+                if cpu_now() - started >= cap {
+                    break;
+                }
+                let stop = Stop::Cpu { started, cap };
+                let next = analyze_impl(position, depth, avoid, Some(&stop));
+                nodes += next.nodes;
+                analysis = merge_analyses(next, analysis, nodes);
+            }
+            analysis
+        }
+        Budget::Nodes(limit) => {
+            let mut analysis = analyze_impl(position, 1, avoid, None);
+            let mut used = analysis.nodes;
+            for depth in 2..=max_depth {
+                if used >= *limit {
+                    break;
+                }
+                let stop = Stop::Nodes { used, limit: *limit };
+                let next = analyze_impl(position, depth, avoid, Some(&stop));
+                used += next.nodes;
+                analysis = merge_analyses(next, analysis, used);
+            }
+            analysis
+        }
+    }
+}
+
+/// Like [`best_move_with_avoid`], but under a [`Budget`] with iterative
+/// deepening: the deployment path. `Budget::Ms(DEFAULT_BUD_MS)` holds a
+/// ~2 s/move native line even where full depth 3 does not fit.
+pub fn best_move_with_budget(
+    position: &Position,
+    max_depth: u8,
+    avoid: &[Point],
+    budget: &Budget,
+) -> Option<Move> {
+    if let Some(open) = blue_opener(position) {
+        return Some(open);
+    }
+    analyze_with_budget(position, max_depth, avoid, budget)
+        .candidates
+        .first()
+        .map(|c| c.mv)
+}
+
 /// For a first action the second can close into a triangle: the room it adds, up to that
 /// triangle's area, for the scoring events left.
 fn loop_bonus(position: &Position, mv: Move, after: &Position, room_before: f64) -> f64 {
@@ -716,6 +845,14 @@ pub fn analyze(position: &Position, depth: u8) -> DeepAnalysis {
 }
 
 pub fn analyze_with_avoid(position: &Position, depth: u8, avoid: &[Point]) -> DeepAnalysis {
+    analyze_impl(position, depth, avoid, None)
+}
+
+/// The analysis itself. `stop` is the budget's root-level checkpoint: the
+/// root loop checks between children (the first always runs), so a budgeted
+/// search keeps the deepest completed iteration's full work plus whatever
+/// root children fit under the cap.
+fn analyze_impl(position: &Position, depth: u8, avoid: &[Point], stop: Option<&Stop>) -> DeepAnalysis {
     let mover = position.to_move();
     let opp = mover.opponent();
     let mut ctx = Ctx::new();
@@ -723,7 +860,10 @@ pub fn analyze_with_avoid(position: &Position, depth: u8, avoid: &[Point]) -> De
     let mut scored: Vec<(f64, DeepCandidate)> = Vec::with_capacity(root.len());
     let mut alpha = f64::NEG_INFINITY;
 
-    for Ranked { mv, after, priority, .. } in root {
+    for (searched, Ranked { mv, after, priority, .. }) in root.into_iter().enumerate() {
+        if searched > 0 && stop.is_some_and(|stop| stop.exceeded(&ctx)) {
+            break;
+        }
         let before_nodes = ctx.nodes;
         // The root's accumulated extension is zero (no plies above), so the
         // child's value at depth 1 is exactly its priority.
