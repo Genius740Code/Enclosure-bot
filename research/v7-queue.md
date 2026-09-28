@@ -240,3 +240,15 @@ Gate: nodes/position drops > 10% vs standard alpha-beta, value-exact.
 5. **Q17 (PVS)** — marginal gain, last
 
 Each would be a separate dose-swept gate (nodes/position, value-exact, gauge/h2h).
+
+## Q18 (USER 2026-09-28): Symmetry pruning in perfectly symmetric positions
+"In a perfectly symmetric position, a move left or right is the same — no need to calculate twice."
+
+- Enclosure board (19×19) has rotational and reflection symmetries. At game start and many early/mid positions, the position is perfectly symmetric under 180° rotation (Blue ↔ Red swap + board flip).
+- In symmetric positions: moves related by symmetry are **value-equivalent**. Evaluating one suffices; the other gets the same score by symmetry.
+- Implementation: detect symmetry class of position (full symmetry, rotational only, reflection only, none). For each symmetry orbit of moves, evaluate **one representative**, assign its score to all symmetric siblings.
+- Savings: up to 2–4× fewer evaluations in symmetric phases (early game, mirrored mid-game). Zero cost in asymmetric positions.
+- Must respect deterministic tiebreak: if symmetric moves tie, pick by canonical ordering (lowest move id) — already the rule.
+- Composes with move ordering: only order/evaluate representatives; expand scores to siblings after.
+- Gate: nodes/position drops in symmetric positions with zero value change on bench 596.
+- Composes with Q14 (move ordering): representatives ordered by XBot priority, then symmetry-expanded.
