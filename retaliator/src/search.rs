@@ -104,7 +104,8 @@ const DENSE_BONUS: f64 = 1.0;
 /// capped horizon, is subtracted at selection. Doomed megaloops net to ~0,
 /// so the bot builds split/remote/dense ground instead of one big grazeable
 /// balloon. Computed only where the enemy is to move (their legal set).
-const DOOM_W: f64 = 1.0;
+/// Lane O test: increased to 2.5 for stronger vulnerability pricing
+const DOOM_W: f64 = 2.5;
 /// Capture exposure: nodes held by a single edge can be captured outright.
 /// Counts ours vs theirs; each such node is a discrete, hard-to-reverse
 /// swing, so it prices higher than a generic edge.
