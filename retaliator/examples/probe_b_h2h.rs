@@ -23,6 +23,22 @@ fn play(mut game: Game, a_blue: bool, a: fn(&Position) -> Option<Move>, b: fn(&P
 }
 fn wra(f: fn(&Position) -> Option<Move>) -> fn(&Position) -> Option<Move> { f }
 
+std::thread_local! {
+    static UNBREAK_DOSE: std::cell::RefCell<(f64, f64)> = std::cell::RefCell::new((0.0, 0.0));
+}
+
+/// Variant picker for `E_UNBREAK=e,c`: the Q2 dose via a thread-local
+/// (fn pointers can't close over the parsed dose). Deterministic: the
+/// dose is fixed before the games start, tiebreaks still by move index.
+fn unbreak_pick(position: &Position) -> Option<Move> {
+    let (e, c) = UNBREAK_DOSE.with(|d| *d.borrow());
+    eval_phases::unbreak_best_move_with_avoid(
+        position,
+        &[],
+        eval_phases::Unbreak { extend_w: e, create_w: c },
+    )
+}
+
 fn main() {
     // Faithfulness: control (term OFF) vs shipped search, position for
     // position, over a scoutbase self-play game from the empty start and one
@@ -56,7 +72,21 @@ fn main() {
         return;
     }
 
-    let laneb = wra(eval_phases::best_move);
+    let laneb: fn(&Position) -> Option<Move> = match std::env::var("E_UNBREAK") {
+        Ok(v) => {
+            let mut it = v.split(',');
+            let e: f64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0.0);
+            let c: f64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0.0);
+            println!("laneE Q2 config: E_UNBREAK extend={e} create={c}");
+            // fn pointer can't close over dose; route through a thread-local.
+            UNBREAK_DOSE.with(|d| *d.borrow_mut() = (e, c));
+            unbreak_pick
+        }
+        Err(_) => {
+            println!("laneE Q2 config: control (doom-OFF best_move)");
+            wra(eval_phases::best_move)
+        }
+    };
     let shipped = wra(retaliator::search::best_move);
     let (mut w, mut n) = (0, 0);
     let (mut wb, mut nb, mut wr, mut nr) = (0, 0, 0, 0);

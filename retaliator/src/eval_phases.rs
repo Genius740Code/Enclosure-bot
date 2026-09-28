@@ -115,16 +115,50 @@ const DENSE_DIST: i8 = 1;
 const DENSE_COUNT: u32 = 2;
 const DENSE_BONUS: f64 = 1.0;
 
-/// Unbreakable-shape building (Lane E v7): rivals win by making walls that
-/// share nodes along their length (2+ touches = no legal cut — v4 already
-/// avoids cutting there). Mirror term: bonus for OUR first actions that
-/// EXTEND shared-node walls / create 2+ touch thickets for us.
+/// Unbreakable-shape building (Lane E v7 Q2): rivals win by making walls
+/// that share nodes along their length (2+ touches = no legal cut — v4
+/// already avoids cutting there). Mirror term: bonus for OUR first actions
+/// that EXTEND shared-node walls / create 2+ touch thickets for us.
 /// - A "shared node" = one of our nodes with degree >= 2 (a junction in our wall network).
 /// - EXTENDING: the move's source is already a shared node (degree >= 2 before the move).
 /// - CREATING: the move's target becomes a shared node (connects to 2+ existing own nodes).
-/// Full-horizon units (area x min(events, 12)), deterministic tiebreak by move index.
-const EXTEND_SHARED_W: f64 = 1.0;
-const CREATE_SHARED_W: f64 = 1.0;
+/// Full-horizon units (x hz = area x min(events,12)), deterministic tiebreak
+/// by move index. Doses swept per gate via `E_UNBREAK`; (0,0) = OFF = the
+/// doom-OFF control. The rescued pre-429 dose was extend=1.0/create=1.0.
+/// NOTE: CREATE overlaps the shipped DENSE_BONUS (target near 2+ own nodes)
+/// but is strictly topological — an actual junction created, not proximity;
+/// EXTEND has no shipped counterpart. Swept separately (extend-only,
+/// create-only) before any joint dose.
+
+/// Q2 dose under test: the two unbreakable-shape weights. (0,0) = OFF.
+#[derive(Clone, Copy, PartialEq)]
+pub struct Unbreak {
+    pub extend_w: f64,
+    pub create_w: f64,
+}
+
+impl Unbreak {
+    /// OFF: the doom-OFF control (byte-identical).
+    pub const OFF: Self = Self { extend_w: 0.0, create_w: 0.0 };
+    /// Parse the `E_UNBREAK` probe env ("extend,create", e.g. "1,1").
+    /// Absent/unparseable = OFF (probe defaults stay the control).
+    pub fn from_env() -> Self {
+        match std::env::var("E_UNBREAK") {
+            Ok(v) => {
+                let mut it = v.split(',');
+                match (it.next().and_then(|s| s.parse().ok()), it.next().and_then(|s| s.parse().ok())) {
+                    (Some(e), Some(c)) => Self { extend_w: e, create_w: c },
+                    _ => Self::OFF,
+                }
+            }
+            Err(_) => Self::OFF,
+        }
+    }
+    /// Whether either weight is non-zero (the term fires at all).
+    pub fn on(self) -> bool {
+        self.extend_w != 0.0 || self.create_w != 0.0
+    }
+}
 
 /// Cut-threat steal (rival-analysis #3: GB's cut bonus / spacebot's cut-threat
 /// model): at each leaf, prefer moves that cut high-value enemy edges and
@@ -330,7 +364,18 @@ pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move
     // the gate defaults stay the published doom-OFF control, and this path
     // keeps the shipped routing semantics (flat penalty) for any avoid set
     // the caller passes.
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, false, false)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false)
+}
+
+/// The Lane E v7 Q2 term under test: the doom-OFF control plus the
+/// unbreakable-shape building bonus in dose `u` (see [`Unbreak`]). The avoid
+/// set is the caller's; the gate probes sweep doses via `E_UNBREAK`.
+pub fn unbreak_best_move_with_avoid(
+    position: &Position,
+    avoid: &[Point],
+    u: Unbreak,
+) -> Option<Move> {
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, u, false)
 }
 
 /// The B-3 term under test: the shipped anti-rebuild routing plus the
@@ -342,7 +387,7 @@ pub fn farm_best_move_with_avoid(
     avoid: &[Point],
     form: Rebuild,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, false, false)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, Unbreak::OFF, false)
 }
 
 /// The shipped `search::best_move` exactly: the doom discount ON, no added
@@ -351,7 +396,7 @@ pub fn farm_best_move_with_avoid(
 /// the gate keeps per-example dead-code quiet.)
 #[allow(dead_code)]
 pub fn baseline_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, false, false)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, Unbreak::OFF, false)
 }
 
 /// The CLOSE_B2 ablation control: doom OFF (the B-2 recommendation) with the
@@ -360,7 +405,7 @@ pub fn baseline_best_move(position: &Position) -> Option<Move> {
 /// term alone.
 #[allow(dead_code)]
 pub fn ablation_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, false, false)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, Unbreak::OFF, false)
 }
 
 /// The skeleton's selection loop, with the doom discount and the added terms
@@ -375,7 +420,7 @@ fn best_move_features(
     doom: bool,
     close: bool,
     rebuild: Rebuild,
-    unbreakable: bool,
+    unbreak: Unbreak,
     cut_threat: bool,
 ) -> Option<Move> {
     if let Some(open) = blue_opener(position) {
@@ -384,7 +429,7 @@ fn best_move_features(
     let mover = position.to_move();
     let opp = mover.opponent();
     let budget = budget.clamp(SMALLEST_BUDGET, MOVE_BUDGET);
-    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild, unbreakable, cut_threat);
+    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild, unbreak, cut_threat);
     let nodes = first_actions.len();
     let width = first_actions.len().min(WIDTH);
     let reply_budget = (budget - nodes) / width.max(1);
@@ -392,7 +437,7 @@ fn best_move_features(
     // (adjusted score for ordering, the move it belongs to).
     let mut scored: Vec<(f64, Move)> = Vec::new();
     for (mv, after, _, _) in first_actions.into_iter().take(width) {
-        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off, false, false);
+        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off, Unbreak::OFF, false);
         let mut pv = vec![mv];
         let mut evaluation = value(&after);
         if let Some((reply, _, reply_value, _)) = replies.first() {
@@ -632,7 +677,7 @@ fn ranked(
     avoid: &[Point],
     close: bool,
     rebuild: Rebuild,
-    unbreakable: bool,
+    unbreak: Unbreak,
     cut_threat: bool,
 ) -> Vec<(Move, Position, f64, f64)> {
     let mover = position.to_move();
@@ -679,18 +724,19 @@ fn ranked(
                 if near_own_count(position, mover, target) >= DENSE_COUNT {
                     priority += DENSE_BONUS * hz;
                 }
-                // Unbreakable-shape building (Lane E v7): extend shared-node walls /
+                // Unbreakable-shape building (Lane E v7 Q2): extend shared-node walls /
                 // create 2+ touch thickets. A "shared node" = our node with degree >= 2.
                 // EXTENDING: source is already a shared node (degree >= 2 before the move).
                 // CREATING: target becomes a shared node (will connect to 2+ existing own nodes).
-                if unbreakable {
-                    let src_deg = node_degree(position, mover, mv.source);
-                    let tgt_deg_after = node_degree(&after, mover, target);
-                    if src_deg >= 2 {
-                        priority += EXTEND_SHARED_W * hz;
+                // Doses in `unbreak`; OFF (0,0) skips the degree walks entirely.
+                if unbreak.on() {
+                    if unbreak.extend_w != 0.0 && node_degree(position, mover, mv.source) >= 2 {
+                        priority += unbreak.extend_w * hz;
                     }
-                    if tgt_deg_after >= 2 {
-                        priority += CREATE_SHARED_W * hz;
+                    if unbreak.create_w != 0.0
+                        && node_degree(&after, mover, target) >= 2
+                    {
+                        priority += unbreak.create_w * hz;
                     }
                 }
                 // Cut-threat steal (rival-analysis #3: GB's cut bonus / spacebot):
