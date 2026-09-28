@@ -261,6 +261,51 @@ fn profile(iterations: usize) {
     println!("  branching b = {b}");
 }
 
+/// Fast-path exactness (no args): walks a baseline self-play game and, at
+/// every position, compares every legal move's fast [`ChildFacts`] against a
+/// real clone+apply. The fast path claims the engine would change no area;
+/// any move where it would show up here as an f64 bit mismatch.
+fn exact() {
+    let mut game = Game::new();
+    let (mut fast, mut slow, mut mismatches) = (0usize, 0usize, 0usize);
+    loop {
+        let pos = game.position().clone();
+        let mover = pos.to_move();
+        for mv in pos.legal_moves().iter() {
+            let danger = retaliator::search_deep::source_danger(&pos, mv.source);
+            match retaliator::search_deep::child_facts(&pos, mv, danger) {
+                Some(facts) => {
+                    fast += 1;
+                    let mut after = pos.clone();
+                    let outcome = after.apply_unchecked(mv);
+                    let gained = (after.area(mover).to_f64() - pos.area(mover).to_f64()).max(0.0);
+                    let destroyed =
+                        (pos.area(mover.opponent()).to_f64() - after.area(mover.opponent()).to_f64()).max(0.0);
+                    let banked = pos.actions_played() % 2 == 0 || after.is_finished();
+                    let ok = retaliator::search_deep::cheap_value(&after).to_bits() == facts.val.to_bits()
+                        && (gained + destroyed).to_bits() == facts.swing.to_bits()
+                        && after.is_finished() == facts.finished
+                        && after.scoring_events_left() == facts.events
+                        && outcome.scored.is_some() == banked;
+                    if !ok {
+                        mismatches += 1;
+                        println!("MISMATCH t={} mv={mv:?} fast={facts:?} after val={}", pos.actions_played(), retaliator::search_deep::cheap_value(&after));
+                    }
+                }
+                None => slow += 1,
+            }
+        }
+        if game.is_over() {
+            break;
+        }
+        let mv = base(game.position()).unwrap();
+        game.play(mv).unwrap();
+    }
+    println!(
+        "== exact: {fast} fast children bit-identical to clone+apply, {slow} materialized, {mismatches} mismatches =="
+    );
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mode = args.get(1).cloned().unwrap_or_else(|| "all".into());
@@ -276,6 +321,7 @@ fn main() {
         }
         "gauge" => gauge(n1.unwrap_or(6)),
         "verify" => verify(),
+        "exact" => exact(),
         "bench" => bench(n1.unwrap_or(1)),
         "profile" => profile(n1.unwrap_or(20000)),
         _ => {

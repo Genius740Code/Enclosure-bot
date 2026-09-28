@@ -39,8 +39,12 @@
 //!   view where that view is all it has.
 
 use std::cmp::Reverse;
+use std::sync::OnceLock;
 
-use meridian_engine::{Move, MoveKind, Outcome, Player, Point, Position};
+use meridian_engine::{Area, Edge, Move, MoveKind, Outcome, Player, Point, Position, Score};
+
+/// The game's action count (engine `position::TOTAL_ACTIONS`, not re-exported).
+const TOTAL_ACTIONS: u8 = 120;
 
 // ---------------------------------------------------------------------------
 // Evaluation — verbatim from `search.rs` except where noted.
@@ -363,11 +367,181 @@ pub fn repeats_a_connection(position: &Position, mv: Move) -> bool {
 /// draw check — the parts that dominate per-node cost at depth. The full
 /// [`evaluate`] runs at the root and the first ply only.
 pub fn cheap_value(position: &Position) -> f64 {
-    let events_left = f64::from(position.scoring_events_left());
-    let worth = |player| {
-        position.score(player).to_f64() + position.area(player).to_f64() * events_left.min(HORIZON)
-    };
-    worth(Player::Blue) - worth(Player::Red)
+    cheap_parts(
+        position.score(Player::Blue),
+        position.score(Player::Red),
+        position.area(Player::Blue),
+        position.area(Player::Red),
+        position.scoring_events_left(),
+    )
+}
+
+/// [`cheap_value`] from parts, so the apply-free fast path below and the
+/// materialized path agree bit for bit: same expression shape, same rounding.
+fn cheap_parts(score_b: Score, score_r: Score, area_b: Area, area_r: Area, events_left: u8) -> f64 {
+    let events_left = f64::from(events_left);
+    let worth = |score: Score, area: Area| score.to_f64() + area.to_f64() * events_left.min(HORIZON);
+    worth(score_b, area_b) - worth(score_r, area_r)
+}
+
+// ---------------------------------------------------------------------------
+// Fast children — apply-free evaluation of moves that cannot change an area.
+//
+// `Position::apply_unchecked` only recomputes an area in two cases: the move
+// cuts an enemy edge (removing it can only shrink that area) or it may close
+// a loop of the mover's (a connect, or an edge crossing one of the mover's
+// edges away from its ends). Every other child keeps both areas, so its
+// scores (banked at turn ends from unchanged areas) and its cheap value are
+// pure arithmetic. Deciding which case a move is in needs the engine's own
+// "shares a point" test, so it is copied verbatim below and precomputed into
+// a directions bitmask per edge origin offset — the same trick the engine's
+// own tables use, so the classification is exact, not an approximation.
+// ---------------------------------------------------------------------------
+
+/// The king-step reach of a move (the engine's window is 7 x 7).
+const REACH: i32 = 3;
+/// How far an edge's origin can be from a move's source and still touch it.
+const NEARBY: i32 = 2 * REACH;
+const NEARBY_SIDE: usize = (2 * NEARBY + 1) as usize;
+const NUM_CANONICAL: usize = meridian_engine::geometry::NUM_CANONICAL_DIRECTIONS;
+
+/// Twice the signed area of `a` x `b`.
+fn seg_cross(ax: i32, ay: i32, bx: i32, by: i32) -> i32 {
+    ax * by - ay * bx
+}
+
+/// Which side of the line through `a` and `b` the point `p` is on.
+fn seg_side(ax: i32, ay: i32, bx: i32, by: i32, px: i32, py: i32) -> i32 {
+    seg_cross(bx - ax, by - ay, px - ax, py - ay).signum()
+}
+
+/// For a point `p` on the line through `a` and `b`: whether it lies between them.
+fn seg_within(ax: i32, ay: i32, bx: i32, by: i32, px: i32, py: i32) -> bool {
+    px >= ax.min(bx) && px <= ax.max(bx) && py >= ay.min(by) && py <= ay.max(by)
+}
+
+/// Whether the segments `ab` and `cd` share a point, ends included. The
+/// engine's own `segments_touch` (vendor/meridian-bot-kit/engine/src/geometry.rs),
+/// on plain coordinates; the fast/slow decision below must classify exactly
+/// what `Position::apply_unchecked` treats as a cut or a crossing.
+fn segments_touch(ax: i32, ay: i32, bx: i32, by: i32, cx: i32, cy: i32, dx: i32, dy: i32) -> bool {
+    let (c_side, d_side) = (seg_side(ax, ay, bx, by, cx, cy), seg_side(ax, ay, bx, by, dx, dy));
+    let (a_side, b_side) = (seg_side(cx, cy, dx, dy, ax, ay), seg_side(cx, cy, dx, dy, bx, by));
+    if c_side != d_side && a_side != b_side {
+        return true;
+    }
+    (c_side == 0 && seg_within(ax, ay, bx, by, cx, cy))
+        || (d_side == 0 && seg_within(ax, ay, bx, by, dx, dy))
+        || (a_side == 0 && seg_within(cx, cy, dx, dy, ax, ay))
+        || (b_side == 0 && seg_within(cx, cy, dx, dy, bx, by))
+}
+
+/// `masks[(oy + NEARBY) * side + (ox + NEARBY)][canonical]`: the bitmask of
+/// candidate directions (bit = `Direction::index`) whose segment from the
+/// source shares a point with the edge from `(ox, oy)` in `canonical`.
+/// One process-wide build: 13 x 13 offsets x 24 canonical x 48 candidates.
+fn touch_masks() -> &'static Box<[u64; NEARBY_SIDE * NEARBY_SIDE * NUM_CANONICAL]> {
+    static MASKS: OnceLock<Box<[u64; NEARBY_SIDE * NEARBY_SIDE * NUM_CANONICAL]>> = OnceLock::new();
+    MASKS.get_or_init(|| {
+        let mut masks = Box::new([0u64; NEARBY_SIDE * NEARBY_SIDE * NUM_CANONICAL]);
+        for oy in -NEARBY..=NEARBY {
+            for ox in -NEARBY..=NEARBY {
+                for canonical in meridian_engine::geometry::Direction::all()
+                    .filter(|direction| direction.is_canonical())
+                {
+                    let (cdx, cdy) = (i32::from(canonical.dx()), i32::from(canonical.dy()));
+                    let mut mask = 0u64;
+                    for candidate in meridian_engine::geometry::Direction::all() {
+                        let (dx, dy) = (i32::from(candidate.dx()), i32::from(candidate.dy()));
+                        if segments_touch(0, 0, dx, dy, ox, oy, ox + cdx, oy + cdy) {
+                            mask |= 1 << candidate.index();
+                        }
+                    }
+                    let index = ((oy + NEARBY) as usize * NEARBY_SIDE + (ox + NEARBY) as usize)
+                        * NUM_CANONICAL
+                        + (canonical.index() - meridian_engine::geometry::NUM_DIRECTIONS / 2);
+                    masks[index] = mask;
+                }
+            }
+        }
+        masks
+    })
+}
+
+/// The directions from `source` whose move shares a point with `edge`.
+fn touching_directions(source: Point, edge: Edge) -> u64 {
+    let ox = i32::from(edge.origin().x()) - i32::from(source.x());
+    let oy = i32::from(edge.origin().y()) - i32::from(source.y());
+    if ox.abs() > NEARBY || oy.abs() > NEARBY {
+        return 0;
+    }
+    let index = (oy + NEARBY) as usize * NEARBY_SIDE * NUM_CANONICAL
+        + (ox + NEARBY) as usize * NUM_CANONICAL
+        + (edge.canonical_direction().index() - meridian_engine::geometry::NUM_DIRECTIONS / 2);
+    touch_masks()[index]
+}
+
+/// The directions from `source` that need the engine, not arithmetic: any
+/// enemy edge they touch is cut (that area can shrink), and any own edge they
+/// touch away from `source` can close a loop (that area can grow). Edges with
+/// `source` as an endpoint always "touch" but never do either.
+pub fn source_danger(position: &Position, source: Point) -> u64 {
+    let mover = position.to_move();
+    let mut mask = 0u64;
+    for edge in position.edges(mover).iter() {
+        if !edge.has_endpoint(source) {
+            mask |= touching_directions(source, edge);
+        }
+    }
+    for edge in position.edges(mover.opponent()).iter() {
+        mask |= touching_directions(source, edge);
+    }
+    mask
+}
+
+/// The 1-ply facts of a child the ordering pass needs: the cheap value after
+/// the move, the area swing (own gained + enemy destroyed), whether the game
+/// ends, and the scoring events left. Pure arithmetic for moves that cannot
+/// change an area; everything else is materialized through the engine.
+#[derive(Debug)]
+pub struct ChildFacts {
+    pub val: f64,
+    pub swing: f64,
+    pub finished: bool,
+    pub events: u8,
+}
+
+/// [`ChildFacts`] for `mv` from `position`, given `source_danger`'s mask for
+/// `mv.source`. `None` when the move must be materialized: it connects or
+/// captures (kind), cuts, or may close a loop.
+pub fn child_facts(position: &Position, mv: Move, danger: u64) -> Option<ChildFacts> {
+    let target = mv.target().expect("legal moves end on the board");
+    if position.node_owner(target).is_some() || danger >> mv.direction.index() & 1 != 0 {
+        return None;
+    }
+    // No cut, no loop close: `apply_unchecked` would only bank scores at the
+    // turn end (or game end) from unchanged areas, and advance the clock.
+    let actions = position.actions_played() + 1;
+    let finished = actions >= TOTAL_ACTIONS;
+    let events = if finished { 0 } else { (TOTAL_ACTIONS - actions) / 2 + 1 };
+    let banked = actions % 2 == 1 || finished;
+    let (mut score_b, mut score_r) = (position.score(Player::Blue), position.score(Player::Red));
+    if banked {
+        score_b += position.area(Player::Blue);
+        score_r += position.area(Player::Red);
+    }
+    Some(ChildFacts {
+        val: cheap_parts(
+            score_b,
+            score_r,
+            position.area(Player::Blue),
+            position.area(Player::Red),
+            events,
+        ),
+        swing: 0.0,
+        finished,
+        events,
+    })
 }
 
 fn length(mv: Move) -> i8 {
@@ -556,8 +730,9 @@ fn negamax(
         let events = f64::from(pos.scoring_events_left());
         return sign(mover) * cheap_value(pos) + sign(mover) * ext * extension_factor(events);
     }
+    let moves = pos.legal_moves();
     let legal: Vec<Move> =
-        pos.legal_moves().iter().filter(|&mv| !repeats_a_connection(pos, mv)).collect();
+        moves.iter().filter(|&mv| !repeats_a_connection(pos, mv)).collect();
     if legal.is_empty() {
         ctx.pv_len[ply] = 0;
         // The game is a draw: the static part is 0, the line's extension counts.
@@ -579,21 +754,38 @@ fn negamax(
     // Stalemate (a live leaf where the mover has no legal move) is the one
     // exactness loss: `value` scores it 0, `cheap_value` scores the material.
     // Interior nodes still catch it exactly via their own movegen.
+    //
+    // Children that cannot change an area — the large majority: no cut, no
+    // loop close — are arithmetic (see [`child_facts`]); only the rest pay
+    // for a clone and an apply.
+    let mut danger = [0u64; meridian_engine::geometry::NUM_POINTS];
+    for (source, _) in moves.by_source() {
+        danger[source.index()] = source_danger(pos, source);
+    }
     let mut children: Vec<(f64, Move, f64, f64, bool)> = Vec::with_capacity(legal.len());
     for mv in legal {
-        let mut after = pos.clone();
-        after.apply_unchecked(mv);
-        let val = cheap_value(&after);
-        let gained = (after.area(mover).to_f64() - pos.area(mover).to_f64()).max(0.0);
-        let destroyed =
-            (pos.area(mover.opponent()).to_f64() - after.area(mover.opponent()).to_f64()).max(0.0);
-        let factor_c = extension_factor(f64::from(after.scoring_events_left()));
-        let finished = after.is_finished();
-        let priority = sign(mover) * val + (gained + destroyed) * factor_c;
+        let Some(facts) = child_facts(pos, mv, danger[mv.source.index()]) else {
+            // This child needs the engine: it connects or captures, cuts an
+            // enemy edge, or may close a loop of the mover's.
+            let mut after = pos.clone();
+            after.apply_unchecked(mv);
+            let gained = (after.area(mover).to_f64() - pos.area(mover).to_f64()).max(0.0);
+            let destroyed =
+                (pos.area(mover.opponent()).to_f64() - after.area(mover.opponent()).to_f64()).max(0.0);
+            let swing = gained + destroyed;
+            let finished = after.is_finished();
+            let factor_c = extension_factor(f64::from(after.scoring_events_left()));
+            let priority = sign(mover) * cheap_value(&after) + swing * factor_c;
+            // A finished child's leaf has 0 events left: the extension vanishes.
+            let leaf_factor = if finished { 0.0 } else { factor_c };
+            children.push((priority, mv, leaf_factor, swing, finished));
+            continue;
+        };
+        let factor_c = extension_factor(f64::from(facts.events));
+        let priority = sign(mover) * facts.val + facts.swing * factor_c;
         // A finished child's leaf has 0 events left: the extension vanishes.
-        let leaf_factor = if finished { 0.0 } else { factor_c };
-        let swing = gained + destroyed;
-        children.push((priority, mv, leaf_factor, swing, finished));
+        let leaf_factor = if facts.finished { 0.0 } else { factor_c };
+        children.push((priority, mv, leaf_factor, facts.swing, facts.finished));
     }
     children.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.index().cmp(&b.1.index())));
 
