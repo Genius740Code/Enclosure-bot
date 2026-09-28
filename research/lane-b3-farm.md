@@ -137,7 +137,7 @@ ground. Fixed site trajectory, per-action comparison.
 |---|---|---|---|---|
 | control (no avoid) | 5/10 (1/5 -16.7% / 4/5 +9.2%) | -9.9% (-94.5% -1038 / -94.5% -1038 / -55.9% -472) | 8/8 | baseline, reproduced exactly |
 | mem 12 flat | 4/10 (1/5 -19.6% / 3/5 +7.8%) | **-6.8%** (blue +37.1 x3, +38.9; red -80.5 -901 / -80.5 -901 / -83.5 -664) | 8/8 (blue +52.4, red +69.3) | league +3.1pp but v1 -1 win (as-red 4864 flips to a loss, as-blue 9199 -804); gauge blue -1.1pp |
-| mem 20 flat | pending | -9.3% (blue +30.4 x3, +38.9; red rows identical to mem 12: -901 / -901 / -664) | pending | league +0.6pp only — blue-row improvement is non-monotone in memory (mem 12 +37.1 > mem 20 +30.4 > ctrl +29.0); red collapse rows identical mem 12/20 |
+| mem 20 flat | 4/10 (1/5 -19.7% / 3/5 +7.8%) | -9.3% (blue +30.4 x3, +38.9; red rows identical to mem 12: -901 / -901 / -664) | pending | league +0.6pp only — blue-row improvement is non-monotone in memory (mem 12 +37.1 > mem 20 +30.4 > ctrl +29.0); red collapse rows identical mem 12/20 |
 
 ## Sweep table
 
