@@ -580,6 +580,23 @@ pub enum Budget {
 /// The deployment default: 2000 ms native per move.
 pub const DEFAULT_BUD_MS: u64 = 2000;
 
+/// How wide the search looks: root children searched, and children per
+/// interior node, both in priority order with the move-index tiebreak.
+/// Turn-start roots are why: their depth-3 tree is ~b^2 leaf-parent nodes
+/// (the same-mover ply hands down a +INF beta), so full width there costs
+/// tens of seconds; 8 x 6 makes depth 3 a few tens of milliseconds.
+/// Deterministic — same widths, same tree, every run.
+#[derive(Clone, Copy)]
+pub struct Width {
+    pub root: usize,
+    pub inner: usize,
+}
+
+/// The capped default: 8 root children, 6 below.
+pub const DEFAULT_WIDTH: Width = Width { root: 8, inner: 6 };
+/// Full width: the uncapped search the earlier lanes measured.
+pub const FULL_WIDTH: Width = Width { root: usize::MAX, inner: usize::MAX };
+
 /// When a running search stops: the root loop checks between children.
 enum Stop {
     Cpu { started: f64, cap: f64 },
@@ -619,46 +636,79 @@ fn merge_analyses(mut deeper: DeepAnalysis, shallower: DeepAnalysis, nodes: u64)
 
 /// Iterative deepening under a budget: depth 1, 2, ..., `max_depth`, keeping
 /// the deepest analysis that completed (or, under `Ms`, the deepest whose
-/// root loop got at least one child in).
+/// root loop got at least one child in). Full width — see [`analyze_capped`]
+/// for the width-capped form.
 pub fn analyze_with_budget(
     position: &Position,
     max_depth: u8,
     avoid: &[Point],
     budget: &Budget,
 ) -> DeepAnalysis {
+    analyze_capped(position, max_depth, avoid, budget, FULL_WIDTH)
+}
+
+/// [`analyze_with_budget`] with width caps: the configurable form. The
+/// deployment line is `Budget::Ms(DEFAULT_BUD_MS)` + `DEFAULT_WIDTH`; the
+/// gates run `Budget::Unbounded` + `DEFAULT_WIDTH` (deterministic).
+pub fn analyze_capped(
+    position: &Position,
+    max_depth: u8,
+    avoid: &[Point],
+    budget: &Budget,
+    width: Width,
+) -> DeepAnalysis {
     match budget {
-        Budget::Unbounded => analyze_with_avoid(position, max_depth, avoid),
+        Budget::Unbounded => analyze_impl(position, max_depth, avoid, None, width),
         Budget::Ms(cap_ms) => {
             let started = cpu_now();
             let cap = *cap_ms as f64 / 1000.0;
-            let mut analysis = analyze_impl(position, 1, avoid, None);
+            let mut analysis = analyze_impl(position, 1, avoid, None, width);
             let mut nodes = analysis.nodes;
             for depth in 2..=max_depth {
                 if cpu_now() - started >= cap {
                     break;
                 }
                 let stop = Stop::Cpu { started, cap };
-                let next = analyze_impl(position, depth, avoid, Some(&stop));
+                let next = analyze_impl(position, depth, avoid, Some(&stop), width);
                 nodes += next.nodes;
                 analysis = merge_analyses(next, analysis, nodes);
             }
             analysis
         }
         Budget::Nodes(limit) => {
-            let mut analysis = analyze_impl(position, 1, avoid, None);
+            let mut analysis = analyze_impl(position, 1, avoid, None, width);
             let mut used = analysis.nodes;
             for depth in 2..=max_depth {
                 if used >= *limit {
                     break;
                 }
                 let stop = Stop::Nodes { used, limit: *limit };
-                let next = analyze_impl(position, depth, avoid, Some(&stop));
+                let next = analyze_impl(position, depth, avoid, Some(&stop), width);
                 used += next.nodes;
                 analysis = merge_analyses(next, analysis, used);
             }
             analysis
         }
     }
+}
+
+/// Like [`best_move_with_avoid`], but budget + width configurable: the
+/// deployment path (`Budget::Ms(DEFAULT_BUD_MS)` + `DEFAULT_WIDTH`) and the
+/// gate configuration (`Budget::Unbounded` + `DEFAULT_WIDTH`) in one entry.
+pub fn best_move_capped(
+    position: &Position,
+    max_depth: u8,
+    avoid: &[Point],
+    budget: &Budget,
+    width: Width,
+) -> Option<Move> {
+    if let Some(open) = blue_opener(position) {
+        return Some(open);
+    }
+    analyze_capped(position, max_depth, avoid, budget, width)
+        .candidates
+        .first()
+        .map(|c| c.mv)
 }
 
 /// Like [`best_move_with_avoid`], but under a [`Budget`] with iterative
@@ -752,6 +802,8 @@ struct Ctx {
     /// Diagnostics: value hits (a depth-1 pass skipped), any-probes, stores.
     tt_hits: u64,
     tt_stores: u64,
+    /// This search's width: children per interior node, priority-ordered.
+    width: Width,
 }
 
 impl Ctx {
@@ -763,6 +815,7 @@ impl Ctx {
             tt: HashMap::new(),
             tt_hits: 0,
             tt_stores: 0,
+            width: FULL_WIDTH,
         }
     }
 
@@ -845,22 +898,31 @@ pub fn analyze(position: &Position, depth: u8) -> DeepAnalysis {
 }
 
 pub fn analyze_with_avoid(position: &Position, depth: u8, avoid: &[Point]) -> DeepAnalysis {
-    analyze_impl(position, depth, avoid, None)
+    analyze_impl(position, depth, avoid, None, FULL_WIDTH)
 }
 
 /// The analysis itself. `stop` is the budget's root-level checkpoint: the
 /// root loop checks between children (the first always runs), so a budgeted
 /// search keeps the deepest completed iteration's full work plus whatever
-/// root children fit under the cap.
-fn analyze_impl(position: &Position, depth: u8, avoid: &[Point], stop: Option<&Stop>) -> DeepAnalysis {
+/// root children fit under the cap. `width` caps how many root children are
+/// searched at all; the root list is priority-ordered, so this is the same
+/// "top-N by 1-ply priority" cut the budget makes, but deterministic.
+fn analyze_impl(
+    position: &Position,
+    depth: u8,
+    avoid: &[Point],
+    stop: Option<&Stop>,
+    width: Width,
+) -> DeepAnalysis {
     let mover = position.to_move();
     let opp = mover.opponent();
     let mut ctx = Ctx::new();
+    ctx.width = width;
     let root = ranked(position, avoid);
     let mut scored: Vec<(f64, DeepCandidate)> = Vec::with_capacity(root.len());
     let mut alpha = f64::NEG_INFINITY;
 
-    for (searched, Ranked { mv, after, priority, .. }) in root.into_iter().enumerate() {
+    for (searched, Ranked { mv, after, priority, .. }) in root.into_iter().take(width.root).enumerate() {
         if searched > 0 && stop.is_some_and(|stop| stop.exceeded(&ctx)) {
             break;
         }
@@ -1038,6 +1100,10 @@ fn negamax(
             }
         }
     }
+    // Width cap: the beam. The children are priority-ordered (the TT move
+    // first), so this keeps the sharpest few — cuts, captures and area
+    // swings sort high in the cheap priority — and drops the quiet tail.
+    children.truncate(ctx.width.inner);
 
     let mut best = f64::NEG_INFINITY;
     let mut best_move: Option<Move> = None;

@@ -352,6 +352,51 @@ fn benchbudget(ms: u64) {
     }
 }
 
+/// Capped cost: `analyze_capped(…, 3, Budget::Unbounded, DEFAULT_WIDTH)` per
+/// position — the gate configuration (8 root / 6 inner, deterministic).
+/// The affordability table for the width-capped depth-3 verdict.
+fn benchcap() {
+    println!("== benchcap: depth-3, Budget::Unbounded, DEFAULT_WIDTH (8 root / 6 inner) ==");
+    for open in [None, Some(4864usize)] {
+        let mut game = Game::new();
+        if let Some(id) = open {
+            game.play(Move::from_index(id).unwrap()).unwrap();
+        }
+        for target in [12usize, 13, 24, 25, 48, 49, 72, 73, 96, 97] {
+            while !game.is_over() && usize::from(game.position().actions_played()) < target {
+                let mv = base(game.position()).unwrap();
+                game.play(mv).unwrap();
+            }
+            if game.is_over() {
+                break;
+            }
+            let pos = game.position();
+            let legal = pos.legal_moves().len();
+            let c0 = cpu_seconds();
+            let analysis = retaliator::search_deep::analyze_capped(
+                &pos,
+                3,
+                &[],
+                &retaliator::search_deep::Budget::Unbounded,
+                retaliator::search_deep::DEFAULT_WIDTH,
+            );
+            let cpu = cpu_seconds() - c0;
+            println!(
+                "  t={} open={open:?}: nodes={} wall cpu={cpu:.2}s root={}/{} best={} eval={:.2} tt={}/{}",
+                pos.actions_played(),
+                analysis.nodes,
+                analysis.candidates.len(),
+                legal,
+                analysis.candidates.first().map(|c| c.mv.index()).unwrap_or(usize::MAX),
+                analysis.evaluation,
+                analysis.tt_hits,
+                analysis.tt_stores
+            );
+            std::hint::black_box(&analysis);
+        }
+    }
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let mode = args.get(1).cloned().unwrap_or_else(|| "all".into());
@@ -370,6 +415,7 @@ fn main() {
         "exact" => exact(),
         "bench" => bench(n1.unwrap_or(1)),
         "benchbudget" => benchbudget(n1.unwrap_or(2000) as u64),
+        "benchcap" => benchcap(),
         "profile" => profile(n1.unwrap_or(20000)),
         _ => {
             h2h(4);
