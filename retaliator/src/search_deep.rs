@@ -30,6 +30,13 @@
 //!   equal scores, or a live game where the mover has no legal move — and
 //!   legality still comes from the engine only (`check_move`). This runs at
 //!   every node of the deep search, where it was most of the cost.
+//! - below the first ply the search values children with [`cheap_value`]
+//!   (banked scores + enclosed area at the capped horizon) instead of the
+//!   full [`evaluate`]: the room hull, the capture-degree scan and the
+//!   stalemate draw check dominate per-node cost and barely move the argmax
+//!   at depth. The root and its children (the first ply) keep the full
+//!   evaluation, so the deep search still agrees with the baseline's 1-ply
+//!   view where that view is all it has.
 
 use std::cmp::Reverse;
 
@@ -547,7 +554,7 @@ fn negamax(
     if depth == 0 {
         ctx.pv_len[ply] = 0;
         let events = f64::from(pos.scoring_events_left());
-        return sign(mover) * value(pos) + sign(mover) * ext * extension_factor(events);
+        return sign(mover) * cheap_value(pos) + sign(mover) * ext * extension_factor(events);
     }
     let legal: Vec<Move> =
         pos.legal_moves().iter().filter(|&mv| !repeats_a_connection(pos, mv)).collect();
@@ -563,11 +570,20 @@ fn negamax(
     // root-only (tuned there); depth sees their consequences anyway. A
     // connection between own nodes is deduped by `repeats_a_connection`, so
     // no position is searched twice.
+    //
+    // Below the first ply the static value is [`cheap_value`]: banked scores
+    // plus enclosed area at the capped horizon. The room hull, the
+    // capture-degree scan and the stalemate draw check that make up most of
+    // [`evaluate`]'s cost do not change the argmax much at depth — area is
+    // the dominant term — and the root/first ply still see them in full.
+    // Stalemate (a live leaf where the mover has no legal move) is the one
+    // exactness loss: `value` scores it 0, `cheap_value` scores the material.
+    // Interior nodes still catch it exactly via their own movegen.
     let mut children: Vec<(f64, Move, f64, f64, bool)> = Vec::with_capacity(legal.len());
     for mv in legal {
         let mut after = pos.clone();
         after.apply_unchecked(mv);
-        let val = value(&after);
+        let val = cheap_value(&after);
         let gained = (after.area(mover).to_f64() - pos.area(mover).to_f64()).max(0.0);
         let destroyed =
             (pos.area(mover.opponent()).to_f64() - after.area(mover.opponent()).to_f64()).max(0.0);

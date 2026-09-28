@@ -164,7 +164,7 @@ fn bench(runs: usize) {
         if let Some(id) = open {
             game.play(Move::from_index(id).unwrap()).unwrap();
         }
-        for target in [12usize, 24] {
+        for target in [12usize, 24, 48, 72, 96] {
             while !game.is_over() && usize::from(game.position().actions_played()) < target {
                 let mv = base(game.position()).unwrap();
                 game.play(mv).unwrap();
@@ -173,7 +173,7 @@ fn bench(runs: usize) {
                 break;
             }
             let pos = game.position();
-            for _ in 0..runs.max(1) {
+            for _r in 0..runs.max(1) {
                 let w0 = std::time::Instant::now();
                 let c0 = cpu_seconds();
                 let analysis = retaliator::search_deep::analyze(&pos, 3);
@@ -181,10 +181,17 @@ fn bench(runs: usize) {
                 let cpu = cpu_seconds() - c0;
                 let ns = if cpu > 0.0 { analysis.nodes as f64 / cpu / 1000.0 } else { 0.0 };
                 println!(
-                    "  t={} open={open:?}: nodes={} wall={wall:.1}s cpu={cpu:.1}s ({ns:.1}k n/s cpu)",
+                    "  t={} open={open:?}: nodes={} wall={wall:.1}s cpu={cpu:.1}s ({ns:.1}k n/s cpu) best={} eval={:.2}",
                     pos.actions_played(),
-                    analysis.nodes
+                    analysis.nodes,
+                    analysis
+                        .candidates
+                        .first()
+                        .map(|c| c.mv.index())
+                        .unwrap_or(usize::MAX),
+                    analysis.evaluation
                 );
+                std::hint::black_box(&analysis);
             }
         }
     }
