@@ -39,6 +39,8 @@
 //!   view where that view is all it has.
 
 use std::cmp::Reverse;
+use std::collections::HashMap;
+use std::hash::Hasher;
 use std::sync::OnceLock;
 
 use meridian_engine::{Area, Edge, Move, MoveKind, Outcome, Player, Point, Position, Score};
@@ -593,6 +595,9 @@ pub struct DeepAnalysis {
     pub depth: usize,
     /// Positions searched.
     pub nodes: u64,
+    /// Transposition diagnostics: value hits and stores.
+    pub tt_hits: u64,
+    pub tt_stores: u64,
     /// The best moves first.
     pub candidates: Vec<DeepCandidate>,
 }
@@ -612,6 +617,12 @@ struct Ctx {
     /// Triangular PV table: `pv[ply * MAX_PLY ..][.. pv_len[ply]]`.
     pv: Box<[Move]>,
     pv_len: [usize; MAX_PLY],
+    /// Transpositions within this search. Cleared per move: entries are only
+    /// exact in the context of one root's accumulated extensions.
+    tt: HashMap<u64, TtEntry>,
+    /// Diagnostics: value hits (a depth-1 pass skipped), any-probes, stores.
+    tt_hits: u64,
+    tt_stores: u64,
 }
 
 impl Ctx {
@@ -620,11 +631,70 @@ impl Ctx {
             nodes: 0,
             pv: vec![Move::from_index(0).expect("move 0 exists"); MAX_PLY * MAX_PLY].into_boxed_slice(),
             pv_len: [0; MAX_PLY],
+            tt: HashMap::new(),
+            tt_hits: 0,
+            tt_stores: 0,
         }
     }
 
     fn line(&self, ply: usize) -> Vec<Move> {
         self.pv[ply * MAX_PLY..ply * MAX_PLY + self.pv_len[ply]].to_vec()
+    }
+}
+
+/// The position's identity for the transposition table: the engine's own
+/// structural hash (edges, scores, shielded, fresh, actions played), through
+/// `DefaultHasher` — fixed keys, so searches stay deterministic across runs.
+/// 64-bit collisions are the standard accepted risk; nothing verifies a hit.
+fn position_hash(position: &Position) -> u64 {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    std::hash::Hash::hash(position, &mut hasher);
+    hasher.finish()
+}
+
+/// One transposition-table entry. The value parts belong to depth-1 nodes,
+/// where every live child shares one extension factor, so the node's value is
+/// `max(p_finish, p_live + sign(mover) * ext * factor)`: path-independent
+/// parts plus the caller's accumulated line extension, exact for any path.
+/// `exact` says every child was searched (a cutoff leaves a lower bound,
+/// sound only for beta cutoffs). `stalemate` marks the no-legal-move draw.
+/// `best` is the best child found, for move ordering at any depth.
+#[derive(Clone)]
+struct TtEntry {
+    best: Option<Move>,
+    valued: bool,
+    exact: bool,
+    stalemate: bool,
+    p_finish: f64,
+    p_live: f64,
+    factor: f64,
+}
+
+impl TtEntry {
+    fn new() -> TtEntry {
+        TtEntry {
+            best: None,
+            valued: false,
+            exact: false,
+            stalemate: false,
+            p_finish: f64::NEG_INFINITY,
+            p_live: f64::NEG_INFINITY,
+            factor: 0.0,
+        }
+    }
+
+    /// The node's value (or, when not `exact`, a lower bound on it) under the
+    /// caller's line extension `ext`.
+    fn bound(&self, mover: Player, ext: f64) -> f64 {
+        if self.stalemate {
+            return sign(mover) * ext * self.factor;
+        }
+        let live = self.p_live + sign(mover) * ext * self.factor;
+        if self.p_finish > live {
+            self.p_finish
+        } else {
+            live
+        }
     }
 }
 
@@ -703,7 +773,14 @@ pub fn analyze_with_avoid(position: &Position, depth: u8, avoid: &[Point]) -> De
     scored.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.mv.index().cmp(&b.1.mv.index())));
     let candidates = scored.into_iter().map(|(_, c)| c).collect::<Vec<_>>();
     let evaluation = candidates.first().map_or_else(|| value(position), |best| best.evaluation);
-    DeepAnalysis { evaluation, depth: usize::from(depth), nodes: ctx.nodes, candidates }
+    DeepAnalysis {
+        evaluation,
+        depth: usize::from(depth),
+        nodes: ctx.nodes,
+        tt_hits: ctx.tt_hits,
+        tt_stores: ctx.tt_stores,
+        candidates,
+    }
 }
 
 /// Negamax alpha-beta over actions. Returns the value from the perspective of
@@ -730,14 +807,36 @@ fn negamax(
         let events = f64::from(pos.scoring_events_left());
         return sign(mover) * cheap_value(pos) + sign(mover) * ext * extension_factor(events);
     }
+    let key = position_hash(pos);
+    // A depth-1 node's value is exactly the stored parts plus this line's
+    // extension, so a hit replaces the whole movegen + ordering pass. A
+    // cutoff bound can only be reused for another cutoff.
+    if depth == 1 {
+        if let Some(entry) = ctx.tt.get(&key) {
+            if entry.valued {
+                let bound = entry.bound(mover, ext);
+                if entry.exact || bound >= beta {
+                    ctx.tt_hits += 1;
+                    ctx.pv_len[ply] = 0;
+                    return bound;
+                }
+            }
+        }
+    }
     let moves = pos.legal_moves();
     let legal: Vec<Move> =
         moves.iter().filter(|&mv| !repeats_a_connection(pos, mv)).collect();
     if legal.is_empty() {
         ctx.pv_len[ply] = 0;
         // The game is a draw: the static part is 0, the line's extension counts.
-        let events = f64::from(pos.scoring_events_left());
-        return sign(mover) * ext * extension_factor(events);
+        let factor = extension_factor(f64::from(pos.scoring_events_left()));
+        let mut entry = ctx.tt.remove(&key).unwrap_or_else(TtEntry::new);
+        entry.valued = true;
+        entry.exact = true;
+        entry.stalemate = true;
+        entry.factor = factor;
+        ctx.tt.insert(key, entry);
+        return sign(mover) * ext * factor;
     }
 
     // Order the children: mover-signed 1-ply value + horizon extension — the
@@ -788,9 +887,35 @@ fn negamax(
         children.push((priority, mv, leaf_factor, facts.swing, facts.finished));
     }
     children.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.index().cmp(&b.1.index())));
+    // Transposition move ordering: the best child of an earlier visit to this
+    // position goes first, so cutoffs come sooner. The children's values are
+    // unchanged — only interior tie-breaks and node counts can differ.
+    if let Some(entry) = ctx.tt.get(&key) {
+        if let Some(want) = entry.best {
+            if let Some(at) = children.iter().position(|child| child.1.index() == want.index()) {
+                let front = children.remove(at);
+                children.insert(0, front);
+            }
+        }
+    }
 
     let mut best = f64::NEG_INFINITY;
+    let mut best_move: Option<Move> = None;
+    let mut cutoff = false;
+    // The depth-1 value parts to store: priority maxima by child kind, and
+    // the one extension factor every live child shares.
+    let (mut p_finish, mut p_live, mut live_factor) = (f64::NEG_INFINITY, f64::NEG_INFINITY, 0.0);
     for (priority, mv, leaf_factor, swing, finished) in children {
+        if depth == 1 {
+            if finished {
+                if priority > p_finish {
+                    p_finish = priority;
+                }
+            } else if priority > p_live {
+                p_live = priority;
+                live_factor = leaf_factor;
+            }
+        }
         let v = if finished {
             // The game ended: the extension vanishes (0 events left), so the
             // ordering value is already the exact value.
@@ -827,8 +952,26 @@ fn negamax(
             alpha = v;
         }
         if alpha >= beta {
+            cutoff = true;
             break;
         }
     }
+    // Store what this visit learned about the position. The best move orders
+    // children at any depth; the value parts only mean something at depth 1,
+    // where one factor serves every live child (see [`TtEntry`]).
+    let mut entry = ctx.tt.remove(&key).unwrap_or_else(TtEntry::new);
+    if best_move.is_some() {
+        entry.best = best_move;
+    }
+    if depth == 1 {
+        entry.valued = true;
+        entry.exact = !cutoff;
+        entry.stalemate = false;
+        entry.p_finish = p_finish;
+        entry.p_live = p_live;
+        entry.factor = live_factor;
+    }
+    ctx.tt.insert(key, entry);
+    ctx.tt_stores += 1;
     best
 }

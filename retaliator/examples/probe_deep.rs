@@ -164,7 +164,7 @@ fn bench(runs: usize) {
         if let Some(id) = open {
             game.play(Move::from_index(id).unwrap()).unwrap();
         }
-        for target in [12usize, 24, 48, 72, 96] {
+        for target in [12usize, 13, 24, 25, 48, 49, 72, 73, 96, 97] {
             while !game.is_over() && usize::from(game.position().actions_played()) < target {
                 let mv = base(game.position()).unwrap();
                 game.play(mv).unwrap();
@@ -181,7 +181,7 @@ fn bench(runs: usize) {
                 let cpu = cpu_seconds() - c0;
                 let ns = if cpu > 0.0 { analysis.nodes as f64 / cpu / 1000.0 } else { 0.0 };
                 println!(
-                    "  t={} open={open:?}: nodes={} wall={wall:.1}s cpu={cpu:.1}s ({ns:.1}k n/s cpu) best={} eval={:.2}",
+                    "  t={} open={open:?}: nodes={} wall={wall:.1}s cpu={cpu:.1}s ({ns:.1}k n/s cpu) best={} eval={:.2} tt={}/{} hits/stores",
                     pos.actions_played(),
                     analysis.nodes,
                     analysis
@@ -189,7 +189,9 @@ fn bench(runs: usize) {
                         .first()
                         .map(|c| c.mv.index())
                         .unwrap_or(usize::MAX),
-                    analysis.evaluation
+                    analysis.evaluation,
+                    analysis.tt_hits,
+                    analysis.tt_stores
                 );
                 std::hint::black_box(&analysis);
             }
