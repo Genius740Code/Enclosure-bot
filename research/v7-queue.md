@@ -56,3 +56,14 @@ if they place it, it's never break and causes problems in the long run."
 - Falsifiable: contest-remote dose sweep must raise enemy-area-lifetime gap
   (theirs falls) without tanking our own build; if early contests just donate
   targets (neck/aggro lesson), CONTACT_PENALTY interplay decides and we kill it.
+
+## Q2-amendment (USER 2026-09-28): MANY different shapes — never pattern-match one
+Founder correction: unbreakable comes in many shape families (corridors,
+blobs, thickets, nested loops...), not just the double-wall corridor.
+- Consequence for Q2/Q3: detection AND building bonuses must key off
+  STRUCTURAL properties (cut-touch counts, shared-node ratios, wall thickness
+  per unit area), never off named patterns. A term that only fires on
+  corridors is a bug, not a feature.
+- Required coverage: validate any shape term across GB + capybara + AngelBot
+  + blob-mimic lines. If it helps vs one family and hurts vs others, it fails
+  generality and dies (no family-specific carve-outs without their own gates).
