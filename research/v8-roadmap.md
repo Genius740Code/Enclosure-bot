@@ -1,7 +1,8 @@
 # v8 roadmap — everything between here and ship (2026-09-29, master `441ec23`)
 
 External-AI usage is exhausted; all external lanes stopped half-done. Our agents:
-replies-Ultra running (`lane-v8-reply`), 1 Nvidia slot free. Cap stays max 2 Nvidia.
+POP-PRICE D1 running (Nvidia, `lane-v8-pop`), tie census (OpenCode, `lane-v8-tie`),
+S2 handoff sent (backgrounded). Cap: 1 Nvidia + 1 OpenCode at a time.
 
 **Ship bar** (v8-plan §3): Elo > v7 over 20+ games; beats v7 mirrors both colors;
 takes games off ≥2 rivals; no collapses. **Cut rule** (M4): stacked master beats v7
@@ -20,12 +21,11 @@ takes games off ≥2 rivals; no collapses. **Cut rule** (M4): stacked master bea
 - [ ] Autopsy our-color re-run: b0ac4141, 1c69056c (30c7653b fixed `e1b82d3`).
       No lane may cite those two games until corrected.
 
-## Phase 1 — shared infra (unblocks EVERY h2h gate; build once)
+## Phase 1 — shared infra (UNBLOCKED 2026-09-29, merged `8ac25c8`)
 
-- [ ] `v7base` frozen-baseline harness: copy current opening-ON routed engine into
-      `examples/support/v7base.rs` + 10-game alternating-color h2h runner with
-      per-chair splits. Infrastructure, not a behavior variable. Consumers: P-dose-3
-      gate, R dose-1 gate, all future doses. (Red-split AI's design is the spec.)
+- [x] `v7base` frozen-baseline harness (`examples/support/v7base.rs` + `h2h_base.rs`):
+      identity 20/20, gauge 6/6, self-h2h Blue 0/5 Red 5/5 (color-decided mirrors).
+      Merged to master (examples-only, zero engine delta). All lanes use it.
 
 ## Phase 2 — finish half-done lanes (one variable per dose, full gates)
 
@@ -34,31 +34,34 @@ takes games off ≥2 rivals; no collapses. **Cut rule** (M4): stacked master bea
       Branch `origin/lane-v8-p`, worktree `game-v8p`. Successor hypothesis: POP-PRICE.
 - [ ] **R (red-split).** Premise REFRAMED by E-1: both colors run 8-move mesh
       (`MESH_R_TXT` exists, `search.rs:94`) — the dose is blue-free vs red-scripted,
-      not "make blue like red". Steps: v7base (Phase 1) → apply
-      `BLUE_SCRIPTED_OPENING=false` (spec verified at `search.rs:157-172`) → build →
-      h2h/league/gauge → push `lane-v8-r`. Worktree `game-v8rt` clean at `1741965`.
-- [ ] **S2 (opponent replies, #1 defect).** Ultra phase-1 running: archetype profiles
-      + weighted-vs-greedy match % per archetype. If >55% overall and every archetype
-      up → wire dose behind toggle (default OFF, verify OFF-identity) → full gates.
-      M2 chess-tech port stays BLOCKED until this lands (M7 verdict).
+      not "make blue like red". Steps: apply `BLUE_SCRIPTED_OPENING=false`
+      (spec verified at `search.rs:157-172`) → build → h2h (in-tree runner) /
+      league / gauge → push `lane-v8-r`. Worktree `game-v8rt` clean at `1741965`
+      (needs master merge first).
+- [ ] **S2 (opponent replies, #1 defect).** Phase-1 running + VladNet spec handed off
+      (`research/archetype-vladnet.md` on `origin/lane-v8-rivals`, commit `e2b10e8`:
+      94.1% lag 1-2 predictor pseudo-spec, validate on held-out 1c69056c since
+      queued eval 9f06cd59 is unplayed). Then GB archetype. Wire dose behind toggle
+      (default OFF, verify OFF-identity) if >55% overall and every archetype up.
+      M2 port stays BLOCKED.
 - [ ] **M10 (MCTS pilot).** External session at ~75% (playout 2,240/s native, 1.4k
       sims/s MCTS; variants 22/28; pilot written unrun). Resume: aggregate variants →
       run pilot on M7's 20 positions (reconstructible from `research/games/3a414aad`
       on `origin/lane-v8-autopsy` + `flip_test.rs` on `origin/lane-v8-audit`) →
       write `m10-mcts-pilot.md` → push `lane-v8-mcts`. WASM ratio: use 3x, no build
       needed. Verdict pilot-or-kill at ~2.2k sims (prior ~60% kill).
-- [ ] **Rivals.** Build `research/rival-playbooks.md` from local JSONs only
-      (`git show origin/lane-v8-autopsy:research/games/<id>-*.json`, 5 games:
-      3a414aad, 1c69056c, d2d4b4fd, ad65f054, 30c7653b; b1e7d2d1 is queued-not-played)
-      → push `lane-v8-rivals`. No network needed.
+- [x] **Rivals.** `research/rival-playbooks.md` + miner (`bdb5b0e`), habit-2
+      replication (`3d6e366`: 32/34 lag 1-2, -314.0/34 confirmed), VladNet archetype
+      + predictor spec (`e2b10e8`), all on `origin/lane-v8-rivals`. Remaining: replicate
+      one GB habit before lanes cite GB figures; GB playbook figures otherwise provisional.
 
 ## Phase 3 — idea-backlog Step-0s (no engine change; cheapest first)
 
 All five ideas start with a $0 probe; only survivors get doses.
-- [ ] **POP-PRICE** (idea #1, +35): extend `flip_test.rs` into decision-node ledger
-      at 3a414aad actions 56,57,64,80,84,88,89. Kill-0: re-close beats best
-      alternative by more than tail+pair+rebuild explain. Then D1 `DOOM_TAIL_W`,
-      D2 `DOOM_PAIR_W`, D3 `REBUILD_K`.
+- [ ] **POP-PRICE** (idea #1, +35): kill-0 PASSED 6/7 (`poprice-ledger.md` on
+      `origin/lane-v8-rivals`) + BEAM-SEED premise confirmed (alternatives rank
+      10-106). **D1 (`DOOM_TAIL_W` 0→0.5) RUNNING** on `lane-v8-pop`. Then D2
+      (`DOOM_PAIR_W`), D3 (`REBUILD_K`) only if ledger order says so.
 - [ ] **BEAM-SEED** (idea #2, +30): census — screen-argmax outside priority-top-8
       rate on a8e03a5f/ad65f054/d2d4b4fd/30c7653b/3a414aad ranges. Kill-0: <10%.
       Cost gate: median WASM move ≤2.0s, max ≤4.5s (Oct-4 forfeit rule).
@@ -92,13 +95,15 @@ engine work (measure first) · red-opener design (premise false, E-1).
 |------|-----------------|----------|-------|
 | P rebuild | `lane-v8-p` | `game-v8p` | dose 2 KILL; dose 3 to gate |
 | W wall | `lane-v8-w` | `game-v8w` | 3 doses KILL, closed |
-| S2 replies | `lane-v8-reply` | `game-v8r` | phase-1 running (Ultra) |
-| R split | `lane-v8-r` | `game-v8rt` | spec ready, needs v7base |
+| POP (`DOOM_TAIL_W`) | `lane-v8-pop` | `game-v8pop` | D1 running (Nvidia) |
+| S2 replies | `lane-v8-reply` | `game-v8r` | phase-1 + VladNet spec handoff (bkgd) |
+| Tie census | `lane-v8-tie` | `game-v8t` | Step-0 running (OpenCode) |
+| R split | `lane-v8-r` | `game-v8rt` | spec ready, needs master merge |
 | M10 MCTS | `lane-v8-mcts` | — (external container) | 75%, needs resume |
 | Rivals | `lane-v8-rivals` | — (external container) | data ready, needs author |
 | Ideas | `lane-v8-ideas` | — | doc in chat, needs filing |
 | Autopsy/data | `lane-v8-autopsy` | `game-v8c` | done; hosts 12 game JSONs |
 | Audit/M7 | `lane-v8-audit` | `game-v8a` | done; hosts flip_test |
 
-Suggested agent order under the 2-Nvidia cap: (1) v7base harness → (2) POP-PRICE
-ledger → (3) R dose-1 → (4) BEAM-SEED census → (5) M10 resume → (6) rivals author.
+Suggested agent order under the 1+1 cap: POP-D1 (running) → tie verdict →
+R dose-1 → BEAM-SEED census → M10 resume → GB-habit replication.
