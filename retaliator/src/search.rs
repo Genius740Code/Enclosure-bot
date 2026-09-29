@@ -20,6 +20,14 @@
 //!    no area, far from the enemy, is tempo burned in the back: the safe loop
 //!    already banks every turn, and one cut zeroes a loop no matter how
 //!    reinforced it looks. Penalized, so the bot expands instead.
+//! 4. **Corridor-root contest (Lane W, M9/E4).** When the enemy builds a
+//!    2-wall corridor (shared-node walls: 2+ edges meeting at a node =
+//!    uncuttable), their area grows rapidly (E4: 3→71 in 10 moves). We detect
+//!    this by tracking enemy shared-node count and area acceleration. The
+//!    "corridor root" is the highest-shared node anchoring the wall. Contesting
+//!    it early (before the wall shuts) is priced in the M1 exception ledger as
+//!    a DENY move that must outbid the best area move. Single variable: the
+//!    area-acceleration threshold (dose sweep ≤3 values).
 
 use std::cmp::Reverse;
 use std::sync::LazyLock;
@@ -51,6 +59,29 @@ const DEADWOOD_ENEMY_DIST: i8 = 3;
 /// Penalty for a non-breaking first action landing within this radius.
 const CUT_RADIUS: i8 = 3;
 const REBUILD_PENALTY: f64 = 3.0;
+
+/// Corridor-root contest (Lane W, M9/E4): detect enemy 2-wall progress and
+/// contest the corridor root before it shuts. Single variable: the area-
+/// acceleration threshold (dose sweep ≤3 values). E4 exhibit: 3→71 in 10
+/// moves = ~6.8 area/move acceleration.
+/// DOSE 1: 5.0 area/10 moves (conservative)
+/// DOSE 2: 6.8 area/10 moves (E4 exact)
+/// DOSE 3: 8.5 area/10 moves (aggressive)
+const CORRIDOR_ACCEL_THRESHOLD: f64 = 6.8; // DOSE 2: E4 exact threshold
+/// Minimum shared-node count to qualify as a 2-wall corridor node.
+const CORRIDOR_SHARED_MIN: u32 = 2;
+/// Radius around corridor root to consider as contest targets.
+const CORRIDOR_ROOT_RADIUS: i8 = 2;
+/// Contest bonus multiplier (scales with horizon like other terms).
+/// Must outbid best area move in M1 ledger: area move ~5 area * 30 events * 0.5 = 75 pts.
+/// With severity up to 3x and hz up to 12, bonus=10 gives up to 360 pts.
+const CORRIDOR_CONTEST_BONUS: f64 = 10.0;
+/// Minimum enemy shared nodes to trigger corridor detection.
+/// E4 corridor has many shared nodes (two parallel walls with cross-links).
+/// Top bots build long corridors: GB builds ~12 wall actions before closing.
+/// Set high to avoid false positives from normal wall-building.
+const CORRIDOR_TRIGGER_SHARED: usize = 8;
+
 /// Blue's forced first action: D10-F7. Measured over 12 games vs three
 /// opponents (v1, v2, scout-class): +20% to +41% margins, 12/12 positive,
 /// vs -4% to +14% unforced. The search walks backward (D10-A7) on
@@ -715,6 +746,14 @@ fn ranked(
                 {
                     priority -= DEADWOOD_PENALTY * hz;
                 }
+                // Corridor-root contest (Lane W, M9/E4): if enemy is building a
+                // 2-wall corridor (high shared nodes + area acceleration), contest
+                // the corridor root before it shuts. Priced in M1 ledger as DENY
+                // that must outbid best area move. Single variable: threshold.
+                if first && outcome.broken.is_none() {
+                    let contest_bonus = corridor_contest_bonus(position, mover, opp, target, hz);
+                    priority += contest_bonus;
+                }
             }
             Ranked { mv, after, value, priority }
         })
@@ -767,6 +806,101 @@ fn near_own_count(position: &Position, player: Player, target: Point) -> u32 {
 /// Whether `target` is within Chebyshev `dist` of any of `player`'s nodes.
 fn near_enemy_node(position: &Position, player: Player, target: Point, dist: i8) -> bool {
     near_points(position.nodes(player).iter(), target, dist)
+}
+
+/// Count shared nodes for a player: nodes where 2+ edges meet (uncuttable wall nodes).
+/// This is the key detector for 2-wall corridors (E4: shared-node walls).
+fn shared_node_count(position: &Position, player: Player) -> u32 {
+    use std::collections::HashMap;
+    let mut degree: HashMap<usize, u32> = HashMap::new();
+    for edge in position.edges(player).iter() {
+        for end in [edge.origin(), edge.far()] {
+            *degree.entry(end.index()).or_insert(0) += 1;
+        }
+    }
+    degree.values().filter(|&&d| d >= CORRIDOR_SHARED_MIN).count() as u32
+}
+
+/// Find the corridor root: the enemy node with highest shared-edge count (most
+/// anchoring the wall). Returns None if no qualifying corridor nodes exist.
+fn corridor_root(position: &Position, opp: Player) -> Option<Point> {
+    use std::collections::HashMap;
+    let mut degree: HashMap<usize, u32> = HashMap::new();
+    for edge in position.edges(opp).iter() {
+        for end in [edge.origin(), edge.far()] {
+            *degree.entry(end.index()).or_insert(0) += 1;
+        }
+    }
+    degree
+        .into_iter()
+        .filter(|(_, d)| *d >= CORRIDOR_SHARED_MIN)
+        .max_by_key(|(_, d)| *d)
+        .map(|(idx, _)| Point::from_index(idx).expect("valid point"))
+}
+
+/// Check if enemy is building a corridor: very high shared-node count BUT
+/// area still low (corridor not yet closed). This is the PRE-CLOSURE threat
+/// window. E4: at move 40 (actions~80), shared nodes high, area only 3.0.
+/// At move 50, corridor closes, area jumps to 71. We must contest during
+/// moves 40-50. Strict filters to avoid false positives on normal walls.
+fn is_corridor_threat(position: &Position, opp: Player) -> bool {
+    let shared = shared_node_count(position, opp);
+    // Require very high shared nodes: only substantial corridors (two long
+    // parallel walls with cross-links) reach this. Normal walls: 2-4 shared.
+    if shared < 8 {
+        return false;
+    }
+    // Threat heuristic: high shared nodes but area NOT yet banked.
+    // Corridor building phase: shared nodes high, area low for action count.
+    let actions = position.actions_played() as f64;
+    let area = position.area(opp).to_f64();
+    let threshold = actions * CORRIDOR_ACCEL_THRESHOLD / 10.0;
+    if area >= threshold {
+        return false; // Corridor already closed, too late
+    }
+    // Additional filter: corridor root must be in a threatening position.
+    // The root should be advancing toward our side, not retreating.
+    let Some(root) = corridor_root(position, opp) else {
+        return false;
+    };
+    let mover = position.to_move();
+    // For Blue (mover), enemy is Red. Red's corridor root threatening us
+    // would be on Blue's side (negative x for Blue starting at D10=-6,0).
+    // For Red (mover), enemy is Blue. Blue's corridor root threatening us
+    // would be on Red's side (positive x for Red starting at P10=6,0).
+    let threatening = match mover {
+        Player::Blue => root.x() <= -2, // Red corridor reaching toward Blue
+        Player::Red => root.x() >= 2,   // Blue corridor reaching toward Red
+    };
+    threatening
+}
+
+/// Contest bonus for moves targeting the corridor root. Returns the bonus
+/// (scaled by horizon) if the move contests the corridor, 0 otherwise.
+fn corridor_contest_bonus(
+    position: &Position,
+    _mover: Player,
+    opp: Player,
+    target: Point,
+    hz: f64,
+) -> f64 {
+    if !is_corridor_threat(position, opp) {
+        return 0.0;
+    }
+    let Some(root) = corridor_root(position, opp) else {
+        return 0.0;
+    };
+    // Contest if target is near the corridor root
+    if (target.x() - root.x()).abs() <= CORRIDOR_ROOT_RADIUS
+        && (target.y() - root.y()).abs() <= CORRIDOR_ROOT_RADIUS
+    {
+        // Must outbid best area move: bonus scales with threat severity
+        let shared = shared_node_count(position, opp) as f64;
+        let severity = (shared / CORRIDOR_TRIGGER_SHARED as f64).min(3.0);
+        CORRIDOR_CONTEST_BONUS * severity * hz
+    } else {
+        0.0
+    }
 }
 
 /// A connection between two of the mover's nodes is listed from both ends. This is the second.
