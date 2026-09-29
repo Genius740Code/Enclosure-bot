@@ -139,3 +139,17 @@ Stompy, 9f06cd59 VladNet, 5164143f AngelWASM, b1e7d2d1 GB, f33e29fc GB2.0,
 90a4e520 capybara, 323bf662 xmybot). Founder says "launch another subagent to
 analyse" at that point — full autopsy + rival files + gate doses.
 Objective over everything: higher Elo, wins vs other bots. Style is irrelevant.
+
+### 6i. M8 — team play: moves work the bigger picture (founder idea)
+Solo-greedy audit (2026-09-29): the ONLY multi-move coordination in-tree is
+`loop_bonus` (triangle close setup = one 2-move combo) + the scripted mesh
+prefix. Everything else picks the best solo move vs a greedy reply; the pv is
+an implicit plan but selection never rewards "sets up our next move".
+Mechanism (Lane P): COMBO valuation — a first action earns its best OWN
+follow-up's gain (our-our max-max through pair-turns, distinct from reply
+min), generalizing loop_bonus beyond triangles; DOUBLE-THREAT bonus — a move
+creating 2+ big completions next (enemy answers at most one). General rule:
+no move without a job in a multi-turn plan (setup, completion, threat).
+C2 measures FIRST: coherence rate (% moves extending a structure or enabling
+a follow-up) vs win% — if team moves don't correlate, price dies unbuilt.
+Gate: coherence UP + area/move UP + full chain + v7-mirror (M4).
