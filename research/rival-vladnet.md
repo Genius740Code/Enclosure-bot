@@ -50,11 +50,12 @@
 
 ## What Beats VladNet
 
-### Evidence from 30c7653b (v7 as RED vs Great Barrier — WE CRUSHED GB 4335-2709)
-- We built **112.5 area bank by move 120** as Red
-- GB's bank: 47.8 — **we broke it repeatedly** (25 breaks, 4 catastrophic >15 area)
-- **Key difference**: As Red, we had **no fixed opener** → found anti-bank lines
-- VladNet lost to us as Red in... wait, VladNet beat us as Blue (1c69056c). But we beat GB as Red.
+### Evidence from 30c7653b (CORRECTED 2026-09-29: we were RED, GB won 4335-2709 as Blue)
+- GB (blue) built the **112.5 area bank by move 120** — unbroken all game (Cluster 2)
+- Ours (red): 47.8 at 120. We led at 60, then a **-39.7 break at move 101** popped our bank (Cluster 5)
+- The prior reading was inverted (4335 is GB's score, 112.5 is GB's bank). Real lesson:
+  even with red's free opening, our banks pop late while theirs hold — bank fragility,
+  not opener freedom, decided this game. The "25 breaks / 4 catastrophic" claim is withdrawn.
 
 ### Hypothesis: VladNet is Beatable By
 1. **Corridor-root contest at move 20-30** (Lane W: WALL-RACE 1.0)
