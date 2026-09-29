@@ -112,3 +112,19 @@ Probe `opp_census_site.rs`: replayed all 202 local site games via engine
 Verdict: **unbreakable-share REJECTED as a win predictor**; DENSE_BONUS
 rationale (thick walls survive cuts) may still hold defensively, but share
 does not explain who wins human games. Do not build eval terms on it.
+
+## Lane O v7 phase-trigger validation (P0 spec + P1 retune) — 2026-09-29 — SPLIT
+Probe `opp_phase.rs` (PhaseTracker measurement only, release, deterministic,
+engine legality; 3 foe lines x skip{0,10,20,30} x color = n=8/line).
+Full tables in `research/o-phase-validation.md`, raw in `research/logs_lane_o_phase.txt`.
+Line substitution: no capybara mimic exists in-tree; third line is v1base (quiet control).
+- P0 (spec-as-written): **MISFIRE 0/24** — CONTEST 0 turns (0.75 never matches
+  the rush: collapser early peak 0.5-0.67), WALL 0 turns (3.0 = 3x the physical
+  ceiling; obs max exactly 1.00 in 18/24 — foe acts 2 of every 4 turns),
+  BANK fires t=6-19 on opening loops in 24/24 (sticky, masks all).
+- P1 (BUILD-exit dwell bypass, CONTEST 0.5, WALL 1.0, BANK +turn>=30):
+  CONTEST recall 8/8 rush but **KILLED — non-discriminative** (quiet dwell 16.9
+  >= rush 14.9, 10 FP entries/8 quiet games, ~30% exit lag).
+  WALL-RACE 1.0 **PROVISIONAL VALIDATE** (3/8 gbstyle, entries t=2/3/7, FP 0/16).
+  BANK (t=30-45, 23/24) + DENY (300/150, only on real swings) **VALIDATED**.
+  Q10: DENY is Blue-only in these matchups (6 Blue vs 2 Red entries).

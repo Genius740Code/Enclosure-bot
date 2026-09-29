@@ -1,0 +1,624 @@
+===== P0DIAG (spec triggers + max-rate diagnostics) =====
+GAME collapser us=blue skip=0 rs=1139 ss=790 WIN dwell B/C/W/K/D=5/0/0/51/5 trans=2 bigcloses=6 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@2 maxbuild=1.00@2 maxarea=3.85@42 firstclose=2 small=14
+  t=  6 BUILD     -> BANK-RACE (area_sum 27 / turn 6)
+  t= 57 BANK-RACE -> DENY      (lead 306 >= 300)
+  CLOSE t= 16 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 23 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 27 gain= 24.0 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 42 gain= 13.2 phase=BANK-RACE lead=none
+  CLOSE t= 56 gain= 10.0 phase=BANK-RACE lead=none
+GAME collapser us=red skip=0 rs=1176 ss=1008 WIN dwell B/C/W/K/D=6/0/0/55/0 trans=1 bigcloses=11 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@45 maxbuild=1.00@3 maxarea=2.95@19 firstclose=3 small=15
+  t=  7 BUILD     -> BANK-RACE (area_sum 27 / turn 7)
+  CLOSE t= 25 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 29 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 33 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 36 gain= 14.0 phase=BANK-RACE lead=none
+  CLOSE t= 43 gain= 12.0 phase=BANK-RACE lead=none
+  CLOSE t= 45 gain= 12.0 phase=BANK-RACE lead=none
+  CLOSE t= 47 gain= 12.8 phase=BANK-RACE lead=none
+  CLOSE t= 49 gain= 12.0 phase=BANK-RACE lead=none
+  CLOSE t= 50 gain= 16.5 phase=BANK-RACE lead=none
+  CLOSE t= 60 gain= 12.4 phase=BANK-RACE lead=none
+GAME collapser us=blue skip=10 rs=1139 ss=790 WIN dwell B/C/W/K/D=3/0/0/48/5 trans=2 bigcloses=6 contest_turns=0 wall_turns=0 lag=0 maxclose=0.67@8 maxbuild=1.00@8 maxarea=3.85@42 firstclose=6 small=12
+  t=  9 BUILD     -> BANK-RACE (area_sum 45 / turn 9)
+  t= 57 BANK-RACE -> DENY      (lead 306 >= 300)
+  CLOSE t= 16 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 23 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 27 gain= 24.0 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 42 gain= 13.2 phase=BANK-RACE lead=none
+  CLOSE t= 56 gain= 10.0 phase=BANK-RACE lead=none
+GAME collapser us=red skip=10 rs=690 ss=795 LOSS dwell B/C/W/K/D=3/0/0/53/0 trans=1 bigcloses=6 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@7 maxbuild=1.00@7 maxarea=3.38@9 firstclose=7 small=13
+  t=  9 BUILD     -> BANK-RACE (area_sum 45 / turn 9)
+  CLOSE t=  9 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 19 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 20 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 25 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 41 gain= 12.0 phase=BANK-RACE lead=none
+  CLOSE t= 47 gain=  8.7 phase=BANK-RACE lead=none
+GAME collapser us=blue skip=20 rs=1139 ss=790 WIN dwell B/C/W/K/D=3/0/0/43/5 trans=2 bigcloses=6 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@12 maxbuild=1.00@12 maxarea=3.85@42 firstclose=12 small=9
+  t= 14 BUILD     -> BANK-RACE (area_sum 68 / turn 14)
+  t= 57 BANK-RACE -> DENY      (lead 306 >= 300)
+  CLOSE t= 16 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 23 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 27 gain= 24.0 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 42 gain= 13.2 phase=BANK-RACE lead=none
+  CLOSE t= 56 gain= 10.0 phase=BANK-RACE lead=none
+GAME collapser us=red skip=20 rs=690 ss=795 LOSS dwell B/C/W/K/D=3/0/0/48/0 trans=1 bigcloses=5 contest_turns=0 wall_turns=0 lag=0 maxclose=0.67@13 maxbuild=1.00@13 maxarea=3.00@13 firstclose=11 small=12
+  t= 14 BUILD     -> BANK-RACE (area_sum 63 / turn 14)
+  CLOSE t= 19 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 20 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 25 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 41 gain= 12.0 phase=BANK-RACE lead=none
+  CLOSE t= 47 gain=  8.7 phase=BANK-RACE lead=none
+GAME collapser us=blue skip=30 rs=804 ss=763 WIN dwell B/C/W/K/D=3/0/0/43/0 trans=1 bigcloses=9 contest_turns=0 wall_turns=0 lag=0 maxclose=1.00@56 maxbuild=0.33@18 maxarea=3.19@60 firstclose=20 small=7
+  t= 19 BUILD     -> BANK-RACE (area_sum 46 / turn 19)
+  CLOSE t= 20 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 24 gain= 10.5 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 33 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 34 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 41 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 46 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 52 gain= 11.7 phase=BANK-RACE lead=none
+  CLOSE t= 55 gain= 11.7 phase=BANK-RACE lead=none
+GAME collapser us=red skip=30 rs=910 ss=926 LOSS dwell B/C/W/K/D=3/0/0/43/0 trans=1 bigcloses=12 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@35 maxbuild=0.50@17 maxarea=3.40@37 firstclose=18 small=6
+  t= 19 BUILD     -> BANK-RACE (area_sum 50 / turn 19)
+  CLOSE t= 18 gain= 22.5 phase=BUILD     lead=none
+  CLOSE t= 22 gain= 27.0 phase=BANK-RACE lead=none
+  CLOSE t= 27 gain= 31.5 phase=BANK-RACE lead=none
+  CLOSE t= 28 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain= 31.5 phase=BANK-RACE lead=none
+  CLOSE t= 35 gain= 19.2 phase=BANK-RACE lead=none
+  CLOSE t= 45 gain= 16.1 phase=BANK-RACE lead=none
+  CLOSE t= 47 gain= 11.4 phase=BANK-RACE lead=none
+  CLOSE t= 51 gain= 11.4 phase=BANK-RACE lead=none
+  CLOSE t= 52 gain= 16.1 phase=BANK-RACE lead=none
+  CLOSE t= 57 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 59 gain= 20.5 phase=BANK-RACE lead=none
+GAME gbstyle us=blue skip=0 rs=1823 ss=782 WIN dwell B/C/W/K/D=8/0/0/7/46 trans=2 bigcloses=0 contest_turns=0 wall_turns=0 lag=0 maxclose=0.25@8 maxbuild=1.00@2 maxarea=2.68@32 firstclose=7 small=4
+  t=  9 BUILD     -> BANK-RACE (area_sum 30 / turn 9)
+  t= 16 BANK-RACE -> DENY      (lead 333 >= 300)
+GAME gbstyle us=red skip=0 rs=2169 ss=947 WIN dwell B/C/W/K/D=9/0/0/8/44 trans=2 bigcloses=3 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@29 maxbuild=1.00@3 maxarea=5.13@51 firstclose=8 small=4
+  t= 10 BUILD     -> BANK-RACE (area_sum 25 / turn 10)
+  t= 18 BANK-RACE -> DENY      (lead 327 >= 300)
+  CLOSE t= 27 gain= 15.0 phase=DENY      lead=none
+  CLOSE t= 33 gain= 13.2 phase=DENY      lead=none
+  CLOSE t= 60 gain=  9.5 phase=DENY      lead=none
+GAME gbstyle us=blue skip=10 rs=1108 ss=654 WIN dwell B/C/W/K/D=3/0/0/32/21 trans=2 bigcloses=9 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@18 maxbuild=1.00@8 maxarea=3.83@38 firstclose=8 small=2
+  t=  9 BUILD     -> BANK-RACE (area_sum 45 / turn 9)
+  t= 41 BANK-RACE -> DENY      (lead 300 >= 300)
+  CLOSE t=  8 gain=  9.0 phase=BUILD     lead=none
+  CLOSE t= 16 gain= 26.8 phase=BANK-RACE lead=none
+  CLOSE t= 17 gain= 12.0 phase=BANK-RACE lead=none
+  CLOSE t= 20 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 27 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 37 gain= 19.2 phase=BANK-RACE lead=none
+  CLOSE t= 45 gain= 12.6 phase=DENY      lead=none
+  CLOSE t= 53 gain=  9.0 phase=DENY      lead=none
+  CLOSE t= 58 gain=  9.0 phase=DENY      lead=none
+GAME gbstyle us=red skip=10 rs=1536 ss=1255 WIN dwell B/C/W/K/D=3/0/0/53/0 trans=1 bigcloses=6 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@41 maxbuild=1.00@7 maxarea=3.42@17 firstclose=15 small=1
+  t=  9 BUILD     -> BANK-RACE (area_sum 39 / turn 9)
+  CLOSE t= 15 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 38 gain= 10.2 phase=BANK-RACE lead=none
+  CLOSE t= 41 gain=  8.1 phase=BANK-RACE lead=none
+  CLOSE t= 42 gain= 11.1 phase=BANK-RACE lead=none
+  CLOSE t= 49 gain=  8.6 phase=BANK-RACE lead=none
+  CLOSE t= 50 gain= 17.3 phase=BANK-RACE lead=none
+GAME gbstyle us=blue skip=20 rs=1402 ss=738 WIN dwell B/C/W/K/D=3/0/0/23/25 trans=2 bigcloses=6 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@20 maxbuild=1.00@12 maxarea=6.00@20 firstclose=17 small=1
+  t= 14 BUILD     -> BANK-RACE (area_sum 65 / turn 14)
+  t= 37 BANK-RACE -> DENY      (lead 307 >= 300)
+  CLOSE t= 19 gain= 39.8 phase=BANK-RACE lead=none
+  CLOSE t= 21 gain= 10.1 phase=BANK-RACE lead=none
+  CLOSE t= 26 gain=  8.6 phase=BANK-RACE lead=none
+  CLOSE t= 36 gain= 20.0 phase=BANK-RACE lead=none
+  CLOSE t= 44 gain= 13.8 phase=DENY      lead=none
+  CLOSE t= 50 gain= 14.2 phase=DENY      lead=none
+GAME gbstyle us=red skip=20 rs=1454 ss=1694 LOSS dwell B/C/W/K/D=3/0/0/48/0 trans=1 bigcloses=6 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@47 maxbuild=1.00@13 maxarea=4.04@35 firstclose=17 small=4
+  t= 14 BUILD     -> BANK-RACE (area_sum 66 / turn 14)
+  CLOSE t= 17 gain= 11.2 phase=BANK-RACE lead=none
+  CLOSE t= 24 gain= 19.1 phase=BANK-RACE lead=none
+  CLOSE t= 34 gain= 39.6 phase=BANK-RACE lead=none
+  CLOSE t= 47 gain=  8.6 phase=BANK-RACE lead=none
+  CLOSE t= 54 gain= 13.6 phase=BANK-RACE lead=none
+  CLOSE t= 60 gain= 10.0 phase=BANK-RACE lead=none
+GAME gbstyle us=blue skip=30 rs=841 ss=821 WIN dwell B/C/W/K/D=3/0/0/43/0 trans=1 bigcloses=4 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@48 maxbuild=0.50@29 maxarea=4.88@48 firstclose=26 small=5
+  t= 19 BUILD     -> BANK-RACE (area_sum 46 / turn 19)
+  CLOSE t= 45 gain= 11.1 phase=BANK-RACE lead=none
+  CLOSE t= 47 gain= 22.8 phase=BANK-RACE lead=none
+  CLOSE t= 51 gain= 18.5 phase=BANK-RACE lead=none
+  CLOSE t= 60 gain=  9.4 phase=BANK-RACE lead=none
+GAME gbstyle us=red skip=30 rs=1133 ss=808 WIN dwell B/C/W/K/D=3/0/0/41/2 trans=2 bigcloses=4 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@57 maxbuild=0.50@17 maxarea=6.27@25 firstclose=18 small=4
+  t= 19 BUILD     -> BANK-RACE (area_sum 50 / turn 19)
+  t= 60 BANK-RACE -> DENY      (lead 311 >= 300)
+  CLOSE t= 18 gain= 22.5 phase=BUILD     lead=none
+  CLOSE t= 22 gain= 27.0 phase=BANK-RACE lead=none
+  CLOSE t= 26 gain= 22.5 phase=BANK-RACE lead=none
+  CLOSE t= 31 gain=  9.0 phase=BANK-RACE lead=none
+GAME v1base us=blue skip=0 rs=934 ss=1055 LOSS dwell B/C/W/K/D=5/0/0/56/0 trans=1 bigcloses=18 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@54 maxbuild=1.00@2 maxarea=9.37@36 firstclose=2 small=8
+  t=  6 BUILD     -> BANK-RACE (area_sum 27 / turn 6)
+  CLOSE t= 16 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 24 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 26 gain= 15.0 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain= 33.0 phase=BANK-RACE lead=none
+  CLOSE t= 31 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 34 gain= 19.5 phase=BANK-RACE lead=none
+  CLOSE t= 36 gain= 29.0 phase=BANK-RACE lead=none
+  CLOSE t= 38 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 40 gain= 51.0 phase=BANK-RACE lead=none
+  CLOSE t= 42 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 43 gain= 51.0 phase=BANK-RACE lead=none
+  CLOSE t= 48 gain= 26.5 phase=BANK-RACE lead=none
+  CLOSE t= 50 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 51 gain= 26.5 phase=BANK-RACE lead=none
+  CLOSE t= 53 gain= 38.5 phase=BANK-RACE lead=none
+  CLOSE t= 54 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 58 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 59 gain= 39.1 phase=BANK-RACE lead=none
+GAME v1base us=red skip=0 rs=936 ss=893 WIN dwell B/C/W/K/D=6/0/0/55/0 trans=1 bigcloses=2 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@51 maxbuild=1.00@3 maxarea=2.95@19 firstclose=3 small=15
+  t=  7 BUILD     -> BANK-RACE (area_sum 27 / turn 7)
+  CLOSE t= 35 gain= 10.5 phase=BANK-RACE lead=none
+  CLOSE t= 39 gain= 10.5 phase=BANK-RACE lead=none
+GAME v1base us=blue skip=10 rs=934 ss=1055 LOSS dwell B/C/W/K/D=3/0/0/53/0 trans=1 bigcloses=18 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@54 maxbuild=1.00@8 maxarea=9.37@36 firstclose=6 small=6
+  t=  9 BUILD     -> BANK-RACE (area_sum 45 / turn 9)
+  CLOSE t= 16 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 24 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 26 gain= 15.0 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain= 33.0 phase=BANK-RACE lead=none
+  CLOSE t= 31 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 34 gain= 19.5 phase=BANK-RACE lead=none
+  CLOSE t= 36 gain= 29.0 phase=BANK-RACE lead=none
+  CLOSE t= 38 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 40 gain= 51.0 phase=BANK-RACE lead=none
+  CLOSE t= 42 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 43 gain= 51.0 phase=BANK-RACE lead=none
+  CLOSE t= 48 gain= 26.5 phase=BANK-RACE lead=none
+  CLOSE t= 50 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 51 gain= 26.5 phase=BANK-RACE lead=none
+  CLOSE t= 53 gain= 38.5 phase=BANK-RACE lead=none
+  CLOSE t= 54 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 58 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 59 gain= 39.1 phase=BANK-RACE lead=none
+GAME v1base us=red skip=10 rs=771 ss=1021 LOSS dwell B/C/W/K/D=3/0/0/53/0 trans=1 bigcloses=16 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@47 maxbuild=1.00@7 maxarea=7.79@55 firstclose=7 small=5
+  t=  9 BUILD     -> BANK-RACE (area_sum 45 / turn 9)
+  CLOSE t=  9 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 19 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 20 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 27 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 29 gain= 12.5 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 32 gain= 12.5 phase=BANK-RACE lead=none
+  CLOSE t= 37 gain= 12.5 phase=BANK-RACE lead=none
+  CLOSE t= 38 gain= 21.8 phase=BANK-RACE lead=none
+  CLOSE t= 40 gain= 10.0 phase=BANK-RACE lead=none
+  CLOSE t= 44 gain= 10.0 phase=BANK-RACE lead=none
+  CLOSE t= 45 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 47 gain= 15.0 phase=BANK-RACE lead=none
+  CLOSE t= 49 gain= 10.0 phase=BANK-RACE lead=none
+  CLOSE t= 57 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 58 gain= 24.4 phase=BANK-RACE lead=none
+GAME v1base us=blue skip=20 rs=934 ss=1055 LOSS dwell B/C/W/K/D=3/0/0/48/0 trans=1 bigcloses=18 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@54 maxbuild=1.00@12 maxarea=9.37@36 firstclose=12 small=3
+  t= 14 BUILD     -> BANK-RACE (area_sum 68 / turn 14)
+  CLOSE t= 16 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 24 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 26 gain= 15.0 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain= 33.0 phase=BANK-RACE lead=none
+  CLOSE t= 31 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 34 gain= 19.5 phase=BANK-RACE lead=none
+  CLOSE t= 36 gain= 29.0 phase=BANK-RACE lead=none
+  CLOSE t= 38 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 40 gain= 51.0 phase=BANK-RACE lead=none
+  CLOSE t= 42 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 43 gain= 51.0 phase=BANK-RACE lead=none
+  CLOSE t= 48 gain= 26.5 phase=BANK-RACE lead=none
+  CLOSE t= 50 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 51 gain= 26.5 phase=BANK-RACE lead=none
+  CLOSE t= 53 gain= 38.5 phase=BANK-RACE lead=none
+  CLOSE t= 54 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 58 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 59 gain= 39.1 phase=BANK-RACE lead=none
+GAME v1base us=red skip=20 rs=771 ss=1021 LOSS dwell B/C/W/K/D=3/0/0/48/0 trans=1 bigcloses=15 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@47 maxbuild=1.00@13 maxarea=7.79@55 firstclose=11 small=4
+  t= 14 BUILD     -> BANK-RACE (area_sum 63 / turn 14)
+  CLOSE t= 19 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 20 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 27 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 29 gain= 12.5 phase=BANK-RACE lead=none
+  CLOSE t= 30 gain= 18.0 phase=BANK-RACE lead=none
+  CLOSE t= 32 gain= 12.5 phase=BANK-RACE lead=none
+  CLOSE t= 37 gain= 12.5 phase=BANK-RACE lead=none
+  CLOSE t= 38 gain= 21.8 phase=BANK-RACE lead=none
+  CLOSE t= 40 gain= 10.0 phase=BANK-RACE lead=none
+  CLOSE t= 44 gain= 10.0 phase=BANK-RACE lead=none
+  CLOSE t= 45 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 47 gain= 15.0 phase=BANK-RACE lead=none
+  CLOSE t= 49 gain= 10.0 phase=BANK-RACE lead=none
+  CLOSE t= 57 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 58 gain= 24.4 phase=BANK-RACE lead=none
+GAME v1base us=blue skip=30 rs=737 ss=860 LOSS dwell B/C/W/K/D=3/0/0/43/0 trans=1 bigcloses=20 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@28 maxbuild=0.33@18 maxarea=5.62@42 firstclose=24 small=2
+  t= 19 BUILD     -> BANK-RACE (area_sum 46 / turn 19)
+  CLOSE t= 24 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 26 gain=  9.6 phase=BANK-RACE lead=none
+  CLOSE t= 27 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 28 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 31 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 35 gain= 12.5 phase=BANK-RACE lead=none
+  CLOSE t= 37 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 38 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 40 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 42 gain= 36.0 phase=BANK-RACE lead=none
+  CLOSE t= 45 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 46 gain= 36.0 phase=BANK-RACE lead=none
+  CLOSE t= 48 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 49 gain= 27.0 phase=BANK-RACE lead=none
+  CLOSE t= 50 gain= 13.5 phase=BANK-RACE lead=none
+  CLOSE t= 53 gain= 10.5 phase=BANK-RACE lead=none
+  CLOSE t= 54 gain= 27.0 phase=BANK-RACE lead=none
+  CLOSE t= 56 gain=  9.0 phase=BANK-RACE lead=none
+  CLOSE t= 58 gain= 36.0 phase=BANK-RACE lead=none
+  CLOSE t= 59 gain=  9.6 phase=BANK-RACE lead=none
+GAME v1base us=red skip=30 rs=647 ss=880 LOSS dwell B/C/W/K/D=3/0/0/43/0 trans=1 bigcloses=13 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@31 maxbuild=0.50@17 maxarea=7.36@29 firstclose=18 small=1
+  t= 19 BUILD     -> BANK-RACE (area_sum 50 / turn 19)
+  CLOSE t= 18 gain= 22.5 phase=BUILD     lead=none
+  CLOSE t= 22 gain= 27.0 phase=BANK-RACE lead=none
+  CLOSE t= 29 gain= 27.0 phase=BANK-RACE lead=none
+  CLOSE t= 32 gain= 31.5 phase=BANK-RACE lead=none
+  CLOSE t= 40 gain= 10.0 phase=BANK-RACE lead=none
+  CLOSE t= 41 gain= 10.0 phase=BANK-RACE lead=none
+  CLOSE t= 45 gain=  8.7 phase=BANK-RACE lead=none
+  CLOSE t= 49 gain= 11.6 phase=BANK-RACE lead=none
+  CLOSE t= 51 gain=  9.5 phase=BANK-RACE lead=none
+  CLOSE t= 53 gain= 11.6 phase=BANK-RACE lead=none
+  CLOSE t= 55 gain=  9.5 phase=BANK-RACE lead=none
+  CLOSE t= 57 gain= 11.6 phase=BANK-RACE lead=none
+  CLOSE t= 60 gain= 11.6 phase=BANK-RACE lead=none
+AGG collapser n=8 W-L=5-3 bigcloses=61 w/lead=0/61 mean_lead=-1.0 | dwell BUILD min/med/max/mean=3/3/6/3.6 CONTEST=0/0/0/0.0 WALL=0/0/0/0.0 BANK=43/48/55/48.0 DENY=0/0/5/1.9 | contest_lag=0/0
+  color us=blue: W-L=4-0 contest_turns=0 wall_turns=0 bigcloses=27
+  color us=red: W-L=1-3 contest_turns=0 wall_turns=0 bigcloses=34
+AGG gbstyle n=8 W-L=7-1 bigcloses=38 w/lead=0/38 mean_lead=-1.0 | dwell BUILD min/med/max/mean=3/3/9/4.4 CONTEST=0/0/0/0.0 WALL=0/0/0/0.0 BANK=7/41/53/31.9 DENY=0/21/46/17.2 | contest_lag=0/0
+  color us=blue: W-L=4-0 contest_turns=0 wall_turns=0 bigcloses=19
+  color us=red: W-L=3-1 contest_turns=0 wall_turns=0 bigcloses=19
+AGG v1base n=8 W-L=1-7 bigcloses=120 w/lead=0/120 mean_lead=-1.0 | dwell BUILD min/med/max/mean=3/3/6/3.6 CONTEST=0/0/0/0.0 WALL=0/0/0/0.0 BANK=43/53/56/49.9 DENY=0/0/0/0.0 | contest_lag=0/0
+  color us=blue: W-L=0-4 contest_turns=0 wall_turns=0 bigcloses=74
+  color us=red: W-L=1-3 contest_turns=0 wall_turns=0 bigcloses=46
+
+===== P1 (retune: contest 0.5, wall 1.0, bank turn>=30, build-exit bypass) =====
+GAME collapser us=blue skip=0 rs=1139 ss=790 WIN dwell B/C/W/K/D=11/24/0/21/5 trans=6 bigcloses=6 contest_turns=24 wall_turns=0 lag=7 maxclose=0.50@2 maxbuild=1.00@2 maxarea=3.85@42 firstclose=2 small=14
+  t=  2 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 21 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 30 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 35 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 36 BUILD     -> BANK-RACE (area_sum 27 / turn 36)
+  t= 57 BANK-RACE -> DENY      (lead 306 >= 300)
+  CLOSE t= 16 gain=  9.0 phase=CONTEST   lead=14 turns
+  CLOSE t= 23 gain=  9.0 phase=BUILD     lead=21 turns
+  CLOSE t= 27 gain= 24.0 phase=BUILD     lead=25 turns
+  CLOSE t= 30 gain=  9.0 phase=CONTEST   lead=0 turns
+  CLOSE t= 42 gain= 13.2 phase=BANK-RACE lead=12 turns
+  CLOSE t= 56 gain= 10.0 phase=BANK-RACE lead=26 turns
+GAME collapser us=red skip=0 rs=1176 ss=1008 WIN dwell B/C/W/K/D=12/17/0/32/0 trans=3 bigcloses=11 contest_turns=17 wall_turns=0 lag=3 maxclose=0.75@45 maxbuild=1.00@3 maxarea=2.95@19 firstclose=3 small=15
+  t=  5 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 22 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 30 BUILD     -> BANK-RACE (area_sum 54 / turn 30)
+  CLOSE t= 25 gain= 18.0 phase=BUILD     lead=20 turns
+  CLOSE t= 29 gain=  9.0 phase=BUILD     lead=24 turns
+  CLOSE t= 30 gain=  9.0 phase=BANK-RACE lead=25 turns
+  CLOSE t= 33 gain=  9.0 phase=BANK-RACE lead=28 turns
+  CLOSE t= 36 gain= 14.0 phase=BANK-RACE lead=31 turns
+  CLOSE t= 43 gain= 12.0 phase=BANK-RACE lead=38 turns
+  CLOSE t= 45 gain= 12.0 phase=BANK-RACE lead=40 turns
+  CLOSE t= 47 gain= 12.8 phase=BANK-RACE lead=42 turns
+  CLOSE t= 49 gain= 12.0 phase=BANK-RACE lead=44 turns
+  CLOSE t= 50 gain= 16.5 phase=BANK-RACE lead=45 turns
+  CLOSE t= 60 gain= 12.4 phase=BANK-RACE lead=55 turns
+GAME collapser us=blue skip=10 rs=1139 ss=790 WIN dwell B/C/W/K/D=11/19/0/21/5 trans=6 bigcloses=6 contest_turns=19 wall_turns=0 lag=6 maxclose=0.67@8 maxbuild=1.00@8 maxarea=3.85@42 firstclose=6 small=12
+  t=  7 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 21 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 30 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 35 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 36 BUILD     -> BANK-RACE (area_sum 27 / turn 36)
+  t= 57 BANK-RACE -> DENY      (lead 306 >= 300)
+  CLOSE t= 16 gain=  9.0 phase=CONTEST   lead=9 turns
+  CLOSE t= 23 gain=  9.0 phase=BUILD     lead=16 turns
+  CLOSE t= 27 gain= 24.0 phase=BUILD     lead=20 turns
+  CLOSE t= 30 gain=  9.0 phase=CONTEST   lead=0 turns
+  CLOSE t= 42 gain= 13.2 phase=BANK-RACE lead=12 turns
+  CLOSE t= 56 gain= 10.0 phase=BANK-RACE lead=26 turns
+GAME collapser us=red skip=10 rs=690 ss=795 LOSS dwell B/C/W/K/D=15/16/0/25/0 trans=5 bigcloses=6 contest_turns=16 wall_turns=0 lag=7 maxclose=0.50@7 maxbuild=1.00@7 maxarea=3.38@9 firstclose=7 small=13
+  t=  7 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 18 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 27 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 32 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 37 BUILD     -> BANK-RACE (area_sum 26 / turn 37)
+  CLOSE t=  9 gain=  9.0 phase=CONTEST   lead=2 turns
+  CLOSE t= 19 gain= 18.0 phase=BUILD     lead=12 turns
+  CLOSE t= 20 gain= 13.5 phase=BUILD     lead=13 turns
+  CLOSE t= 25 gain= 18.0 phase=BUILD     lead=18 turns
+  CLOSE t= 41 gain= 12.0 phase=BANK-RACE lead=14 turns
+  CLOSE t= 47 gain=  8.7 phase=BANK-RACE lead=20 turns
+GAME collapser us=blue skip=20 rs=1139 ss=790 WIN dwell B/C/W/K/D=11/14/0/21/5 trans=6 bigcloses=6 contest_turns=14 wall_turns=0 lag=7 maxclose=0.50@12 maxbuild=1.00@12 maxarea=3.85@42 firstclose=12 small=9
+  t= 12 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 21 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 30 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 35 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 36 BUILD     -> BANK-RACE (area_sum 27 / turn 36)
+  t= 57 BANK-RACE -> DENY      (lead 306 >= 300)
+  CLOSE t= 16 gain=  9.0 phase=CONTEST   lead=4 turns
+  CLOSE t= 23 gain=  9.0 phase=BUILD     lead=11 turns
+  CLOSE t= 27 gain= 24.0 phase=BUILD     lead=15 turns
+  CLOSE t= 30 gain=  9.0 phase=CONTEST   lead=0 turns
+  CLOSE t= 42 gain= 13.2 phase=BANK-RACE lead=12 turns
+  CLOSE t= 56 gain= 10.0 phase=BANK-RACE lead=26 turns
+GAME collapser us=red skip=20 rs=690 ss=795 LOSS dwell B/C/W/K/D=15/11/0/25/0 trans=5 bigcloses=5 contest_turns=11 wall_turns=0 lag=6 maxclose=0.67@13 maxbuild=1.00@13 maxarea=3.00@13 firstclose=11 small=12
+  t= 12 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 18 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 27 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 32 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 37 BUILD     -> BANK-RACE (area_sum 26 / turn 37)
+  CLOSE t= 19 gain= 18.0 phase=BUILD     lead=7 turns
+  CLOSE t= 20 gain= 13.5 phase=BUILD     lead=8 turns
+  CLOSE t= 25 gain= 18.0 phase=BUILD     lead=13 turns
+  CLOSE t= 41 gain= 12.0 phase=BANK-RACE lead=14 turns
+  CLOSE t= 47 gain=  8.7 phase=BANK-RACE lead=20 turns
+GAME collapser us=blue skip=30 rs=804 ss=763 WIN dwell B/C/W/K/D=10/5/0/31/0 trans=3 bigcloses=9 contest_turns=5 wall_turns=0 lag=3 maxclose=1.00@56 maxbuild=0.33@18 maxarea=3.19@60 firstclose=20 small=7
+  t= 26 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 31 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 31 BUILD     -> BANK-RACE (area_sum 26 / turn 31)
+  CLOSE t= 20 gain=  9.0 phase=BUILD     lead=none
+  CLOSE t= 24 gain= 10.5 phase=BUILD     lead=none
+  CLOSE t= 30 gain=  9.0 phase=CONTEST   lead=4 turns
+  CLOSE t= 33 gain=  9.0 phase=BANK-RACE lead=7 turns
+  CLOSE t= 34 gain=  9.0 phase=BANK-RACE lead=8 turns
+  CLOSE t= 41 gain=  9.0 phase=BANK-RACE lead=15 turns
+  CLOSE t= 46 gain=  9.0 phase=BANK-RACE lead=20 turns
+  CLOSE t= 52 gain= 11.7 phase=BANK-RACE lead=26 turns
+  CLOSE t= 55 gain= 11.7 phase=BANK-RACE lead=29 turns
+GAME collapser us=red skip=30 rs=910 ss=926 LOSS dwell B/C/W/K/D=16/13/0/17/0 trans=3 bigcloses=12 contest_turns=13 wall_turns=0 lag=3 maxclose=0.75@35 maxbuild=0.50@17 maxarea=3.40@37 firstclose=18 small=6
+  t= 29 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 42 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 45 BUILD     -> BANK-RACE (area_sum 27 / turn 45)
+  CLOSE t= 18 gain= 22.5 phase=BUILD     lead=none
+  CLOSE t= 22 gain= 27.0 phase=BUILD     lead=none
+  CLOSE t= 27 gain= 31.5 phase=BUILD     lead=none
+  CLOSE t= 28 gain= 18.0 phase=BUILD     lead=none
+  CLOSE t= 30 gain= 31.5 phase=CONTEST   lead=1 turns
+  CLOSE t= 35 gain= 19.2 phase=CONTEST   lead=6 turns
+  CLOSE t= 45 gain= 16.1 phase=BANK-RACE lead=16 turns
+  CLOSE t= 47 gain= 11.4 phase=BANK-RACE lead=18 turns
+  CLOSE t= 51 gain= 11.4 phase=BANK-RACE lead=22 turns
+  CLOSE t= 52 gain= 16.1 phase=BANK-RACE lead=23 turns
+  CLOSE t= 57 gain= 18.0 phase=BANK-RACE lead=28 turns
+  CLOSE t= 59 gain= 20.5 phase=BANK-RACE lead=30 turns
+GAME gbstyle us=blue skip=0 rs=1823 ss=782 WIN dwell B/C/W/K/D=6/0/23/0/32 trans=3 bigcloses=0 contest_turns=0 wall_turns=23 lag=0 maxclose=0.25@8 maxbuild=1.00@2 maxarea=2.68@32 firstclose=7 small=4
+  t=  2 BUILD     -> WALL-RACE (build 1.00 >= 1, area 0.00 < 1)
+  t= 25 WALL-RACE -> BUILD     (build_rate 0.25 < 1.5)
+  t= 30 BUILD     -> DENY      (bank + lead 589 >= 300)
+GAME gbstyle us=red skip=0 rs=2169 ss=947 WIN dwell B/C/W/K/D=2/0/29/0/30 trans=3 bigcloses=3 contest_turns=0 wall_turns=29 lag=0 maxclose=0.50@29 maxbuild=1.00@3 maxarea=5.13@51 firstclose=8 small=4
+  t=  3 BUILD     -> WALL-RACE (build 1.00 >= 1, area 0.00 < 1)
+  t= 32 WALL-RACE -> BUILD     (build_rate 0.00 < 1.5)
+  t= 32 BUILD     -> DENY      (bank + lead 696 >= 300)
+  CLOSE t= 27 gain= 15.0 phase=WALL-RACE lead=24 turns
+  CLOSE t= 33 gain= 13.2 phase=DENY      lead=30 turns
+  CLOSE t= 60 gain=  9.5 phase=DENY      lead=57 turns
+GAME gbstyle us=blue skip=10 rs=1108 ss=654 WIN dwell B/C/W/K/D=17/7/0/11/21 trans=4 bigcloses=9 contest_turns=7 wall_turns=0 lag=3 maxclose=0.50@18 maxbuild=1.00@8 maxarea=3.83@38 firstclose=8 small=2
+  t= 18 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 25 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 30 BUILD     -> BANK-RACE (area_sum 48 / turn 30)
+  t= 41 BANK-RACE -> DENY      (lead 300 >= 300)
+  CLOSE t=  8 gain=  9.0 phase=BUILD     lead=none
+  CLOSE t= 16 gain= 26.8 phase=BUILD     lead=none
+  CLOSE t= 17 gain= 12.0 phase=BUILD     lead=none
+  CLOSE t= 20 gain=  9.0 phase=CONTEST   lead=2 turns
+  CLOSE t= 27 gain=  9.0 phase=BUILD     lead=9 turns
+  CLOSE t= 37 gain= 19.2 phase=BANK-RACE lead=19 turns
+  CLOSE t= 45 gain= 12.6 phase=DENY      lead=27 turns
+  CLOSE t= 53 gain=  9.0 phase=DENY      lead=35 turns
+  CLOSE t= 58 gain=  9.0 phase=DENY      lead=40 turns
+GAME gbstyle us=red skip=10 rs=1536 ss=1255 WIN dwell B/C/W/K/D=5/0/19/32/0 trans=3 bigcloses=6 contest_turns=0 wall_turns=19 lag=0 maxclose=0.50@41 maxbuild=1.00@7 maxarea=3.42@17 firstclose=15 small=1
+  t=  7 BUILD     -> WALL-RACE (build 1.00 >= 1, area 0.00 < 1)
+  t= 26 WALL-RACE -> BUILD     (build_rate 0.25 < 1.5)
+  t= 30 BUILD     -> BANK-RACE (area_sum 48 / turn 30)
+  CLOSE t= 15 gain=  9.0 phase=WALL-RACE lead=8 turns
+  CLOSE t= 38 gain= 10.2 phase=BANK-RACE lead=31 turns
+  CLOSE t= 41 gain=  8.1 phase=BANK-RACE lead=34 turns
+  CLOSE t= 42 gain= 11.1 phase=BANK-RACE lead=35 turns
+  CLOSE t= 49 gain=  8.6 phase=BANK-RACE lead=42 turns
+  CLOSE t= 50 gain= 17.3 phase=BANK-RACE lead=43 turns
+GAME gbstyle us=blue skip=20 rs=1402 ss=738 WIN dwell B/C/W/K/D=13/7/0/6/25 trans=4 bigcloses=6 contest_turns=7 wall_turns=0 lag=3 maxclose=0.50@20 maxbuild=1.00@12 maxarea=6.00@20 firstclose=17 small=1
+  t= 20 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 27 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 31 BUILD     -> BANK-RACE (area_sum 37 / turn 31)
+  t= 37 BANK-RACE -> DENY      (lead 307 >= 300)
+  CLOSE t= 19 gain= 39.8 phase=BUILD     lead=none
+  CLOSE t= 21 gain= 10.1 phase=CONTEST   lead=1 turns
+  CLOSE t= 26 gain=  8.6 phase=CONTEST   lead=6 turns
+  CLOSE t= 36 gain= 20.0 phase=BANK-RACE lead=16 turns
+  CLOSE t= 44 gain= 13.8 phase=DENY      lead=24 turns
+  CLOSE t= 50 gain= 14.2 phase=DENY      lead=30 turns
+GAME gbstyle us=red skip=20 rs=1454 ss=1694 LOSS dwell B/C/W/K/D=19/0/0/32/0 trans=1 bigcloses=6 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@47 maxbuild=1.00@13 maxarea=4.04@35 firstclose=17 small=4
+  t= 30 BUILD     -> BANK-RACE (area_sum 69 / turn 30)
+  CLOSE t= 17 gain= 11.2 phase=BUILD     lead=none
+  CLOSE t= 24 gain= 19.1 phase=BUILD     lead=none
+  CLOSE t= 34 gain= 39.6 phase=BANK-RACE lead=none
+  CLOSE t= 47 gain=  8.6 phase=BANK-RACE lead=none
+  CLOSE t= 54 gain= 13.6 phase=BANK-RACE lead=none
+  CLOSE t= 60 gain= 10.0 phase=BANK-RACE lead=none
+GAME gbstyle us=blue skip=30 rs=841 ss=821 WIN dwell B/C/W/K/D=14/0/0/32/0 trans=1 bigcloses=4 contest_turns=0 wall_turns=0 lag=0 maxclose=0.75@48 maxbuild=0.50@29 maxarea=4.88@48 firstclose=26 small=5
+  t= 30 BUILD     -> BANK-RACE (area_sum 26 / turn 30)
+  CLOSE t= 45 gain= 11.1 phase=BANK-RACE lead=none
+  CLOSE t= 47 gain= 22.8 phase=BANK-RACE lead=none
+  CLOSE t= 51 gain= 18.5 phase=BANK-RACE lead=none
+  CLOSE t= 60 gain=  9.4 phase=BANK-RACE lead=none
+GAME gbstyle us=red skip=30 rs=1133 ss=808 WIN dwell B/C/W/K/D=23/0/0/21/2 trans=2 bigcloses=4 contest_turns=0 wall_turns=0 lag=0 maxclose=0.50@57 maxbuild=0.50@17 maxarea=6.27@25 firstclose=18 small=4
+  t= 39 BUILD     -> BANK-RACE (area_sum 26 / turn 39)
+  t= 60 BANK-RACE -> DENY      (lead 311 >= 300)
+  CLOSE t= 18 gain= 22.5 phase=BUILD     lead=none
+  CLOSE t= 22 gain= 27.0 phase=BUILD     lead=none
+  CLOSE t= 26 gain= 22.5 phase=BUILD     lead=none
+  CLOSE t= 31 gain=  9.0 phase=BUILD     lead=none
+GAME v1base us=blue skip=0 rs=934 ss=1055 LOSS dwell B/C/W/K/D=10/19/0/32/0 trans=3 bigcloses=18 contest_turns=19 wall_turns=0 lag=4 maxclose=0.75@54 maxbuild=1.00@2 maxarea=9.37@36 firstclose=2 small=8
+  t=  2 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 21 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 30 BUILD     -> BANK-RACE (area_sum 47 / turn 30)
+  CLOSE t= 16 gain=  9.0 phase=CONTEST   lead=14 turns
+  CLOSE t= 24 gain=  9.0 phase=BUILD     lead=22 turns
+  CLOSE t= 26 gain= 15.0 phase=BUILD     lead=24 turns
+  CLOSE t= 30 gain= 33.0 phase=BANK-RACE lead=28 turns
+  CLOSE t= 31 gain= 13.5 phase=BANK-RACE lead=29 turns
+  CLOSE t= 34 gain= 19.5 phase=BANK-RACE lead=32 turns
+  CLOSE t= 36 gain= 29.0 phase=BANK-RACE lead=34 turns
+  CLOSE t= 38 gain= 13.5 phase=BANK-RACE lead=36 turns
+  CLOSE t= 40 gain= 51.0 phase=BANK-RACE lead=38 turns
+  CLOSE t= 42 gain= 13.5 phase=BANK-RACE lead=40 turns
+  CLOSE t= 43 gain= 51.0 phase=BANK-RACE lead=41 turns
+  CLOSE t= 48 gain= 26.5 phase=BANK-RACE lead=46 turns
+  CLOSE t= 50 gain= 13.5 phase=BANK-RACE lead=48 turns
+  CLOSE t= 51 gain= 26.5 phase=BANK-RACE lead=49 turns
+  CLOSE t= 53 gain= 38.5 phase=BANK-RACE lead=51 turns
+  CLOSE t= 54 gain= 13.5 phase=BANK-RACE lead=52 turns
+  CLOSE t= 58 gain= 13.5 phase=BANK-RACE lead=56 turns
+  CLOSE t= 59 gain= 39.1 phase=BANK-RACE lead=57 turns
+GAME v1base us=red skip=0 rs=936 ss=893 WIN dwell B/C/W/K/D=12/17/0/32/0 trans=3 bigcloses=2 contest_turns=17 wall_turns=0 lag=3 maxclose=0.75@51 maxbuild=1.00@3 maxarea=2.95@19 firstclose=3 small=15
+  t=  5 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 22 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 30 BUILD     -> BANK-RACE (area_sum 28 / turn 30)
+  CLOSE t= 35 gain= 10.5 phase=BANK-RACE lead=30 turns
+  CLOSE t= 39 gain= 10.5 phase=BANK-RACE lead=34 turns
+GAME v1base us=blue skip=10 rs=934 ss=1055 LOSS dwell B/C/W/K/D=10/14/0/32/0 trans=3 bigcloses=18 contest_turns=14 wall_turns=0 lag=3 maxclose=0.75@54 maxbuild=1.00@8 maxarea=9.37@36 firstclose=6 small=6
+  t=  7 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 21 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 30 BUILD     -> BANK-RACE (area_sum 47 / turn 30)
+  CLOSE t= 16 gain=  9.0 phase=CONTEST   lead=9 turns
+  CLOSE t= 24 gain=  9.0 phase=BUILD     lead=17 turns
+  CLOSE t= 26 gain= 15.0 phase=BUILD     lead=19 turns
+  CLOSE t= 30 gain= 33.0 phase=BANK-RACE lead=23 turns
+  CLOSE t= 31 gain= 13.5 phase=BANK-RACE lead=24 turns
+  CLOSE t= 34 gain= 19.5 phase=BANK-RACE lead=27 turns
+  CLOSE t= 36 gain= 29.0 phase=BANK-RACE lead=29 turns
+  CLOSE t= 38 gain= 13.5 phase=BANK-RACE lead=31 turns
+  CLOSE t= 40 gain= 51.0 phase=BANK-RACE lead=33 turns
+  CLOSE t= 42 gain= 13.5 phase=BANK-RACE lead=35 turns
+  CLOSE t= 43 gain= 51.0 phase=BANK-RACE lead=36 turns
+  CLOSE t= 48 gain= 26.5 phase=BANK-RACE lead=41 turns
+  CLOSE t= 50 gain= 13.5 phase=BANK-RACE lead=43 turns
+  CLOSE t= 51 gain= 26.5 phase=BANK-RACE lead=44 turns
+  CLOSE t= 53 gain= 38.5 phase=BANK-RACE lead=46 turns
+  CLOSE t= 54 gain= 13.5 phase=BANK-RACE lead=47 turns
+  CLOSE t= 58 gain= 13.5 phase=BANK-RACE lead=51 turns
+  CLOSE t= 59 gain= 39.1 phase=BANK-RACE lead=52 turns
+GAME v1base us=red skip=10 rs=771 ss=1021 LOSS dwell B/C/W/K/D=13/20/0/23/0 trans=5 bigcloses=16 contest_turns=20 wall_turns=0 lag=7 maxclose=0.75@47 maxbuild=1.00@7 maxarea=7.79@55 firstclose=7 small=5
+  t=  7 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 18 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 29 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 38 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 39 BUILD     -> BANK-RACE (area_sum 45 / turn 39)
+  CLOSE t=  9 gain=  9.0 phase=CONTEST   lead=2 turns
+  CLOSE t= 19 gain= 18.0 phase=BUILD     lead=12 turns
+  CLOSE t= 20 gain= 13.5 phase=BUILD     lead=13 turns
+  CLOSE t= 27 gain= 13.5 phase=BUILD     lead=20 turns
+  CLOSE t= 29 gain= 12.5 phase=CONTEST   lead=0 turns
+  CLOSE t= 30 gain= 18.0 phase=CONTEST   lead=1 turns
+  CLOSE t= 32 gain= 12.5 phase=CONTEST   lead=3 turns
+  CLOSE t= 37 gain= 12.5 phase=CONTEST   lead=8 turns
+  CLOSE t= 38 gain= 21.8 phase=BUILD     lead=9 turns
+  CLOSE t= 40 gain= 10.0 phase=BANK-RACE lead=11 turns
+  CLOSE t= 44 gain= 10.0 phase=BANK-RACE lead=15 turns
+  CLOSE t= 45 gain=  9.0 phase=BANK-RACE lead=16 turns
+  CLOSE t= 47 gain= 15.0 phase=BANK-RACE lead=18 turns
+  CLOSE t= 49 gain= 10.0 phase=BANK-RACE lead=20 turns
+  CLOSE t= 57 gain=  9.0 phase=BANK-RACE lead=28 turns
+  CLOSE t= 58 gain= 24.4 phase=BANK-RACE lead=29 turns
+GAME v1base us=blue skip=20 rs=934 ss=1055 LOSS dwell B/C/W/K/D=10/9/0/32/0 trans=3 bigcloses=18 contest_turns=9 wall_turns=0 lag=4 maxclose=0.75@54 maxbuild=1.00@12 maxarea=9.37@36 firstclose=12 small=3
+  t= 12 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 21 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 30 BUILD     -> BANK-RACE (area_sum 47 / turn 30)
+  CLOSE t= 16 gain=  9.0 phase=CONTEST   lead=4 turns
+  CLOSE t= 24 gain=  9.0 phase=BUILD     lead=12 turns
+  CLOSE t= 26 gain= 15.0 phase=BUILD     lead=14 turns
+  CLOSE t= 30 gain= 33.0 phase=BANK-RACE lead=18 turns
+  CLOSE t= 31 gain= 13.5 phase=BANK-RACE lead=19 turns
+  CLOSE t= 34 gain= 19.5 phase=BANK-RACE lead=22 turns
+  CLOSE t= 36 gain= 29.0 phase=BANK-RACE lead=24 turns
+  CLOSE t= 38 gain= 13.5 phase=BANK-RACE lead=26 turns
+  CLOSE t= 40 gain= 51.0 phase=BANK-RACE lead=28 turns
+  CLOSE t= 42 gain= 13.5 phase=BANK-RACE lead=30 turns
+  CLOSE t= 43 gain= 51.0 phase=BANK-RACE lead=31 turns
+  CLOSE t= 48 gain= 26.5 phase=BANK-RACE lead=36 turns
+  CLOSE t= 50 gain= 13.5 phase=BANK-RACE lead=38 turns
+  CLOSE t= 51 gain= 26.5 phase=BANK-RACE lead=39 turns
+  CLOSE t= 53 gain= 38.5 phase=BANK-RACE lead=41 turns
+  CLOSE t= 54 gain= 13.5 phase=BANK-RACE lead=42 turns
+  CLOSE t= 58 gain= 13.5 phase=BANK-RACE lead=46 turns
+  CLOSE t= 59 gain= 39.1 phase=BANK-RACE lead=47 turns
+GAME v1base us=red skip=20 rs=771 ss=1021 LOSS dwell B/C/W/K/D=13/15/0/23/0 trans=5 bigcloses=15 contest_turns=15 wall_turns=0 lag=6 maxclose=0.75@47 maxbuild=1.00@13 maxarea=7.79@55 firstclose=11 small=4
+  t= 12 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 18 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 29 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 38 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  t= 39 BUILD     -> BANK-RACE (area_sum 45 / turn 39)
+  CLOSE t= 19 gain= 18.0 phase=BUILD     lead=7 turns
+  CLOSE t= 20 gain= 13.5 phase=BUILD     lead=8 turns
+  CLOSE t= 27 gain= 13.5 phase=BUILD     lead=15 turns
+  CLOSE t= 29 gain= 12.5 phase=CONTEST   lead=0 turns
+  CLOSE t= 30 gain= 18.0 phase=CONTEST   lead=1 turns
+  CLOSE t= 32 gain= 12.5 phase=CONTEST   lead=3 turns
+  CLOSE t= 37 gain= 12.5 phase=CONTEST   lead=8 turns
+  CLOSE t= 38 gain= 21.8 phase=BUILD     lead=9 turns
+  CLOSE t= 40 gain= 10.0 phase=BANK-RACE lead=11 turns
+  CLOSE t= 44 gain= 10.0 phase=BANK-RACE lead=15 turns
+  CLOSE t= 45 gain=  9.0 phase=BANK-RACE lead=16 turns
+  CLOSE t= 47 gain= 15.0 phase=BANK-RACE lead=18 turns
+  CLOSE t= 49 gain= 10.0 phase=BANK-RACE lead=20 turns
+  CLOSE t= 57 gain=  9.0 phase=BANK-RACE lead=28 turns
+  CLOSE t= 58 gain= 24.4 phase=BANK-RACE lead=29 turns
+GAME v1base us=blue skip=30 rs=737 ss=860 LOSS dwell B/C/W/K/D=10/34/0/2/0 trans=3 bigcloses=20 contest_turns=34 wall_turns=0 lag=4 maxclose=0.75@28 maxbuild=0.33@18 maxarea=5.62@42 firstclose=24 small=2
+  t= 26 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 60 CONTEST   -> BUILD     (turn 60 >= 60)
+  t= 60 BUILD     -> BANK-RACE (area_sum 30 / turn 60)
+  CLOSE t= 24 gain=  9.0 phase=BUILD     lead=none
+  CLOSE t= 26 gain=  9.6 phase=CONTEST   lead=0 turns
+  CLOSE t= 27 gain= 13.5 phase=CONTEST   lead=1 turns
+  CLOSE t= 28 gain=  9.0 phase=CONTEST   lead=2 turns
+  CLOSE t= 31 gain= 13.5 phase=CONTEST   lead=5 turns
+  CLOSE t= 35 gain= 12.5 phase=CONTEST   lead=9 turns
+  CLOSE t= 37 gain= 13.5 phase=CONTEST   lead=11 turns
+  CLOSE t= 38 gain=  9.0 phase=CONTEST   lead=12 turns
+  CLOSE t= 40 gain=  9.0 phase=CONTEST   lead=14 turns
+  CLOSE t= 42 gain= 36.0 phase=CONTEST   lead=16 turns
+  CLOSE t= 45 gain= 13.5 phase=CONTEST   lead=19 turns
+  CLOSE t= 46 gain= 36.0 phase=CONTEST   lead=20 turns
+  CLOSE t= 48 gain=  9.0 phase=CONTEST   lead=22 turns
+  CLOSE t= 49 gain= 27.0 phase=CONTEST   lead=23 turns
+  CLOSE t= 50 gain= 13.5 phase=CONTEST   lead=24 turns
+  CLOSE t= 53 gain= 10.5 phase=CONTEST   lead=27 turns
+  CLOSE t= 54 gain= 27.0 phase=CONTEST   lead=28 turns
+  CLOSE t= 56 gain=  9.0 phase=CONTEST   lead=30 turns
+  CLOSE t= 58 gain= 36.0 phase=CONTEST   lead=32 turns
+  CLOSE t= 59 gain=  9.6 phase=CONTEST   lead=33 turns
+GAME v1base us=red skip=30 rs=647 ss=880 LOSS dwell B/C/W/K/D=39/7/0/0/0 trans=2 bigcloses=13 contest_turns=7 wall_turns=0 lag=3 maxclose=0.50@31 maxbuild=0.50@17 maxarea=7.36@29 firstclose=18 small=1
+  t= 31 BUILD     -> CONTEST   (close_rate 0.50 >= 0.5)
+  t= 38 CONTEST   -> BUILD     (close_rate<0.4 x4)
+  CLOSE t= 18 gain= 22.5 phase=BUILD     lead=none
+  CLOSE t= 22 gain= 27.0 phase=BUILD     lead=none
+  CLOSE t= 29 gain= 27.0 phase=BUILD     lead=none
+  CLOSE t= 32 gain= 31.5 phase=CONTEST   lead=1 turns
+  CLOSE t= 40 gain= 10.0 phase=BUILD     lead=9 turns
+  CLOSE t= 41 gain= 10.0 phase=BUILD     lead=10 turns
+  CLOSE t= 45 gain=  8.7 phase=BUILD     lead=14 turns
+  CLOSE t= 49 gain= 11.6 phase=BUILD     lead=18 turns
+  CLOSE t= 51 gain=  9.5 phase=BUILD     lead=20 turns
+  CLOSE t= 53 gain= 11.6 phase=BUILD     lead=22 turns
+  CLOSE t= 55 gain=  9.5 phase=BUILD     lead=24 turns
+  CLOSE t= 57 gain= 11.6 phase=BUILD     lead=26 turns
+  CLOSE t= 60 gain= 11.6 phase=BUILD     lead=29 turns
+AGG collapser n=8 W-L=5-3 bigcloses=61 w/lead=55/61 mean_lead=18.8 | dwell BUILD min/med/max/mean=10/12/16/12.6 CONTEST=5/16/24/14.9 WALL=0/0/0/0.0 BANK=17/25/32/24.1 DENY=0/0/5/1.9 | contest_lag=42/119
+  color us=blue: W-L=4-0 contest_turns=62 wall_turns=0 bigcloses=27
+  color us=red: W-L=1-3 contest_turns=57 wall_turns=0 bigcloses=34
+AGG gbstyle n=8 W-L=7-1 bigcloses=38 w/lead=20/38 mean_lead=25.6 | dwell BUILD min/med/max/mean=2/14/23/12.4 CONTEST=0/0/7/1.8 WALL=0/0/29/8.9 BANK=0/21/32/16.8 DENY=0/21/32/13.8 | contest_lag=6/14
+  color us=blue: W-L=4-0 contest_turns=14 wall_turns=23 bigcloses=19
+  color us=red: W-L=3-1 contest_turns=0 wall_turns=48 bigcloses=19
+AGG v1base n=8 W-L=1-7 bigcloses=120 w/lead=116/120 mean_lead=24.0 | dwell BUILD min/med/max/mean=10/12/39/14.6 CONTEST=7/17/34/16.9 WALL=0/0/0/0.0 BANK=0/32/32/22.0 DENY=0/0/0/0.0 | contest_lag=34/135
+  color us=blue: W-L=0-4 contest_turns=76 wall_turns=0 bigcloses=74
+  color us=red: W-L=1-3 contest_turns=59 wall_turns=0 bigcloses=46
