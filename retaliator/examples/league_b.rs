@@ -54,8 +54,13 @@ fn play(
         let played = u16::from(game.position().actions_played());
         let ret_moves = (to_move == Player::Blue) == ret_blue;
         let mv = if ret_moves {
+            let b = eval_phases::Breakfix::from_env();
             let u = eval_phases::Unbreak::from_env();
-            if u.on() {
+            if b.on() {
+                // Lane E v7 Q1: dose via E_MISSED (one variable; E_UNBREAK stays unset).
+                let avoid = avoid_points(cuts, to_move, played, mem);
+                eval_phases::breakfix_best_move_with_avoid(game.position(), &avoid, b)
+            } else if u.on() {
                 // Lane E v7 Q2: dose via E_UNBREAK (one variable; B3_MEM stays 0).
                 let avoid = avoid_points(cuts, to_move, played, mem);
                 eval_phases::unbreak_best_move_with_avoid(game.position(), &avoid, u)
@@ -92,7 +97,7 @@ fn play(
 fn main() {
     let mem: usize = std::env::var("B3_MEM").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
     let scale: u8 = std::env::var("B3_SCALE").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
-    println!("B3 config: mem={mem} scale={scale} E_UNBREAK={:?}", std::env::var("E_UNBREAK").unwrap_or_default());
+    println!("B3 config: mem={mem} scale={scale} E_UNBREAK={:?} E_MISSED={:?}", std::env::var("E_UNBREAK").unwrap_or_default(), std::env::var("E_MISSED").unwrap_or_default());
     let mut sum = 0.0; let mut n = 0;
     for skip in [0usize, 10, 20, 30] {
         for ret_blue in [true, false] {

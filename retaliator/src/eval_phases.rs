@@ -364,18 +364,63 @@ pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move
     // the gate defaults stay the published doom-OFF control, and this path
     // keeps the shipped routing semantics (flat penalty) for any avoid set
     // the caller passes.
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF)
+}
+
+/// Lane E v7 Q1 break-fix valuation: charge only MISSED scoring events
+/// for break-fix cycles. The shipped doom discount prices the enemy's worst
+/// one-action pop at the full horizon (x12); the B-2 mechanism verdict is
+/// that a popped loop is re-made after a ~two-turn shield delay, so the
+/// popped area misses ~2 scoring events, not 12 — and ground re-made before
+/// the next event misses none. `missed` = events charged per unit of worst
+/// pop area, capped by events left (area x min(events, missed)); 0.0 = OFF
+/// = the doom-OFF control. Doses swept per gate via `E_MISSED`; doom stays
+/// off on this path (the two charges never stack).
+#[derive(Clone, Copy, PartialEq)]
+pub struct Breakfix {
+    pub missed: f64,
+}
+
+impl Breakfix {
+    /// OFF: the doom-OFF control (byte-identical).
+    pub const OFF: Self = Self { missed: 0.0 };
+    /// Parse the `E_MISSED` probe env (e.g. "2"). Absent/unparseable = OFF.
+    pub fn from_env() -> Self {
+        match std::env::var("E_MISSED") {
+            Ok(v) => match v.parse() {
+                Ok(m) => Self { missed: m },
+                Err(_) => Self::OFF,
+            },
+            Err(_) => Self::OFF,
+        }
+    }
+    /// Whether the charge fires at all.
+    pub fn on(self) -> bool {
+        self.missed > 0.0
+    }
+}
+
+/// The Lane E v7 Q1 term under test: the doom-OFF control plus the
+/// missed-events break-fix charge in dose `b` (see [`Breakfix`]).
+pub fn breakfix_best_move_with_avoid(
+    position: &Position,
+    avoid: &[Point],
+    b: Breakfix,
+) -> Option<Move> {
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, b)
 }
 
 /// The Lane E v7 Q2 term under test: the doom-OFF control plus the
 /// unbreakable-shape building bonus in dose `u` (see [`Unbreak`]). The avoid
 /// set is the caller's; the gate probes sweep doses via `E_UNBREAK`.
+/// Q2 verdict 2026-09-28: REJECT the endpoint-bonus form (no dose beats
+/// control on all gates); the entry stays for the record and the life probe.
 pub fn unbreak_best_move_with_avoid(
     position: &Position,
     avoid: &[Point],
     u: Unbreak,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, u, false)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, u, false, Breakfix::OFF)
 }
 
 /// The B-3 term under test: the shipped anti-rebuild routing plus the
@@ -387,7 +432,7 @@ pub fn farm_best_move_with_avoid(
     avoid: &[Point],
     form: Rebuild,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, Unbreak::OFF, false)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, Unbreak::OFF, false, Breakfix::OFF)
 }
 
 /// The shipped `search::best_move` exactly: the doom discount ON, no added
@@ -396,7 +441,7 @@ pub fn farm_best_move_with_avoid(
 /// the gate keeps per-example dead-code quiet.)
 #[allow(dead_code)]
 pub fn baseline_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, Unbreak::OFF, false)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF)
 }
 
 /// The CLOSE_B2 ablation control: doom OFF (the B-2 recommendation) with the
@@ -405,7 +450,7 @@ pub fn baseline_best_move(position: &Position) -> Option<Move> {
 /// term alone.
 #[allow(dead_code)]
 pub fn ablation_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, Unbreak::OFF, false)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF)
 }
 
 /// The skeleton's selection loop, with the doom discount and the added terms
@@ -422,6 +467,7 @@ fn best_move_features(
     rebuild: Rebuild,
     unbreak: Unbreak,
     cut_threat: bool,
+    breakfix: Breakfix,
 ) -> Option<Move> {
     if let Some(open) = blue_opener(position) {
         return Some(open);
@@ -510,6 +556,17 @@ fn best_move_features(
                 let (worst, cuttable, worst_mv) = pop_cut_remake(pos, mover);
                 if doom {
                     adjusted -= DOOM_W * worst * hz_doom;
+                }
+                // Lane E v7 Q1 break-fix valuation (gated by `breakfix`): the
+                // enemy's worst one-action pop charged at MISSED events, not
+                // the horizon — the popped area banks every event except the
+                // ~2 it sits broken during the shield-delayed re-make, and
+                // ground re-made before the next event misses none (~0).
+                // Units stay area x events; the cap is the dose. Never stacks
+                // with the full-horizon doom (that path passes Breakfix::OFF).
+                if breakfix.on() {
+                    let charge_hz = f64::from(pos.scoring_events_left()).min(breakfix.missed);
+                    adjusted -= worst * charge_hz;
                 }
                 // The (rejected) vulnerability term: the erosion gap — area the
                 // enemy can LEGALLY cut BEYOND the single worst pop, which no

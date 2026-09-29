@@ -25,6 +25,13 @@ fn wra(f: fn(&Position) -> Option<Move>) -> fn(&Position) -> Option<Move> { f }
 
 std::thread_local! {
     static UNBREAK_DOSE: std::cell::RefCell<(f64, f64)> = std::cell::RefCell::new((0.0, 0.0));
+    static MISSED_DOSE: std::cell::RefCell<f64> = std::cell::RefCell::new(0.0);
+}
+
+/// Variant picker for `E_MISSED=m`: the Q1 dose via a thread-local.
+fn q1_pick(position: &Position) -> Option<Move> {
+    let m = MISSED_DOSE.with(|d| *d.borrow());
+    eval_phases::breakfix_best_move_with_avoid(position, &[], eval_phases::Breakfix { missed: m })
 }
 
 /// Variant picker for `E_UNBREAK=e,c`: the Q2 dose via a thread-local
@@ -72,20 +79,28 @@ fn main() {
         return;
     }
 
-    let laneb: fn(&Position) -> Option<Move> = match std::env::var("E_UNBREAK") {
+    let laneb: fn(&Position) -> Option<Move> = match std::env::var("E_MISSED") {
         Ok(v) => {
-            let mut it = v.split(',');
-            let e: f64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0.0);
-            let c: f64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0.0);
-            println!("laneE Q2 config: E_UNBREAK extend={e} create={c}");
-            // fn pointer can't close over dose; route through a thread-local.
-            UNBREAK_DOSE.with(|d| *d.borrow_mut() = (e, c));
-            unbreak_pick
+            let m: f64 = v.parse().unwrap_or(0.0);
+            println!("laneE Q1 config: E_MISSED missed={m}");
+            MISSED_DOSE.with(|d| *d.borrow_mut() = m);
+            q1_pick
         }
-        Err(_) => {
-            println!("laneE Q2 config: control (doom-OFF best_move)");
-            wra(eval_phases::best_move)
-        }
+        Err(_) => match std::env::var("E_UNBREAK") {
+            Ok(v) => {
+                let mut it = v.split(',');
+                let e: f64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0.0);
+                let c: f64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0.0);
+                println!("laneE Q2 config: E_UNBREAK extend={e} create={c}");
+                // fn pointer can't close over dose; route through a thread-local.
+                UNBREAK_DOSE.with(|d| *d.borrow_mut() = (e, c));
+                unbreak_pick
+            }
+            Err(_) => {
+                println!("laneE config: control (doom-OFF best_move)");
+                wra(eval_phases::best_move)
+            }
+        },
     };
     let shipped = wra(retaliator::search::best_move);
     let (mut w, mut n) = (0, 0);
