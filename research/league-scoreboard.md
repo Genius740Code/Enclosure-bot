@@ -204,3 +204,37 @@ survival consistently — every candidate flips sign across strata. No
 pick; nothing here earns one). C2's H1 caveat confirmed load-bearing: the
 loss-corpus negative gain slope was a corpus artifact (in losses the enemy
 eats big ones and lets small ones stand), not a structural law.
+
+## Experiment E (Lane E v7 Q12) — reinforce-vs-prevent thick-line bonuses — 2026-09-29
+Term (`eval_phases.rs` `Thick{r,p}` + `thick_best_move_with_avoid`): two
+sub-terms, one dose variable each, swept against each other (reinforce-only
+vs prevent-only, 2-dose max). REINFORCE (r): bonus r x hz (binary, the
+shipped DENSE form) for OUR non-breaking first actions that EXTEND our 2+
+touch lines (source already a shared node, degree >= 2 — the Q2-extend form)
+or ANCHOR to them (target within Chebyshev 1 of one of our shared nodes —
+topological, vs DENSE's head-count). PREVENT (p): bonus p x (pairs
+contested) x hz (the Deny form) for OUR non-breaking first actions landing
+within Chebyshev 3 of either endpoint of a foe near-thick frontier pair
+(both endpoints foe wall-ends, degree exactly 1, no edge between them,
+geometrically closable in one move — the foe close's legality is NOT checked,
+it is not foe's turn; geometry is the proxy, stated not hidden). CONTACT
+still bans the free graze on top. Full-horizon units, deterministic tiebreak
+by move index. Dose via `E_THICK="r,p"`; (0,0) = OFF = the doom-OFF control
+(OFF-identity verified: `E_THICK="0,0"` gauge byte-identical to control,
+6/6 blue +53.5 x3 / red +69.3 x3). Gates per dose: h2h >= 6/10, league >
+-9.9% (no row < -300%), gauge 6/6, thick-life (variant share UP *and*
+shipped-side completions DOWN, dose-vs-control; `probe_b_thick`: share =
+mean shared-node fraction of own nodes, comp = own moves raising own shared
+count). HEADWIND (stated before running): the C2 census finds touches do not
+predict close survival with win control — a pure touch bonus has no survival
+mechanism behind it.
+| dose (E_THICK) | h2h W/L | league margin % | gauge W/L | thick-life dose vs control | verdict |
+|---|---|---|---|---|---|
+| Q12D1 reinforce-only (1,0) | 6/10 PASS (blue 2/5 -3.7%: None +45.4 W, 4864 -12.5 L, 5589 -29.3 L, 11723 -35.9 L, 9199 +14.0 W; red 4/5 +1.4%: None -47.4 L, 4864 +17.4 W, 5589 +23.2 W, 11723 +3.9 W, 9199 +10.0 W) | -12.6% FAIL (skip0 -7.4/+38.3, skip10 +15.2/-63.6, skip20 +15.2/-63.6, skip30 +21.3/-55.9; worst -63.6% > -300%) | 6/6 PASS (blue +66.2 x3 R=23 G=16, red +69.2 x3 R=4 G=2 — term fires vs greedy, holds) | variant share 0.761 vs 0.744 UP (+0.017, mechanism fires) BUT shipped-side comp 416 vs 416 FLAT (no denial without the prevent half) — FAIL (needs both) | FAIL (passes h2h + gauge, fails league + thick). Per-row deltas vs E0: collapse line as red improves (skip10/20-red -94.5 -> -63.6) but as-blue collapses (skip0-blue +29.0 -> -7.4, skip10-blue +29.0 -> +15.2, skip30-blue +38.9 -> +21.3): thickening as blue is slow — scoutbase out-expands us. The h2h pass does not travel. |
+| Q12D2 prevent-only (0,1) | 2/10 FAIL (blue 1/5 -24.7%: None +25.8 W, 4864 -37.4 L, 5589 -59.9 L, 11723 -35.9 L, 9199 -16.3 L; red 1/5 -44.6%: None -130.5% blowout L, 4864 -1.9 L, 5589 +8.3 W, 11723 -7.7 L, 9199 -91.1 L) | -58.2% FAIL (skip0 -3.6/+23.1, skip10 -3.6/-174.1, skip20 -3.6/-174.1, skip30 +3.5/-133.4; worst -174.1% > -300%) | 6/6 PASS (blue +70.7 x3 R=15 G=12, red +69.3 x3 R=4 G=2 byte-identical to control) | shipped-side comp 410 vs 416 DOWN (-6, denial fires weakly) BUT variant share 0.737 vs 0.744 DOWN (own lines thinner) — FAIL (needs both) | KILL (worse than control on h2h, league, and own share; only gauge holds). Mechanism: contesting drags our moves onto foe wall-ends — contact tempo loss the CONTACT penalty (1.0 x hz) cannot outbid (p=1.0 x pairs x hz wins the tiebreak toward the graze). The -6 foe completions cost -48.3pp of league. |
+Q12 verdict: KILL after the tasked 2-dose max. Neither half passes its gates;
+no joint dose (would combine a league-losing term with a catastrophic one —
+no mechanistic path to a joint pass). Reinforce thickens our lines (+0.017
+share, h2h 6/10) but loses the as-blue expansion race; prevent weakly denies
+foe thickness (-6 comps) but sacrifices our game to do it. The census
+headwind held: thickness is not survival.
