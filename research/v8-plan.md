@@ -153,3 +153,18 @@ no move without a job in a multi-turn plan (setup, completion, threat).
 C2 measures FIRST: coherence rate (% moves extending a structure or enabling
 a follow-up) vs win% — if team moves don't correlate, price dies unbuilt.
 Gate: coherence UP + area/move UP + full chain + v7-mirror (M4).
+
+### 6j. v6-vs-v7 analysis list (founder: why does v7 lose to v6?)
+Status 2026-09-29: v7 = v6 valuation + deeper beam, yet v7-blue is 0-6 vs v6.
+- [ ] A1 pick-diff: on mirror positions, where do analyze (2-ply) vs
+  analyze_timed picks diverge? Log divergence rate by game phase.
+- [ ] A2 divergence outcome: do deeper flips WIN or LOSE the game? (If flips
+  lose → reply model is wrong and depth amplifies error: confidently wrong.)
+- [ ] A3 blue-only audit: all v7-blue mirror losses — common first-divergence
+  move number? Same collapse signature as E2 (areas even ~40, pop 42-60)?
+- [ ] A4 v6 strength note: v6 = mesh8 + doom-ON + XBot order. Nothing exotic —
+  v7 loses by picking WORSE, not by facing stronger. Fix is selection-side.
+- [ ] A5 M7 cross-check: reply-match rate on v6's actual replies (in-family
+  opponent — should be our HIGHEST match rate; if even v6 surprises us, the
+  model is broken everywhere).
+Owner: points agent at eval completion (has all games). M7 covers A5 now.
