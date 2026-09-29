@@ -201,3 +201,15 @@ enemy-v7 matches 32.7% (even WE surprise our own model once timed). Flip rate
 THEATER until replies are opponent-aware. M2 port BLOCKED pending M6 rival
 files → opponent-aware reply model. Next: S2 re-scoped to reply-model work,
 not alpha-beta port.
+
+### 6n. E4 — the uncontested wall (a8e03a5f, v7 blue vs Apocalypsis red, LIVE)
+Red area: 3.0 (move 40) → 71.2 (50) → 162.0 (60) → 162 flat to 100. A wall
+closed ~40-50 and banked 162 uncontested for 60 moves; we never broke them
+once (their area never dips). Meanwhile red broke us 15+ times (ours 47→39).
+Our moves 41-60 while the wall closed: +9.0/+0.0/+0.5/+1.2/+0.3/+0.0/+5.2/
++0.0/+2.2/+4.1 — small solo closes, ZERO contest, ZERO breaks. The M9 threat
+was real (3→71 in 10 moves = detectable), priced at nothing, answered with
+nothing. Cleanest wall exhibit to date; Lane W builds the corridor-root
+contest trigger against exactly this shape. (Contrast I7-G10 game 9c6254da:
+same matchup reversed, our breaking works there — red 2216 vs blue 1820,
+enemy area 2.7. Breaking CAN work; blue-side passivity is the difference.)
