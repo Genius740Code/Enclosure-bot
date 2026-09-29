@@ -21,7 +21,10 @@ struct Side {
 }
 
 fn variant_pick(position: &Position, uq: (f64, f64), b: eval_phases::Breakfix) -> Option<Move> {
-    if b.on() {
+    let d = eval_phases::Delay::from_env();
+    if d.on() {
+        eval_phases::delay_best_move_with_avoid(position, &[], d)
+    } else if b.on() {
         eval_phases::breakfix_best_move_with_avoid(position, &[], b)
     } else {
         eval_phases::unbreak_best_move_with_avoid(

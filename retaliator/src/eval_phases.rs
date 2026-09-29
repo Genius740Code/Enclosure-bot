@@ -364,7 +364,7 @@ pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move
     // the gate defaults stay the published doom-OFF control, and this path
     // keeps the shipped routing semantics (flat penalty) for any avoid set
     // the caller passes.
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF)
 }
 
 /// Lane E v7 Q1 break-fix valuation: charge only MISSED scoring events
@@ -424,7 +424,7 @@ pub fn breakfix_best_move_with_avoid(
     avoid: &[Point],
     b: Breakfix,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, b)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, b, Delay::OFF)
 }
 
 /// The Lane E v7 Q2 term under test: the doom-OFF control plus the
@@ -437,7 +437,58 @@ pub fn unbreak_best_move_with_avoid(
     avoid: &[Point],
     u: Unbreak,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, u, false, Breakfix::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, u, false, Breakfix::OFF, Delay::OFF)
+}
+
+/// Lane E v7 Q5 delayed-close bonus scaled by open space (2026-09-29,
+/// 1 dose): a first-action close (Connect, area gained) banks its gain, but
+/// a close that caps our growth early trades banked area for lost openness.
+/// The bonus prices the close by its gain SCALED by the open-space fraction
+/// left after it — room/(room+area) in [0,1], pure engine structure, no
+/// named patterns: closes that keep the map open (the patient/delayed kind)
+/// keep ~full gain credit, closes that shut our last room keep ~none.
+/// Full-horizon units (x hz), deterministic tiebreak by move index, applied
+/// at ranking + selection like the CLOSE term. Dose via `E_DELAY=w`
+/// (single dose w=1.0); 0.0/unset = OFF = the doom-OFF control.
+#[derive(Clone, Copy, PartialEq)]
+pub struct Delay {
+    pub w: f64,
+}
+
+impl Delay {
+    /// OFF: the doom-OFF control (byte-identical).
+    pub const OFF: Self = Self { w: 0.0 };
+    /// Parse the `E_DELAY` probe env (e.g. "1"). Absent/unparseable = OFF.
+    pub fn from_env() -> Self {
+        match std::env::var("E_DELAY") {
+            Ok(v) => match v.parse() {
+                Ok(w) => Self { w },
+                Err(_) => Self::OFF,
+            },
+            Err(_) => Self::OFF,
+        }
+    }
+    /// Whether the bonus fires at all.
+    pub fn on(self) -> bool {
+        self.w != 0.0
+    }
+}
+
+/// Open-space fraction after a move: room/(room+area), 0 when both are 0.
+/// The "scaled by open space" factor of the Q5 term — engine structure only.
+fn open_frac(room_after: f64, area_after: f64) -> f64 {
+    let denom = room_after + area_after;
+    if denom <= 0.0 { 0.0 } else { (room_after / denom).clamp(0.0, 1.0) }
+}
+
+/// The Lane E v7 Q5 term under test: the doom-OFF control plus the
+/// open-space-scaled delayed-close bonus in dose `d` (see [`Delay`]).
+pub fn delay_best_move_with_avoid(
+    position: &Position,
+    avoid: &[Point],
+    d: Delay,
+) -> Option<Move> {
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, d)
 }
 
 /// The B-3 term under test: the shipped anti-rebuild routing plus the
@@ -449,7 +500,7 @@ pub fn farm_best_move_with_avoid(
     avoid: &[Point],
     form: Rebuild,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, Unbreak::OFF, false, Breakfix::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF)
 }
 
 /// The shipped `search::best_move` exactly: the doom discount ON, no added
@@ -458,7 +509,7 @@ pub fn farm_best_move_with_avoid(
 /// the gate keeps per-example dead-code quiet.)
 #[allow(dead_code)]
 pub fn baseline_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF)
 }
 
 /// The CLOSE_B2 ablation control: doom OFF (the B-2 recommendation) with the
@@ -467,7 +518,7 @@ pub fn baseline_best_move(position: &Position) -> Option<Move> {
 /// term alone.
 #[allow(dead_code)]
 pub fn ablation_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF)
 }
 
 /// The skeleton's selection loop, with the doom discount and the added terms
@@ -485,6 +536,7 @@ fn best_move_features(
     unbreak: Unbreak,
     cut_threat: bool,
     breakfix: Breakfix,
+    delay: Delay,
 ) -> Option<Move> {
     if let Some(open) = blue_opener(position) {
         return Some(open);
@@ -492,7 +544,7 @@ fn best_move_features(
     let mover = position.to_move();
     let opp = mover.opponent();
     let budget = budget.clamp(SMALLEST_BUDGET, MOVE_BUDGET);
-    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild, unbreak, cut_threat);
+    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild, unbreak, cut_threat, delay);
     let nodes = first_actions.len();
     let width = first_actions.len().min(WIDTH);
     let reply_budget = (budget - nodes) / width.max(1);
@@ -500,7 +552,7 @@ fn best_move_features(
     // (adjusted score for ordering, the move it belongs to).
     let mut scored: Vec<(f64, Move)> = Vec::new();
     for (mv, after, _, _) in first_actions.into_iter().take(width) {
-        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off, Unbreak::OFF, false);
+        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off, Unbreak::OFF, false, Delay::OFF);
         let mut pv = vec![mv];
         let mut evaluation = value(&after);
         if let Some((reply, _, reply_value, _)) = replies.first() {
@@ -533,6 +585,21 @@ fn best_move_features(
                     let gain_sel =
                         probe.area(mover).to_f64() - position.area(mover).to_f64();
                     adjusted += CLOSE_W * (gain_sel - CLOSE_T) * hz_sel;
+                }
+                // Q5 delayed-close bonus at selection (gated): the same
+                // open-space-scaled term as in ranking, so the pick itself
+                // prefers closes that keep the map open.
+                if delay.on() && oc.kind == MoveKind::Connect {
+                    let gain_sel =
+                        probe.area(mover).to_f64() - position.area(mover).to_f64();
+                    if gain_sel > 0.0 {
+                        adjusted += delay.w * gain_sel
+                            * open_frac(
+                                room(&probe, mover),
+                                probe.area(mover).to_f64(),
+                            )
+                            * hz_sel;
+                    }
                 }
             }
             // B-3 farm-cycle routing at selection (gated): the same
@@ -761,6 +828,7 @@ fn ranked(
     rebuild: Rebuild,
     unbreak: Unbreak,
     cut_threat: bool,
+    delay: Delay,
 ) -> Vec<(Move, Position, f64, f64)> {
     let mover = position.to_move();
     let opp = mover.opponent();
@@ -886,6 +954,16 @@ fn ranked(
                 // a 3+ area close. Continuous in gain; full-horizon units.
                 if close && outcome.kind == MoveKind::Connect {
                     priority += CLOSE_W * (own_gain - CLOSE_T) * hz;
+                }
+                // Q5 delayed-close bonus (gated): a close is priced by its
+                // gained area SCALED by the open-space fraction left after
+                // it — closes that keep the map open keep ~full credit,
+                // closes that shut our last room keep ~none. Continuous in
+                // gain and openness; full-horizon units.
+                if delay.on() && outcome.kind == MoveKind::Connect && own_gain > 0.0 {
+                    priority += delay.w * own_gain
+                        * open_frac(room(&after, mover), after.area(mover).to_f64())
+                        * hz;
                 }
                 // Fix 2: don't graze the enemy frontier for free.
                 if outcome.broken.is_none()

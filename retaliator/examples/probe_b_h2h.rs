@@ -26,6 +26,13 @@ fn wra(f: fn(&Position) -> Option<Move>) -> fn(&Position) -> Option<Move> { f }
 std::thread_local! {
     static UNBREAK_DOSE: std::cell::RefCell<(f64, f64)> = std::cell::RefCell::new((0.0, 0.0));
     static MISSED_DOSE: std::cell::RefCell<(f64, f64)> = std::cell::RefCell::new((0.0, 0.0));
+    static DELAY_DOSE: std::cell::RefCell<f64> = std::cell::RefCell::new(0.0);
+}
+
+/// Variant picker for `E_DELAY=w`: the Q5 dose via a thread-local.
+fn q5_pick(position: &Position) -> Option<Move> {
+    let w = DELAY_DOSE.with(|d| *d.borrow());
+    eval_phases::delay_best_move_with_avoid(position, &[], eval_phases::Delay { w })
 }
 
 /// Variant picker for `E_MISSED=m[,f]`: the Q1 dose via a thread-local.
@@ -79,7 +86,14 @@ fn main() {
         return;
     }
 
-    let laneb: fn(&Position) -> Option<Move> = match std::env::var("E_MISSED") {
+    let laneb: fn(&Position) -> Option<Move> = match std::env::var("E_DELAY") {
+        Ok(v) => {
+            let w: f64 = v.parse().unwrap_or(0.0);
+            println!("laneE Q5 config: E_DELAY w={w}");
+            DELAY_DOSE.with(|d| *d.borrow_mut() = w);
+            q5_pick
+        }
+        Err(_) => match std::env::var("E_MISSED") {
         Ok(v) => {
             let mut it = v.split(',');
             let m: f64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0.0);
@@ -102,6 +116,7 @@ fn main() {
                 println!("laneE config: control (doom-OFF best_move)");
                 wra(eval_phases::best_move)
             }
+        },
         },
     };
     let shipped = wra(retaliator::search::best_move);
