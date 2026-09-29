@@ -238,3 +238,22 @@ no mechanistic path to a joint pass). Reinforce thickens our lines (+0.017
 share, h2h 6/10) but loses the as-blue expansion race; prevent weakly denies
 foe thickness (-6 comps) but sacrifices our game to do it. The census
 headwind held: thickness is not survival.
+
+## Experiment E (Lane E v7 Q8) — line-strength census rerun + KILL verdict — 2026-09-29
+Reran `probe_b_census` control dose (E_DENY unset): 12 games (10 h2h + skip0
+both colors vs scoutbase), n=523 closes (win 274 / loss 249), n>=200 gate MET.
+Replicates the §C2-census control half byte-for-number (win gain buckets
+0.246/0.273/0.397/0.192; touches 0.331/0.239/0.175). New: gain x touches joint
+split — big+high-touch closes survive 12.9% in wins (n=31) vs 40.9% in losses
+(n=22); small+low-touch 36.2% wins vs 23.5% losses. Every candidate (gain,
+touches, bank-rate) flips sign across win/loss strata. No shape-family labels
+in probe output (no corridor/blob/thicket/loop classifier in-tree); joint
+gain x touches proxy is the closest the data allows, and it also flips.
+| census (control, n=523) | win stratum | loss stratum | verdict |
+|---|---|---|---|
+| survival predictor check | all slopes flip vs loss stratum | mirror image | KILL — strength does not predict survival with win control; no pricing attempt per task spec |
+Q8 verdict: KILL. No reinforce-strong/abandon-weak term priced (nothing clears
+the census gate). Caveat: control dose means both h2h sides play the shipped
+policy — line diversity limited to one policy's closes; a multi-policy corpus
+could in principle differ, but the sign-flips are large (12.9% vs 40.9%) and
+unlikely to unflip.
