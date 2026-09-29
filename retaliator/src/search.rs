@@ -322,7 +322,9 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
     let mut nodes = first_actions.len();
     let mut depth = usize::from(nodes > 0);
     let width = first_actions.len().min(WIDTH);
-    let reply_budget = (budget - nodes) / width.max(1);
+    // NB: budget < nodes is normal (300+ legal vs small budgets). checked_sub
+    // preserves release behavior (full reply width) without debug underflow.
+    let reply_budget = budget.checked_sub(nodes).map(|r| r / width.max(1)).unwrap_or(usize::MAX);
 
     // (adjusted score for ordering, candidate with honest static evaluation).
     let mut scored: Vec<(f64, Candidate)> = Vec::new();
@@ -524,12 +526,14 @@ pub fn analyze_timed(position: &Position, avoid: &[Point]) -> Analysis {
         if beam.iter().all(|l| l.solved) {
             break; // solved: exact, nothing more to learn
         }
+        if beam.len() < 2 {
+            break; // nothing to choose between — save the clock (cf. Lane T)
+        }
         if elapsed >= THINK_HARD_MS {
             break;
         }
         if elapsed >= THINK_SOFT_MS
-            && (beam.len() < 2
-                || (beam[0].adjusted - beam[1].adjusted).abs() >= VOLATILE_GAP)
+            && (beam[0].adjusted - beam[1].adjusted).abs() >= VOLATILE_GAP
         {
             break; // decided, soft budget spent
         }
