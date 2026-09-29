@@ -192,3 +192,12 @@ show a detectable 2-wall/close-setup signature 2-4 moves early? No signature,
 no price. Gate: prevented-threat value UP + full chain + v7-mirror (M4).
 Interplay: M9 is the enemy-side twin of M8 (our plans) and the disciplined
 heir of Q3/Q10/Q11 + validated DENY trigger.
+
+### 6m. M7 VERDICT (2026-09-29, lane-v8-audit 629659c) — M2 PORT BLOCKED
+Reply-match 39.5% overall (522/1320); VladNet 7.5%, AngelWASM 15.8%, Stompy
+22.5%, GB2.0 32.5%, GB 37.5%. Mirror asymmetry: enemy-v6 matches 77.7%,
+enemy-v7 matches 32.7% (even WE surprise our own model once timed). Flip rate
+45% — depth changes picks against a fantasy opponent. Verdict: DEPTH IS
+THEATER until replies are opponent-aware. M2 port BLOCKED pending M6 rival
+files → opponent-aware reply model. Next: S2 re-scoped to reply-model work,
+not alpha-beta port.
