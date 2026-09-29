@@ -161,3 +161,21 @@ tiebreak by move index. Single dose via `E_DELAY=w`.
 | Q5 open-space close (w=1.0) | 4/10 (blue 1/5 -24.2%, red 3/5 -23.4%; open-None as red -140.4% blowout) | -32.4% (skip0 -14.3/+34.3, skip10 -14.3/-124.3, skip20 -14.3/-124.3, skip30 +12.7/-14.8; diffs -157/+695/-157/-1215/-157/-1215/+168/-166) | 6/6 (blue +60.7 x3, red +69.4 x3; breaks R=13/5, G=9/2 — term fires here, unlike Q1) | life 8.5 vs 15.6, bpb 4.72 vs 7.65 (FELL), breaks 301 vs 225 (ROSE +76) | KILL (worse than control on h2h, league, and life; the bonus rewards open-space closes that scout-class opponents cut — openness without thickness is grazeable) |
 Q5 verdict: KILL after the single tasked dose. Lane E v7 closes with no surviving
 candidate: Q2 REJECT, Q1 KILL (both doses), Q5 KILL. Control (doom-OFF) stands.
+
+## Experiment E (Lane E v7 Q4) — deny-remote contest bonus — 2026-09-29
+Term (`eval_phases.rs` `Deny{w}` + `deny_best_move_with_avoid`): mirror of the
+shipped REMOTE_BONUS — bonus w x (foe remote-wall count contested) x hz at
+ranking + selection for OUR non-breaking first actions landing within 3 of
+enemy nodes that are junctioned (degree >= 2, shared-node unbreakable) AND
+far from all our nodes (> REMOTE_DIST 5, far from the fight), heat-gated
+(heat >= FIGHT_HEAT 10) like the shipped mirror. Priced by shared-node
+COUNT, never by area held. Full-horizon units, deterministic tiebreak by
+move index; CONTACT still bans the free graze underneath. Dose via `E_DENY=w`.
+Q4 was SKIPPED in v7 (gated on a Q1 pass that never came); un-gated per task.
+Same gates as Q2 plus the life watch (enemy area-lifetime must fall without
+ours falling, dose-vs-control).
+| dose (E_DENY) | h2h W/L | league margin % | gauge W/L | life dose vs control | verdict |
+|---|---|---|---|---|---|
+| Q4D1 contest-remote (w=0.25) | 5/10 (blue 1/5 -18.8%, red 4/5 -2.1%) — all 10 game scores byte-identical to E0 | -9.9% — all 8 rows byte-identical to E0 (skip0 +29.0/+39.8, skip10 +29.0/-94.5, skip20 +29.0/-94.5, skip30 +38.9/-55.9; worst row -94.5% > -300%) | 6/6 byte-identical to E0 (blue +53.5 x3, red +69.3 x3; breaks R=20/3, G=16/2) | dose life line-for-line identical to control life (variant 9.7 vs shipped 12.2, bpb 5.00 vs 6.43, breaks 283 vs 254): enemy lifetime did NOT fall, ours did NOT fall — zero pick-flips | KILL (term never flips a pick at the tasked small weight on any of 34 games; h2h 5/10 < 6/10, league -9.9% not > -9.9%, life gate vacuous. Not directionally positive, so no Dose 2 per plan. Either the heat x remote-junction conjunction never arms in these lines, or 0.25 x hz never breaks a tie — both mean the form carries no signal at this weight) |
+Q4 verdict: KILL after Dose 1. No Dose 2 (Dose 1 exactly control = neutral, not
+directionally positive). Next per plan: C2 census measurement (probe_b_census).
