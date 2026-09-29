@@ -96,3 +96,17 @@ Verdict: **KILL all three doses.** Failure is threshold-insensitive (flat
 like Q12D1 (defensive trigger fires too often). Next: fire-rate census on won
 games before any retry; BEAM-SEED (idea backlog #2) is the surviving wall-track
 approach since it adds no bonus term.
+
+## Experiment P-dose-2 (lane-v8-p) — CUT_MEMORY 6->15 — 2026-09-29 — KILL
+Hypothesis: 6-move cut memory lets farming resume; 15 moves covers all farmable cuts.
+Change: `CUT_MEMORY` 6 -> 15 (`6bfb4b3`); gates run with E-6 control comparison.
+Branch `origin/lane-v8-p`, gate commit `25d5308` (full per-chair table on branch).
+- h2h v1: control 4/10 (B2/5 R2/5) vs dose 4/10 (B2/5 R2/5), Δ0 — FAIL.
+- h2h v2: 7/10 vs 7/10, Δ0 (info).
+- league: -20.0% vs -20.0% (collapse row -111.4% both), Δ0 — FAIL.
+- gauge: 6/6 vs 6/6, Δ0 — PASS (no improvement).
+Result: byte-identical lines everywhere; the extended memory never flips a pick
+in gate lines (same disease as Lane E). Matches POP-PRICE prediction: the flat
+penalty can't outbid re-close gains, so memory length isn't the binding constraint.
+Verdict: **KILL dose 2.** Doses 1 (12, strictly weaker) and 3 (20, diagnostic
+plateau with 15) ungated — gate 20 once, expect same, then close the lane.
