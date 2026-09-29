@@ -77,3 +77,22 @@ Rated evals: user-run (not queued by session).
 v6 mirror user-run. Session-queued, all rated: v3 f94f561b, Stompy 2adafd6a,
 VladNet 9f06cd59, AngelBot-WASM 5164143f, GB b1e7d2d1, GB2.0 f33e29fc,
 capybara-v5 90a4e520, xmybot 323bf662 (first attempt typo'd id, re-queued OK).
+
+## Experiment W (lane-v8-w) — corridor-root contest trigger — 2026-09-29 — KILL
+Hypothesis: contesting the corridor root when enemy 2-wall progress crosses a
+threshold (E4: 3->71/10 moves) denies uncontested banks like a8e03a5f.
+Change: new `corridor_contest_bonus` (10.0 x severity x horizon, M1-ledger DENY)
+in `ranked()`; doses vary the fire threshold only (single variable).
+Branch `origin/lane-v8-w` (base 1741965, pre-§6o; never merged to master).
+- Dose 1 (threshold 5.0, `350b67e`): gauge 6/6, league AVG **-29.7%**.
+- Dose 2 (threshold 6.8 = E4 rate, `8a30d39`): gauge 6/6, league AVG **-26.9%**.
+- Dose 3 (threshold 8.5, `4f7ea3c`): gauge 6/6, league AVG **-28.5%**.
+Result: all three fail the league bar (>−9.9%) by ~20pts vs scoutbase.
+h2h (needs v7base harness — still unbuilt) and E4-shape replay never ran.
+No scoreboard rows were recorded by the lane agent; this entry reconstructs
+them from the completion report. Numbers are agent-reported, commits verified.
+Verdict: **KILL all three doses.** Failure is threshold-insensitive (flat
+-27/-30% across doses) → the trigger concept misfires, not the tuning. Smells
+like Q12D1 (defensive trigger fires too often). Next: fire-rate census on won
+games before any retry; BEAM-SEED (idea backlog #2) is the surviving wall-track
+approach since it adds no bonus term.
