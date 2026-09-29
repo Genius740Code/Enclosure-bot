@@ -72,3 +72,8 @@ Engine = v6 (mesh8 + doom-ON, same valuation) + timed think: routed moves spend
 WASM 306523 bytes, sha256 4f6904eff817d56613232ab9c8983db461c3177640b8361a630b0608d8c292c9,
 current version. site_check green pre-upload (opening 16058, 12/12 legal).
 Rated evals: user-run (not queued by session).
+
+## 2026-09-29 — V7 rated evals queued (8 matchups x pairs:1 = 16 games, ~10h)
+v6 mirror user-run. Session-queued, all rated: v3 f94f561b, Stompy 2adafd6a,
+VladNet 9f06cd59, AngelBot-WASM 5164143f, GB b1e7d2d1, GB2.0 f33e29fc,
+capybara-v5 90a4e520, xmybot 323bf662 (first attempt typo'd id, re-queued OK).
