@@ -124,3 +124,18 @@ deliverable.
 - PHASE 1 (when 16 evals land): points subagent (founder call) — full
   autopsy + rival mining + M6 files; full gates on R/W/P/T/S2 doses.
 - v8 ships as NEW bot "Riposte v8". Never touch v7 mid-eval.
+
+### 6h. M7 — reply-model audit (DIAGNOSTIC GATE for M2, Phase 0, no engine change)
+Why depth never converts: our deep search assumes the enemy always plays
+`ranked().first()` (greedy reply). Measure reply-match rate: across finished
+site games + local lines, how often does the enemy's ACTUAL reply equal our
+predicted reply? Also: does deeper search ever FLIP a pick vs 2-ply on real
+positions? Verdicts: match <50% or flips ~never → depth is theater; v8's Elo
+comes from opponent-aware replies (M6 files feed the model), NOT the M2 port.
+Match high + flips frequent → M2 port proceeds. M2 ports NOTHING until M7
+reports. Owner: Lane-recipe below (audit agent). Trigger for POINTS agent:
+all 16 queued evals + user mirrors finished (eval IDs: f94f561b v3, 2adafd6a
+Stompy, 9f06cd59 VladNet, 5164143f AngelWASM, b1e7d2d1 GB, f33e29fc GB2.0,
+90a4e520 capybara, 323bf662 xmybot). Founder says "launch another subagent to
+analyse" at that point — full autopsy + rival files + gate doses.
+Objective over everything: higher Elo, wins vs other bots. Style is irrelevant.
