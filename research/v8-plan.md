@@ -59,3 +59,68 @@ Max 3 concurrent. Worktrees /tmp/opencode/game-v8-<lane> on origin/lane-v8-<lane
   instead of judging style.
 - v7 evals still running (16 games); v8 doses must not move the shipped
   version mid-eval. v8 ships as new bot "Riposte v8".
+
+---
+
+## 6. FULL PLAN (founder brief 2026-09-29 late — ELO MAX, all points)
+
+### 6a. VladNet loss seed (3a414aad, v7 blue, RED won, 120 moves)
+v7 even at move 40 (b=43.4 r=49.2). Moves 42-46: VladNet pops our +4.5/+3.4
+closes; by move 60 areas b=27.0 r=50.8 — never recovers (final b=25.4 r=49.2,
+scores 1187-1861). Repeating-mistake cluster #1: OUR loops pop mid-game,
+THEIR banks never pop. v8 must invert exactly this: unbreakable own banks +
+break enemy banks. First C2 cluster file: `research/c-vlad-loss.md` (pending
+full autopsy when evals land).
+
+### 6b. Move quality: area-first with priced exceptions (M1)
+Rule: the area move plays UNLESS another move outbids it in full-horizon
+points with a NAMED reason (break value, deny value, wall-progress,
+rebuild-denial). No reason = area move. Covers "shitty moves without reason".
+- FAR-SMALL (small gain far from enemy): two-faced. Deferrable = option value
+  (good slow move, do it later); played now = wasted tempo. C2 measures FIRST:
+  do played-now far-small moves correlate with losses? Then price: FAR-SMALL
+  penalty scaled by open space (penalize while space remains, allow when the
+  board fills — the "can do future" judgment, mechanized).
+- Lane P owns M1. Metric: exception ledger per game (% moves with named
+  reason, area/move lifetime UP, sub-2.0 early closes DOWN).
+
+### 6c. Chess programming port (M2, Lane S2) — chessprogramming.org mapping
+"More search = stronger" holds only if depth is real. Timed beam is real but
+shallow per second vs alpha-beta. Port from `lane-v7-search` (all measured):
+- alpha-beta + aspiration windows (mover-perspective fix kept; red-collapse
+  lesson: gate red split separately)
+- TT with Zobrist keys (exact entries + best-move ordering; was value-exact)
+- killer + history + countermove ordering (-77% nodes where cutoffs exist)
+- quiescence: extend captures/breaks/scoring lines until quiet (this game's
+  captures/breaks ARE the tactics)
+- dose 2: LMR + null-move + PVS (Q15/Q17, ungated — fresh)
+Composition: alpha-beta makes the 2s budget reach 2-4x deeper. Lane S2 owns
+the port INTO live `search.rs` (not a side module — the v7 mistake was a
+parallel engine that never shipped). Gate: nodes/pos DOWN at equal depth +
+full gate chain + v7-mirror (M4).
+
+### 6d. v8-beats-v7 bar (M4)
+Founder: v8 must beat v7 most of the time. Mirror gate: candidate vs v7
+(shipped timed version) ≥7/10 with red ≥3/5 and blue ≥3/5. v1 gates stay
+(≥6/10). Both must pass. No lateral ships.
+
+### 6e. Shape library (M5, Lane W second half)
+Strong start shapes = unbreakable area (mesh8 prefix works: keep + extend).
+Build a shape book: red opener (Lane R designs, red has none), mesh
+continuations past move 8, corridor/blob/thicket starters keyed by STRUCTURAL
+properties (never named patterns — Q2-amendment). Validate each shape across
+GB + capybara + Angel + blob-mimic or it dies.
+
+### 6f. Rival strat files (M6, C2+R when games land)
+VladNet (mid-game pop timing + unbreakable banks — 3a414aad seed above),
+Stompy, GB/GB2.0, AngelBot-WASM, capybara, xmybot: one file each —
+what they do, when they do it, what beats it. Mined from OUR finished games
+vs them (16 evals queued) + site games. This is the "analyse the bots"
+deliverable.
+
+### 6g. Phasing (games still running: 8 finished, 4 waiting, rest queued)
+- PHASE 0 (now): mirror autopsy done (E1/E2); S2 port prep (no behavior
+  change until gated); shape lab; warning cleanup done.
+- PHASE 1 (when 16 evals land): points subagent (founder call) — full
+  autopsy + rival mining + M6 files; full gates on R/W/P/T/S2 doses.
+- v8 ships as NEW bot "Riposte v8". Never touch v7 mid-eval.

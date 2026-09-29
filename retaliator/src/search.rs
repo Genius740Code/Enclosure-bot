@@ -336,7 +336,7 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
             pv.push(*reply);
             depth = 2;
         }
-        let mut end = position_after_pv(position, &pv);
+        let end = position_after_pv(position, &pv);
         let mut adjusted = sign(mover) * evaluation + horizon_extension(position, &end, mover);
         // Poisoned ground counts at SELECTION, not just ranking: a line that
         // rebuilds where we were just cut (or contests a fresh wall) loses
@@ -356,7 +356,7 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
                 }
             }
         }
-        let mut visits = 1 + replies.len();
+        let visits = 1 + replies.len();
         // Doom discount (see const docs).
         {
             let doom_at = if end.to_move() == opp {
@@ -477,7 +477,7 @@ pub fn analyze_timed(position: &Position, avoid: &[Point]) -> Analysis {
     for (mv, after, _, _) in firsts.into_iter().take(BEAM) {
         let replies = ranked(&after, after.legal_moves().len(), false, &[]);
         nodes += replies.len();
-        let (mut pv, end) = (vec![mv], after.clone());
+        let (mut pv, _) = (vec![mv], after.clone());
         let mut leaf = value(&after);
         if let Some((reply, rafter, _, _)) = replies.first() {
             pv.push(*reply);
