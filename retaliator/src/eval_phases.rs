@@ -374,23 +374,40 @@ pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move
 /// popped area misses ~2 scoring events, not 12 — and ground re-made before
 /// the next event misses none. `missed` = events charged per unit of worst
 /// pop area, capped by events left (area x min(events, missed)); 0.0 = OFF
-/// = the doom-OFF control. Doses swept per gate via `E_MISSED`; doom stays
-/// off on this path (the two charges never stack).
+/// = the doom-OFF control. `floor` is the second dose form (Q1b): the
+/// re-make burns a turn whatever the area, so any live pop (worst > 0)
+/// charges at least `floor` x hz full-horizon points — a per-break fixed
+/// tempo floor under the area-scaled charge. 0.0 = no floor (Q1a pure
+/// missed-events form). Doses swept per gate via `E_MISSED` ("m" or "m,f");
+/// doom stays off on this path (the two charges never stack).
+/// Q1a verdict 2026-09-29: missed-only (2,0) KILLED — h2h 5/10 = control,
+/// league -23.5% vs -9.9% (collapse skip10/20-red -94.5 -> -137.7: even 2
+/// events overcharge there), gauge byte-identical to control (never flips),
+/// life bpb 5.27 vs 6.18 (FELL), breaks 286 vs 258 (ROSE).
 #[derive(Clone, Copy, PartialEq)]
 pub struct Breakfix {
     pub missed: f64,
+    pub floor: f64,
 }
 
 impl Breakfix {
     /// OFF: the doom-OFF control (byte-identical).
-    pub const OFF: Self = Self { missed: 0.0 };
-    /// Parse the `E_MISSED` probe env (e.g. "2"). Absent/unparseable = OFF.
+    pub const OFF: Self = Self { missed: 0.0, floor: 0.0 };
+    /// Parse the `E_MISSED` probe env ("m" or "m,f", e.g. "2" or "2,0.5").
+    /// Absent/unparseable = OFF.
     pub fn from_env() -> Self {
         match std::env::var("E_MISSED") {
-            Ok(v) => match v.parse() {
-                Ok(m) => Self { missed: m },
-                Err(_) => Self::OFF,
-            },
+            Ok(v) => {
+                let mut it = v.split(',');
+                match (it.next().and_then(|s| s.parse().ok()), it.next()) {
+                    (Some(m), None) => Self { missed: m, floor: 0.0 },
+                    (Some(m), Some(f)) => match f.parse() {
+                        Ok(floor) => Self { missed: m, floor },
+                        Err(_) => Self::OFF,
+                    },
+                    _ => Self::OFF,
+                }
+            }
             Err(_) => Self::OFF,
         }
     }
@@ -566,7 +583,15 @@ fn best_move_features(
                 // with the full-horizon doom (that path passes Breakfix::OFF).
                 if breakfix.on() {
                     let charge_hz = f64::from(pos.scoring_events_left()).min(breakfix.missed);
-                    adjusted -= worst * charge_hz;
+                    let mut charge = worst * charge_hz;
+                    // Q1b floor: the re-make burns a turn whatever the area —
+                    // any live pop prices at least floor x hz. Structural
+                    // (no named patterns), full-horizon units, deterministic
+                    // (no tiebreak involvement: strict max of two values).
+                    if worst > 0.0 {
+                        charge = charge.max(breakfix.floor * hz_doom);
+                    }
+                    adjusted -= charge;
                 }
                 // The (rejected) vulnerability term: the erosion gap — area the
                 // enemy can LEGALLY cut BEYOND the single worst pop, which no

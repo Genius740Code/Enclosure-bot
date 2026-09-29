@@ -20,13 +20,9 @@ struct Side {
     breaks: u32,
 }
 
-fn variant_pick(position: &Position, uq: (f64, f64), missed: f64) -> Option<Move> {
-    if missed > 0.0 {
-        eval_phases::breakfix_best_move_with_avoid(
-            position,
-            &[],
-            eval_phases::Breakfix { missed },
-        )
+fn variant_pick(position: &Position, uq: (f64, f64), b: eval_phases::Breakfix) -> Option<Move> {
+    if b.on() {
+        eval_phases::breakfix_best_move_with_avoid(position, &[], b)
     } else {
         eval_phases::unbreak_best_move_with_avoid(
             position,
@@ -39,8 +35,8 @@ fn variant_pick(position: &Position, uq: (f64, f64), missed: f64) -> Option<Move
 fn main() {
     let u = eval_phases::Unbreak::from_env();
     let dose = (u.extend_w, u.create_w);
-    let missed = eval_phases::Breakfix::from_env().missed;
-    println!("life config: E_UNBREAK extend={} create={} E_MISSED={missed}", dose.0, dose.1);
+    let b = eval_phases::Breakfix::from_env();
+    println!("life config: E_UNBREAK extend={} create={} E_MISSED={},{}", dose.0, dose.1, b.missed, b.floor);
     // Aggregate (variant, shipped) across games.
     let (mut va, mut sa) = (Side::default(), Side::default());
     let (mut vb, mut sb) = (0.0, 0.0);
@@ -56,7 +52,7 @@ fn main() {
             while !game.is_over() {
                 let a_moves = (game.position().to_move() == Player::Blue) == a_blue;
                 let mv = if a_moves {
-                    variant_pick(game.position(), dose, missed)
+                    variant_pick(game.position(), dose, b)
                 } else {
                     retaliator::search::best_move(game.position())
                 };
