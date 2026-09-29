@@ -168,3 +168,11 @@ Status 2026-09-29: v7 = v6 valuation + deeper beam, yet v7-blue is 0-6 vs v6.
   opponent — should be our HIGHEST match rate; if even v6 surprises us, the
   model is broken everywhere).
 Owner: points agent at eval completion (has all games). M7 covers A5 now.
+
+### 6k. sst1 join-404 bug (logged 2026-09-29, bot STOPPED, do NOT restart blind)
+Symptom: match_found → join → "Game not found" x12+, game plays without us,
+abandonment loss (lu30tb vs YshanV1: us red 0.0, never entered). Think path
+NEVER reached — S1-S4 suspects all cleared (one received state showed me=red
+correct). Root cause unknown: game not live at match_found, or join needs a
+different channel/params. sst1 work SUSPENDED until v8 ships; fix requires
+observing a lobby match from match_found with full message capture.
