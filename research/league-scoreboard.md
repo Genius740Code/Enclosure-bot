@@ -65,3 +65,10 @@ nodes, best move legal. `site_check` OK (opening 16058, 12/12 legal, 15.5s).
 Caveats: depth is machine-speed-dependent (routed-path gauge determinism no
 longer holds); strength UNGATED — league/h2h numbers pending. WASM rebuild
 required before upload.
+
+## 2026-09-29 — V7 UPLOADED ("Riposte v7" 0c63610e-23a4-4a41-a701-723cdb1853f7)
+Engine = v6 (mesh8 + doom-ON, same valuation) + timed think: routed moves spend
+2000ms soft / 4800ms hard via beam-8 deepening (same reply model + selection).
+WASM 306523 bytes, sha256 4f6904eff817d56613232ab9c8983db461c3177640b8361a630b0608d8c292c9,
+current version. site_check green pre-upload (opening 16058, 12/12 legal).
+Rated evals: user-run (not queued by session).
