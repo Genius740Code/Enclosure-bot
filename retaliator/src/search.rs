@@ -23,6 +23,7 @@
 
 use std::cmp::Reverse;
 use std::sync::LazyLock;
+use std::time::Instant;
 
 use meridian_engine::{Move, MoveKind, Outcome, Player, Point, Position, notation};
 
@@ -190,6 +191,8 @@ pub fn mesh_prefix(position: &Position, history: &[Move]) -> Option<Move> {
 }
 
 /// Deployed entry: mesh prefix, then the legacy game-start opener, then search.
+/// Timed think (Q6-amendment, v7): searched moves spend at least THINK_SOFT_MS
+/// (no snap replies), more while volatile, capped at THINK_HARD_MS.
 /// Keeps [`best_move_with_avoid`] untouched for probes and back-compat.
 pub fn best_move_routed(
     position: &Position,
@@ -202,7 +205,7 @@ pub fn best_move_routed(
     if let Some(open) = blue_opener(position) {
         return Some(open);
     }
-    analyze_with_avoid(position, MOVE_BUDGET, avoid)
+    analyze_timed(position, avoid)
         .candidates
         .first()
         .map(|candidate| candidate.mv)
@@ -374,6 +377,170 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
         b.0.total_cmp(&a.0).then(a.1.mv.index().cmp(&b.1.mv.index()))
     });
     let candidates = scored.into_iter().map(|(_, c)| c).collect::<Vec<_>>();
+    let evaluation = candidates.first().map_or_else(|| value(position), |best| best.evaluation);
+    Analysis { evaluation, depth, nodes, candidates }
+}
+
+/// Timed think (Q6-amendment, v7): every searched move spends at least
+/// THINK_SOFT_MS, extending to THINK_HARD_MS while the position is volatile
+/// (top two candidates disagree). Site envelope: 5s requested, 20-25s lease —
+/// HARD keeps wide margin under forfeit.
+/// Depth is real minimax, not budget inflation: measured 2026-09-29, full-width
+/// 2-ply costs ~11ms/2436 nodes at 373 legal moves and wider visit budgets
+/// change nothing (saturated). So extra time goes into beam deepening — each
+/// round extends every live line one ply through the same `ranked()` reply
+/// model, re-sorted by the same selection adjustments as `analyze_with_avoid`
+/// (horizon extension, doom discount, rebuild/fresh penalties); only the leaf
+/// is deeper. Solved lines (terminal) stop early: exact needs no more time.
+/// Forced moves (0-1 legal), prefix and opener return instantly.
+/// Machine-speed-dependent depth, NOT probe-deterministic: probes and the
+/// analysis endpoint keep fixed node budgets via `analyze_with_avoid`.
+pub const THINK_SOFT_MS: u64 = 2000;
+pub const THINK_HARD_MS: u64 = 8000;
+/// Mover-relative adjusted gap below which the lead is undecided: keep
+/// thinking to the hard cap.
+const VOLATILE_GAP: f64 = 2.0;
+/// Beam width for timed deepening (matches WIDTH).
+const BEAM: usize = 8;
+
+struct BeamLine {
+    mv: Move,
+    after: Position,
+    pv: Vec<Move>,
+    end: Position,
+    leaf_blue: f64,
+    adjusted: f64,
+    visits: usize,
+    solved: bool,
+}
+
+/// Selection value mirroring `analyze_with_avoid`: mover-relative honest leaf
+/// plus horizon extension, minus rebuild/fresh penalties and the doom
+/// discount (evaluated at the deepest opp-to-move position available).
+fn selection_adjusted(
+    position: &Position,
+    after: &Position,
+    end: &Position,
+    leaf_blue: f64,
+    mover: Player,
+    opp: Player,
+    mv: Move,
+    avoid: &[Point],
+) -> f64 {
+    let mut adjusted = sign(mover) * leaf_blue + horizon_extension(position, end, mover);
+    let hz_sel = f64::from(position.scoring_events_left()).min(HORIZON);
+    let mut probe = position.clone();
+    let oc = probe.apply_unchecked(mv);
+    if oc.broken.is_none() {
+        let tgt = mv.target().expect("legal moves end on the board");
+        if near_points(avoid.iter().copied(), tgt, CUT_RADIUS) {
+            adjusted -= REBUILD_PENALTY * hz_sel;
+        }
+        if near_fresh_enemy(position, tgt) {
+            adjusted -= FRESH_PENALTY * hz_sel;
+        }
+    }
+    let doom_at = if end.to_move() == opp {
+        Some(end)
+    } else if after.to_move() == opp {
+        Some(after)
+    } else {
+        None
+    };
+    if let Some(pos) = doom_at {
+        let hz_doom = f64::from(pos.scoring_events_left()).min(HORIZON);
+        adjusted -= DOOM_W * max_pop(pos, mover) * hz_doom;
+    }
+    adjusted
+}
+
+fn sort_beam(beam: &mut [BeamLine]) {
+    beam.sort_by(|a, b| {
+        b.adjusted.total_cmp(&a.adjusted).then(a.mv.index().cmp(&b.mv.index()))
+    });
+}
+
+pub fn analyze_timed(position: &Position, avoid: &[Point]) -> Analysis {
+    let mover = position.to_move();
+    let opp = mover.opponent();
+    let legal_count = position.legal_moves().len();
+    // Forced: nothing to decide (prefix/opener handled by the caller).
+    if legal_count == 0 {
+        return Analysis { evaluation: value(position), depth: 0, nodes: 0, candidates: vec![] };
+    }
+    let t0 = Instant::now();
+    let firsts = ranked(position, legal_count, true, avoid);
+    let mut nodes = firsts.len();
+    let mut beam: Vec<BeamLine> = Vec::new();
+    for (mv, after, _, _) in firsts.into_iter().take(BEAM) {
+        let replies = ranked(&after, after.legal_moves().len(), false, &[]);
+        nodes += replies.len();
+        let (mut pv, end) = (vec![mv], after.clone());
+        let mut leaf = value(&after);
+        if let Some((reply, rafter, _, _)) = replies.first() {
+            pv.push(*reply);
+            leaf = value(rafter);
+        }
+        let end = position_after_pv(position, &pv);
+        let adjusted = selection_adjusted(position, &after, &end, leaf, mover, opp, mv, avoid);
+        let solved = end.is_finished();
+        let visits = 1 + replies.len();
+        beam.push(BeamLine { mv, after, pv, end, leaf_blue: leaf, adjusted, visits, solved });
+    }
+    sort_beam(&mut beam);
+    if beam.iter().all(|l| l.solved) {
+        return finish_timed(position, beam, nodes);
+    }
+    loop {
+        for line in beam.iter_mut().filter(|l| !l.solved) {
+            if line.end.is_finished() {
+                line.solved = true;
+                continue;
+            }
+            let opts = ranked(&line.end, line.end.legal_moves().len(), false, &[]);
+            nodes += opts.len();
+            match opts.first() {
+                Some((rmv, rafter, _, _)) => {
+                    line.pv.push(*rmv);
+                    line.end = rafter.clone();
+                    line.leaf_blue = value(&line.end);
+                    line.visits += opts.len();
+                    if line.end.is_finished() {
+                        line.solved = true;
+                    }
+                }
+                None => line.solved = true,
+            }
+            line.adjusted =
+                selection_adjusted(position, &line.after, &line.end, line.leaf_blue, mover, opp, line.mv, avoid);
+            if t0.elapsed().as_millis() as u64 >= THINK_HARD_MS {
+                break;
+            }
+        }
+        sort_beam(&mut beam);
+        let elapsed = t0.elapsed().as_millis() as u64;
+        if beam.iter().all(|l| l.solved) {
+            break; // solved: exact, nothing more to learn
+        }
+        if elapsed >= THINK_HARD_MS {
+            break;
+        }
+        if elapsed >= THINK_SOFT_MS
+            && (beam.len() < 2
+                || (beam[0].adjusted - beam[1].adjusted).abs() >= VOLATILE_GAP)
+        {
+            break; // decided, soft budget spent
+        }
+    }
+    finish_timed(position, beam, nodes)
+}
+
+fn finish_timed(position: &Position, beam: Vec<BeamLine>, nodes: usize) -> Analysis {
+    let depth = beam.iter().map(|l| l.pv.len()).max().unwrap_or(0);
+    let candidates = beam
+        .into_iter()
+        .map(|l| Candidate { mv: l.mv, evaluation: l.leaf_blue, pv: l.pv, visits: l.visits })
+        .collect::<Vec<_>>();
     let evaluation = candidates.first().map_or_else(|| value(position), |best| best.evaluation);
     Analysis { evaluation, depth, nodes, candidates }
 }

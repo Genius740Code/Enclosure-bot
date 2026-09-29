@@ -51,3 +51,17 @@ Rated evals queued pairs=1: v5 (6ea13d3e), v4 (a68f64de), GB (daf1be99),
 GB2.0 (5e7dbc71), VladNet (ddd08831), AngelBot (0b6220f8). Site forces
 action-1 per pair: prefix onset-scan delays (inj may read 7/8 there).
 Verdict: PENDING site Elo.
+
+## V7 directive — timed think (Q6-amendment, user order, NOT gated) — 2026-09-29
+User directive: v7 must spend ~2s per searched move, more while volatile.
+Change (`retaliator/src/search.rs`, master): `best_move_routed` now uses
+`analyze_timed` — beam deepening (BEAM=8) through the same `ranked()` reply
+model and selection adjustments (horizon/doom/rebuild/fresh); SOFT=2000ms
+minimum, HARD=8000ms cap, VOLATILE_GAP=2.0 top-2 extension. Prefix/opener and
+forced moves stay instant. Probes/analysis keep fixed node budgets.
+Measurement (native, mid-game 373 legal): full 2-ply = 11ms/2436 nodes
+(saturated — wider budgets change nothing); timed = 2029ms/depth-73/264613
+nodes, best move legal. `site_check` OK (opening 16058, 12/12 legal, 15.5s).
+Caveats: depth is machine-speed-dependent (routed-path gauge determinism no
+longer holds); strength UNGATED — league/h2h numbers pending. WASM rebuild
+required before upload.
