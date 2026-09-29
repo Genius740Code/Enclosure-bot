@@ -176,3 +176,19 @@ NEVER reached — S1-S4 suspects all cleared (one received state showed me=red
 correct). Root cause unknown: game not live at match_found, or join needs a
 different channel/params. sst1 work SUSPENDED until v8 ships; fix requires
 observing a lobby match from match_found with full message capture.
+
+### 6l. M9 — prophylaxis: know the enemy plan, stop it if real (founder idea)
+Contest-gen was KILLED because it contested everything (donates tempo). The
+founder qualifier fixes it: prevent ONLY when the enemy plan is GOOD.
+Mechanism (Lane W): THREAT DETECTION — from our position compute the enemy's
+best achievable (their biggest reply swing, wall-completion progress, close
+setup); a threat is REAL iff its full-horizon value clears a threshold.
+Prevention is then priced as first-class DENY in the M1 exception ledger: our
+spoiling move must outbid our best area move by threat-destroyed value.
+Guardrails (from the KILL): never contest shielded/fresh walls (uncuttable =
+burned tempo); threat x likelihood must beat tempo cost or we expand instead.
+C2 measures FIRST: in losses, how often did the enemy's eventual winning plan
+show a detectable 2-wall/close-setup signature 2-4 moves early? No signature,
+no price. Gate: prevented-threat value UP + full chain + v7-mirror (M4).
+Interplay: M9 is the enemy-side twin of M8 (our plans) and the disciplined
+heir of Q3/Q10/Q11 + validated DENY trigger.
