@@ -383,8 +383,10 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
 
 /// Timed think (Q6-amendment, v7): every searched move spends at least
 /// THINK_SOFT_MS, extending to THINK_HARD_MS while the position is volatile
-/// (top two candidates disagree). Site envelope: 5s requested, 20-25s lease —
-/// HARD keeps wide margin under forfeit.
+/// (top two candidates disagree). Site envelope (bot-api.md): aim for
+/// limits.moveTimeMs = 5000ms; until 2026-10-04 moves stop at ~23s browser /
+/// 25s server, FROM that date a move past the limit FAILS (forfeit). HARD
+/// stays under 5000 with margin. WASM clock via wasi clock_time_get.
 /// Depth is real minimax, not budget inflation: measured 2026-09-29, full-width
 /// 2-ply costs ~11ms/2436 nodes at 373 legal moves and wider visit budgets
 /// change nothing (saturated). So extra time goes into beam deepening — each
@@ -396,7 +398,7 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
 /// Machine-speed-dependent depth, NOT probe-deterministic: probes and the
 /// analysis endpoint keep fixed node budgets via `analyze_with_avoid`.
 pub const THINK_SOFT_MS: u64 = 2000;
-pub const THINK_HARD_MS: u64 = 8000;
+pub const THINK_HARD_MS: u64 = 4800;
 /// Mover-relative adjusted gap below which the lead is undecided: keep
 /// thinking to the hard cap.
 const VOLATILE_GAP: f64 = 2.0;
