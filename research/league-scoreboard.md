@@ -126,3 +126,38 @@ confirms the mechanism direction (lifetime +11%, bpb +11%, breaks flat at half
 dose) but the bonus steers early wall play into lines scoutbase punishes and
 shipped does not (h2h pass + league fail at every positive dose). Next: Q1
 break-fix valuation (charge only missed scoring events, ~2-event doom).
+
+## Experiment E (Lane E v7 Q1) — break-fix valuation dose sweep — 2026-09-29
+Term (`eval_phases.rs` `Breakfix{missed,floor}` + `breakfix_best_move_with_avoid`):
+the enemy's worst one-action pop charged at MISSED events (area x
+min(events,missed)), not the full horizon — popped ground re-made after the
+~two-turn shield delay banks every event except ~2, and ground re-made before
+the next event misses none (~0). Q1b adds a per-break fixed tempo floor: any
+live pop charges at least floor x hz (the re-make burns a turn whatever the
+area). Dose via `E_MISSED=m[,f]`; absent = OFF = doom-OFF control. Doom stays
+off on this path (charges never stack). Same gates as Q2.
+| dose (E_MISSED) | h2h W/L | league margin % | gauge W/L | life (variant vs shipped) | verdict |
+|---|---|---|---|---|---|
+| Q1a missed-only (2,0) | 5/10 (blue 1/5 -17.4%, red 4/5 -1.8%) | -23.5% (skip0 +26.8/+39.8, skip10 +26.8/-137.7, skip20 +26.8/-137.7, skip30 +36.1/-68.6; diffs +285/+776/+285/-1131/+285/-1131/+741/-536) | 6/6 byte-identical to E0 (blue +53.5 x3, red +69.3 x3; breaks R=20/3, G=16/2 — term never flips a gauge pick) | life 10.2 vs 11.8, bpb 5.27 vs 6.18 (FELL), breaks 286 vs 258 (ROSE +28) | KILL (h2h = control; league -13.6pp with collapse skip10/20-red -94.5 -> -137.7 — even 2 events overcharge there; life watch both wrong way) |
+| Q1b missed + floor (2,0.5) | 5/10, all 10 game scores byte-identical to Q1a (floor never flips an h2h pick) | -17.1% (skip0 +26.8/+39.8, skip10 +26.8/-123.1, skip20 +26.8/-123.1, skip30 +57.5/-68.6; diffs +285/+776/+285/-1116/+285/-1116/+1154/-536) | 6/6 byte-identical to E0/Q1a (term never fires) | life 10.2 vs 11.8, bpb 5.27 vs 6.18, breaks 286 vs 258 (identical to Q1a) | KILL (floor adds charge exactly where dose-response says to subtract; league still -7.2pp vs control) |
+Q1 verdict: KILL the break-fix valuation form on all gates — no dose beats control
+on any gate (best: Q1b league -17.1% vs -9.9%; h2h never exceeds 5/10; life bpb
+falls and breaks rise at both doses). Mechanism note: pricing worst-pop at the
+true ~2-event cost still loses because the charge steers AWAY from holding
+breakable area on the collapse lines (skip10/20-red), where shipped's unpriced
+exposure banks anyway — the disease is the max-pop charge itself, not its size.
+Per lane plan (Q1 failed both doses): Q4 deny-remote SKIPPED (gated on Q1 pass),
+Q5 single dose next.
+
+## Experiment E (Lane E v7 Q5) — delayed-close bonus scaled by open space — 2026-09-29
+Term (`eval_phases.rs` `Delay{w}` + `delay_best_move_with_avoid`): a first-action
+close (Connect, gain > 0) gets bonus w x gain x openfrac x hz at ranking +
+selection, where openfrac = room/(room+area) post-move in [0,1] — closes that
+keep the map open keep ~full gain credit, closes that shut our last room keep
+~none. Engine structure only (room/area), full-horizon units, deterministic
+tiebreak by move index. Single dose via `E_DELAY=w`.
+| dose (E_DELAY) | h2h W/L | league margin % | gauge W/L | life (variant vs shipped) | verdict |
+|---|---|---|---|---|---|
+| Q5 open-space close (w=1.0) | 4/10 (blue 1/5 -24.2%, red 3/5 -23.4%; open-None as red -140.4% blowout) | -32.4% (skip0 -14.3/+34.3, skip10 -14.3/-124.3, skip20 -14.3/-124.3, skip30 +12.7/-14.8; diffs -157/+695/-157/-1215/-157/-1215/+168/-166) | 6/6 (blue +60.7 x3, red +69.4 x3; breaks R=13/5, G=9/2 — term fires here, unlike Q1) | life 8.5 vs 15.6, bpb 4.72 vs 7.65 (FELL), breaks 301 vs 225 (ROSE +76) | KILL (worse than control on h2h, league, and life; the bonus rewards open-space closes that scout-class opponents cut — openness without thickness is grazeable) |
+Q5 verdict: KILL after the single tasked dose. Lane E v7 closes with no surviving
+candidate: Q2 REJECT, Q1 KILL (both doses), Q5 KILL. Control (doom-OFF) stands.
