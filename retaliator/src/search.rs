@@ -67,7 +67,7 @@ const REBUILD_PENALTY: f64 = 3.0;
 /// DOSE 1: 5.0 area/10 moves (conservative)
 /// DOSE 2: 6.8 area/10 moves (E4 exact)
 /// DOSE 3: 8.5 area/10 moves (aggressive)
-const CORRIDOR_ACCEL_THRESHOLD: f64 = 6.8; // DOSE 2: E4 exact threshold
+const CORRIDOR_ACCEL_THRESHOLD: f64 = 5.0; // DOSE 1: conservative
 /// Minimum shared-node count to qualify as a 2-wall corridor node.
 const CORRIDOR_SHARED_MIN: u32 = 2;
 /// Radius around corridor root to consider as contest targets.
