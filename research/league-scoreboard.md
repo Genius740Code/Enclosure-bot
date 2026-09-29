@@ -179,3 +179,28 @@ ours falling, dose-vs-control).
 | Q4D1 contest-remote (w=0.25) | 5/10 (blue 1/5 -18.8%, red 4/5 -2.1%) — all 10 game scores byte-identical to E0 | -9.9% — all 8 rows byte-identical to E0 (skip0 +29.0/+39.8, skip10 +29.0/-94.5, skip20 +29.0/-94.5, skip30 +38.9/-55.9; worst row -94.5% > -300%) | 6/6 byte-identical to E0 (blue +53.5 x3, red +69.3 x3; breaks R=20/3, G=16/2) | dose life line-for-line identical to control life (variant 9.7 vs shipped 12.2, bpb 5.00 vs 6.43, breaks 283 vs 254): enemy lifetime did NOT fall, ours did NOT fall — zero pick-flips | KILL (term never flips a pick at the tasked small weight on any of 34 games; h2h 5/10 < 6/10, league -9.9% not > -9.9%, life gate vacuous. Not directionally positive, so no Dose 2 per plan. Either the heat x remote-junction conjunction never arms in these lines, or 0.25 x hz never breaks a tie — both mean the form carries no signal at this weight) |
 Q4 verdict: KILL after Dose 1. No Dose 2 (Dose 1 exactly control = neutral, not
 directionally positive). Next per plan: C2 census measurement (probe_b_census).
+
+## Experiment E (Lane E v7 C2-census) — line-strength measurement — 2026-09-29
+Probe (`retaliator/examples/probe_b_census.rs`, measurement-only, no eval
+change): corpus = h2h gate lines (10 games, variant vs shipped) + league
+genuine rows (skip0 both colors, variant vs scoutbase), BOTH sides' closes
+logged (win control). Per close (Connect, gain >= 2.0): gain; touches =
+max(source-degree-before, target-degree-after); bank-rate = own score delta
+over next 6 own-actions / gain; survived = own area at game end >= 50% of
+post-close peak; dose + result + color + side. JSONL rows + stratified
+summary. NOTE: first run voided (cross-game trajectory slice bug —
+closes resolved against later games' trajectories); fixed (per-game
+close/snap ranges, game lines to stderr) and rerun. n=523 unique closes per
+dose (1046 pooled); n>=200 gate MET. Dose 0.25 games byte-identical to
+control (Q4 never flips), so the dose covariate is vacuous — analysis pooled.
+| predictor | win stratum (n=548) | loss stratum (n=498) | verdict |
+|---|---|---|---|
+| gain [2,4.6)/[4.6,6)/[6,10)/[10+) survival | 0.246/0.273/0.397/0.192 | 0.252/0.286/0.270/0.338 | NO — [10+) flips worst-in-wins to best-in-losses; C2's loss-corpus negative slope does not replicate with win control (survived-mean gain 9.16 vs farmed 10.63, far weaker than C2's 5.62 vs 11.57) |
+| touches 2/3/4+ survival | 0.331/0.239/0.175 | 0.273/0.253/0.368 | NO — sign flips across strata (negative in wins, positive in losses); confounded with gain (higher touches <-> smaller gains: 12.9/11.0/7.6 win meangain) |
+| bank-rate survived vs farmed | 24.37 (n=288) vs 21.88 (n=758) pooled | same pooled | WEAK — small positive gap, but post-hoc (measured after the fact); unusable at pick time without a predictive model |
+Census verdict: with win control, NONE of gain/touches/bank-rate predicts
+survival consistently — every candidate flips sign across strata. No
+"strength" term meets the spec gate (a predictor only counts if it flips a
+pick; nothing here earns one). C2's H1 caveat confirmed load-bearing: the
+loss-corpus negative gain slope was a corpus artifact (in losses the enemy
+eats big ones and lets small ones stand), not a structural law.

@@ -127,8 +127,8 @@ fn main() {
     let scout = scoutbase::best_move as fn(&Position) -> Option<Move>;
     let mut closes: Vec<Close> = Vec::new();
     let mut snaps: Vec<Snap> = Vec::new();
-    // (game id, close-base index, snap-base index, a-won, a-is-variant)
-    let mut games: Vec<(String, usize, usize, bool)> = Vec::new();
+    // (game id, close-base, close-end, snap-base, snap-end, a-won)
+    let mut games: Vec<(String, usize, usize, usize, usize, bool)> = Vec::new();
 
     // H2H gate lines: variant (a) vs shipped (b).
     for open in [None, Some(4864), Some(5589), Some(11723), Some(9199)] {
@@ -138,30 +138,29 @@ fn main() {
                 game.play(Move::from_index(id).unwrap()).unwrap();
             }
             let id = format!("h2h-{open:?}-{}", if a_blue { "blue" } else { "red" });
-            let (cb, sb) = (closes.len(), snaps.len());
+            let (cb0, sb0) = (closes.len(), snaps.len());
             let (asc, bsc) = play(&id, game, a_blue, variant_pick, shipped, &mut closes, &mut snaps);
-            println!("{id}: {asc:.0}-{bsc:.0} {}", if asc > bsc { "A WINS" } else { "b wins" });
-            games.push((id, cb, sb, asc > bsc));
+            eprintln!("{id}: {asc:.0}-{bsc:.0} {}", if asc > bsc { "A WINS" } else { "b wins" });
+            games.push((id, cb0, closes.len(), sb0, snaps.len(), asc > bsc));
         }
     }
     // League genuine rows: skip0, variant (a) vs scoutbase (b), both colors.
     for a_blue in [true, false] {
         let game = Game::new();
         let id = format!("skip0-{}", if a_blue { "blue" } else { "red" });
-        let (cb, sb) = (closes.len(), snaps.len());
+        let (cb0, sb0) = (closes.len(), snaps.len());
         let (asc, bsc) = play(&id, game, a_blue, variant_pick, scout, &mut closes, &mut snaps);
-        println!("{id}: {asc:.0}-{bsc:.0} {}", if asc > bsc { "A WINS" } else { "b wins" });
-        games.push((id, cb, sb, asc > bsc));
+        eprintln!("{id}: {asc:.0}-{bsc:.0} {}", if asc > bsc { "A WINS" } else { "b wins" });
+        games.push((id, cb0, closes.len(), sb0, snaps.len(), asc > bsc));
     }
 
     // Emit JSONL: resolve bank-rate + survival from the trajectory.
     // Per game, snaps[base..] are in action order; close.action = pre-move
     // actions_played, so its own snap index = first snap with action > close.action.
     let mut n = 0usize;
-    for (gid, cb, sb, a_won) in &games {
-        let _ = gid;
-        let traj = &snaps[*sb..];
-        for c in closes[*cb..].iter() {
+    for (_gid, cb0, cb1, sb0, sb1, a_won) in &games {
+        let traj = &snaps[*sb0..*sb1];
+        for c in closes[*cb0..*cb1].iter() {
             // Own snap: first trajectory entry after the close action.
             let own_idx = traj.iter().position(|s| s.action > c.action).unwrap_or(traj.len().saturating_sub(1));
             let p = if c.color == "blue" { Player::Blue } else { Player::Red };
