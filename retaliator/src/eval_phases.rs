@@ -160,6 +160,69 @@ impl Unbreak {
     }
 }
 
+/// Lane E v7 Q4 deny-remote (2026-09-29): price enemy far-from-fight
+/// expansion by unbreakability (shared-node count), not current area.
+/// Mirror of the shipped REMOTE_BONUS (which rewards OUR far building when
+/// the local fight is hot): a bonus for OUR first actions that CONTEST foe
+/// remote walls — landing near enemy nodes that are themselves far from the
+/// fight AND junctioned (degree >= 2, i.e. no legal one-action cut passes
+/// through them). The bonus scales with the shared-node COUNT contested
+/// (structural unbreakability), never with the area the wall currently
+/// holds. Full-horizon units (x hz = count x min(events,12)), deterministic
+/// tiebreak by move index, non-breaking first actions only (the Q2v2
+/// lesson: pricing cuts flips fight responses into cuts), heat-gated like
+/// the shipped mirror (no fight = no remote). Dose via `E_DENY=w`;
+/// 0.0/unset = OFF = the doom-OFF control. Q4 was SKIPPED in v7 (gated on
+/// a Q1 pass that never came); this form prices the foe expansion directly
+/// instead of our own breakable-area exposure.
+/// Q4 Dose 1 verdict 2026-09-29: (see scoreboard; filled after gates).
+#[derive(Clone, Copy, PartialEq)]
+pub struct Deny {
+    pub w: f64,
+}
+
+impl Deny {
+    /// OFF: the doom-OFF control (byte-identical).
+    pub const OFF: Self = Self { w: 0.0 };
+    /// Parse the `E_DENY` probe env (e.g. "0.25"). Absent/unparseable = OFF.
+    pub fn from_env() -> Self {
+        match std::env::var("E_DENY") {
+            Ok(v) => match v.parse() {
+                Ok(w) => Self { w },
+                Err(_) => Self::OFF,
+            },
+            Err(_) => Self::OFF,
+        }
+    }
+    /// Whether the bonus fires at all.
+    pub fn on(self) -> bool {
+        self.w != 0.0
+    }
+}
+
+/// Chebyshev radius within which our landing contests a foe remote wall:
+/// presence (the IDLE/DEADWOOD "near enemy" standard), not a graze
+/// (CONTACT fires at 1 and still bans the free graze on top of this bonus).
+const DENY_CONTEST_DIST: i8 = 3;
+
+/// Foe remote walls worth contesting: enemy nodes that are junctioned
+/// (degree >= 2 — shared-node unbreakable) AND far from all our nodes
+/// (beyond REMOTE_DIST — far from the fight, the mirror of the shipped
+/// REMOTE_BONUS domain). Computed once per ranking, not per candidate.
+fn deny_targets(position: &Position, mover: Player, opp: Player) -> Vec<Point> {
+    let own: Vec<Point> = position.nodes(mover).iter().collect();
+    position
+        .nodes(opp)
+        .iter()
+        .filter(|n| {
+            node_degree(position, opp, *n) >= 2
+                && own.iter().all(|o| {
+                    (o.x() - n.x()).abs() > REMOTE_DIST || (o.y() - n.y()).abs() > REMOTE_DIST
+                })
+        })
+        .collect()
+}
+
 /// Cut-threat steal (rival-analysis #3: GB's cut bonus / spacebot's cut-threat
 /// model): at each leaf, prefer moves that cut high-value enemy edges and
 /// avoid leaving own big-loop edges exposed. The term scores the net cut
@@ -364,7 +427,7 @@ pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move
     // the gate defaults stay the published doom-OFF control, and this path
     // keeps the shipped routing semantics (flat penalty) for any avoid set
     // the caller passes.
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF)
 }
 
 /// Lane E v7 Q1 break-fix valuation: charge only MISSED scoring events
@@ -424,7 +487,7 @@ pub fn breakfix_best_move_with_avoid(
     avoid: &[Point],
     b: Breakfix,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, b, Delay::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, b, Delay::OFF, Deny::OFF)
 }
 
 /// The Lane E v7 Q2 term under test: the doom-OFF control plus the
@@ -437,7 +500,7 @@ pub fn unbreak_best_move_with_avoid(
     avoid: &[Point],
     u: Unbreak,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, u, false, Breakfix::OFF, Delay::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, u, false, Breakfix::OFF, Delay::OFF, Deny::OFF)
 }
 
 /// Lane E v7 Q5 delayed-close bonus scaled by open space (2026-09-29,
@@ -488,7 +551,17 @@ pub fn delay_best_move_with_avoid(
     avoid: &[Point],
     d: Delay,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, d)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, d, Deny::OFF)
+}
+
+/// The Lane E v7 Q4 term under test: the doom-OFF control plus the
+/// contest-remote bonus in dose `d` (see [`Deny`]).
+pub fn deny_best_move_with_avoid(
+    position: &Position,
+    avoid: &[Point],
+    d: Deny,
+) -> Option<Move> {
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, d)
 }
 
 /// The B-3 term under test: the shipped anti-rebuild routing plus the
@@ -500,7 +573,7 @@ pub fn farm_best_move_with_avoid(
     avoid: &[Point],
     form: Rebuild,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF)
 }
 
 /// The shipped `search::best_move` exactly: the doom discount ON, no added
@@ -509,7 +582,7 @@ pub fn farm_best_move_with_avoid(
 /// the gate keeps per-example dead-code quiet.)
 #[allow(dead_code)]
 pub fn baseline_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF)
 }
 
 /// The CLOSE_B2 ablation control: doom OFF (the B-2 recommendation) with the
@@ -518,7 +591,7 @@ pub fn baseline_best_move(position: &Position) -> Option<Move> {
 /// term alone.
 #[allow(dead_code)]
 pub fn ablation_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF)
 }
 
 /// The skeleton's selection loop, with the doom discount and the added terms
@@ -537,6 +610,7 @@ fn best_move_features(
     cut_threat: bool,
     breakfix: Breakfix,
     delay: Delay,
+    deny: Deny,
 ) -> Option<Move> {
     if let Some(open) = blue_opener(position) {
         return Some(open);
@@ -544,7 +618,7 @@ fn best_move_features(
     let mover = position.to_move();
     let opp = mover.opponent();
     let budget = budget.clamp(SMALLEST_BUDGET, MOVE_BUDGET);
-    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild, unbreak, cut_threat, delay);
+    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild, unbreak, cut_threat, delay, deny);
     let nodes = first_actions.len();
     let width = first_actions.len().min(WIDTH);
     let reply_budget = (budget - nodes) / width.max(1);
@@ -552,7 +626,7 @@ fn best_move_features(
     // (adjusted score for ordering, the move it belongs to).
     let mut scored: Vec<(f64, Move)> = Vec::new();
     for (mv, after, _, _) in first_actions.into_iter().take(width) {
-        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off, Unbreak::OFF, false, Delay::OFF);
+        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off, Unbreak::OFF, false, Delay::OFF, Deny::OFF);
         let mut pv = vec![mv];
         let mut evaluation = value(&after);
         if let Some((reply, _, reply_value, _)) = replies.first() {
@@ -599,6 +673,21 @@ fn best_move_features(
                                 probe.area(mover).to_f64(),
                             )
                             * hz_sel;
+                    }
+                }
+                // Q4 deny-remote bonus at selection (gated): the same
+                // shared-count contest term as in ranking, so the pick
+                // itself contests foe remote walls. Non-breaking only.
+                if deny.on() && fight_heat(position, mover, opp) >= FIGHT_HEAT {
+                    let contested = deny_targets(position, mover, opp)
+                        .iter()
+                        .filter(|n| {
+                            (n.x() - tgt.x()).abs() <= DENY_CONTEST_DIST
+                                && (n.y() - tgt.y()).abs() <= DENY_CONTEST_DIST
+                        })
+                        .count();
+                    if contested > 0 {
+                        adjusted += deny.w * contested as f64 * hz_sel;
                     }
                 }
             }
@@ -829,11 +918,20 @@ fn ranked(
     unbreak: Unbreak,
     cut_threat: bool,
     delay: Delay,
+    deny: Deny,
 ) -> Vec<(Move, Position, f64, f64)> {
     let mover = position.to_move();
     let opp = mover.opponent();
     let room_before = room(position, mover);
     let heat = fight_heat(position, mover, opp);
+    // Q4 deny-remote targets (gated): foe junctioned walls far from the
+    // fight, computed once per ranking. Empty when cold or OFF, so the
+    // per-candidate loop below is free on the control path.
+    let deny_list: Vec<Point> = if deny.on() && heat >= FIGHT_HEAT {
+        deny_targets(position, mover, opp)
+    } else {
+        Vec::new()
+    };
     let mut moves: Vec<Move> =
         position.legal_moves().iter().filter(|&mv| !repeats_a_connection(position, mv)).collect();
     moves.sort_by_key(|mv| (Reverse(length(*mv)), mv.index()));
@@ -964,6 +1062,23 @@ fn ranked(
                     priority += delay.w * own_gain
                         * open_frac(room(&after, mover), after.area(mover).to_f64())
                         * hz;
+                }
+                // Q4 deny-remote (gated): contest foe remote walls — land
+                // near junctioned enemy nodes far from the fight, priced
+                // by the shared-node COUNT contested (unbreakability),
+                // never by the area they hold. Non-breaking only (Q2v2);
+                // the CONTACT penalty below still bans the free graze.
+                if !deny_list.is_empty() && outcome.broken.is_none() {
+                    let contested = deny_list
+                        .iter()
+                        .filter(|n| {
+                            (n.x() - target.x()).abs() <= DENY_CONTEST_DIST
+                                && (n.y() - target.y()).abs() <= DENY_CONTEST_DIST
+                        })
+                        .count();
+                    if contested > 0 {
+                        priority += deny.w * contested as f64 * hz;
+                    }
                 }
                 // Fix 2: don't graze the enemy frontier for free.
                 if outcome.broken.is_none()

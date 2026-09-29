@@ -27,6 +27,13 @@ std::thread_local! {
     static UNBREAK_DOSE: std::cell::RefCell<(f64, f64)> = std::cell::RefCell::new((0.0, 0.0));
     static MISSED_DOSE: std::cell::RefCell<(f64, f64)> = std::cell::RefCell::new((0.0, 0.0));
     static DELAY_DOSE: std::cell::RefCell<f64> = std::cell::RefCell::new(0.0);
+    static DENY_DOSE: std::cell::RefCell<f64> = std::cell::RefCell::new(0.0);
+}
+
+/// Variant picker for `E_DENY=w`: the Q4 dose via a thread-local.
+fn deny_pick(position: &Position) -> Option<Move> {
+    let w = DENY_DOSE.with(|d| *d.borrow());
+    eval_phases::deny_best_move_with_avoid(position, &[], eval_phases::Deny { w })
 }
 
 /// Variant picker for `E_DELAY=w`: the Q5 dose via a thread-local.
@@ -86,7 +93,14 @@ fn main() {
         return;
     }
 
-    let laneb: fn(&Position) -> Option<Move> = match std::env::var("E_DELAY") {
+    let laneb: fn(&Position) -> Option<Move> = match std::env::var("E_DENY") {
+        Ok(v) => {
+            let w: f64 = v.parse().unwrap_or(0.0);
+            println!("laneE Q4 config: E_DENY w={w}");
+            DENY_DOSE.with(|d| *d.borrow_mut() = w);
+            deny_pick
+        }
+        Err(_) => match std::env::var("E_DELAY") {
         Ok(v) => {
             let w: f64 = v.parse().unwrap_or(0.0);
             println!("laneE Q5 config: E_DELAY w={w}");
@@ -116,6 +130,7 @@ fn main() {
                 println!("laneE config: control (doom-OFF best_move)");
                 wra(eval_phases::best_move)
             }
+        },
         },
         },
     };
