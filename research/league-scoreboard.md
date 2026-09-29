@@ -85,3 +85,30 @@ tiebreak). Probes `opp_blobstyle`/`opp_sacstyle`/`opp_longfarm`, harness
 
 D2 running total: blob 0/32, sac 7/32 taken off us. Style ranking so far by
 damage: sac (25-7 for us) >> blob (32-0). Details: `lane-d2-sac.md`.
+
+## Lane O contest-gen gate (D1 blue-only, BONUS=0) — 2026-09-29 — KILL
+Probe `opp_contest_gates.rs` (dose + control arms, same binary, release).
+Full table in `research/o-contest-gate-kill.md`.
+- H vs v1: control 3/10 (b0/5 r3/5), dose 3/10 (b0/5 r3/5). Dose flips Blue
+  picks (scores move both ways) but W/L identical. FAIL (>=6/10).
+- L scoutbase: control +9.9% (blue +24.2, red -4.5), dose -6.2%
+  (blue -7.9, red -4.5). Red byte-identical (dose isolation confirmed).
+  Blue skip0/10/20 +30.6 -> -17.2; no row <-300. FAIL (AVG < control).
+- G greedy: 6/6 both (dose blue margin 62.8 -> 37.9). Non-discriminative.
+Verdict: **KILLED**. 8-0 was collapser-matchup-specific; vs v1/scoutbase
+the contest picks donate tempo as Blue. No port spec. Opp-mimic track closed.
+
+## Lane O GB census on site games — 2026-09-29 (prediction test OPEN question closed)
+Probe `opp_census_site.rs`: replayed all 202 local site games via engine
+(0 replay errors), share(winner) > share(loser) test per
+`research/v7-gb-census-spec.md`.
+- Overall: agree **106/202 (52.5%)**, ties 0, NaN 0. z~0.7σ — coin-flip,
+  does NOT beat the 50% baseline.
+- GB families: main GB 41/74 (55%), GB0.2 15/24 (62.5%, driven by
+  capy-as-Red 11/12; capy-as-Blue 4/12).
+- Local mimic validation was 14/16 (87%) — the metric separates thin-walled
+  mimic losers from winners but fails on real games. Real GB wins on
+  volume/close-rate without higher unbreakable-share.
+Verdict: **unbreakable-share REJECTED as a win predictor**; DENSE_BONUS
+rationale (thick walls survive cuts) may still hold defensively, but share
+does not explain who wins human games. Do not build eval terms on it.
