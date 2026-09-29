@@ -96,3 +96,18 @@ subtrees are ordering-proof (capped tree searched fully, 56/56 nodes both ways:
 all fail-low, no ordering can prune). Mechanism works as theory predicts; totals
 dominated by the unprunable position. Kept (strictly positive for the Ms budget:
 more reach per second, zero exactness risk) — strength verdict from full gates.
+
+## Experiment V7-S-Q16 — Q6-amendment gate chain (depth 3, 2s budget, DEFAULT_WIDTH 8/6) — 2026-09-29
+Config: `search_deep::best_move_capped(depth 3, Budget::Ms(2000), DEFAULT_WIDTH 8/6)`
+with Q14 killer+history ordering active (tip 2b2c884).
+`probe_deep h2h_capped_budget` (vs shipped `search::best_move`, 5 openings x 2 colors = 10):
+- **1/10** (blue 1/5, red 0/5). Blue win open=None 1243-727; red losses catastrophic
+  (736-2606, 1697-4805, 1657-4133, 958-2911, 1006-2891); blue losses at 4864 1238-1542,
+  5589 2022-2848, 11723 1144-1316, 9199 1447-1499.
+`probe_deep league_capped_budget` (vs scoutbase, skip 0/10/20/30 x 2 colors = 8):
+- AVG margin **-84.8%** (ret perspective). Blue rows +44.4/+44.4/-27.7/+35.9;
+  red rows -154.0/-238.3/-186.2/-196.6 (no row < -300).
+`probe_deep gauge_capped_budget` (vs greedy, 6): **6/6** (lines byte-identical repeat).
+Gates: h2h 1/10 (<6 FAIL), league -84.8% (< -9.9% FAIL), gauge 6/6 (PASS).
+Verdict: **KILL** — red-collapse persists despite aspiration fix + ordering; Q6-amendment
+does not reach deployment bar. Merge lane-v7-search as control-stand (no further search work).
