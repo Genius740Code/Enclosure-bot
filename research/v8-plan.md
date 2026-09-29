@@ -213,3 +213,21 @@ nothing. Cleanest wall exhibit to date; Lane W builds the corridor-root
 contest trigger against exactly this shape. (Contrast I7-G10 game 9c6254da:
 same matchup reversed, our breaking works there — red 2216 vs blue 1820,
 enemy area 2.7. Breaking CAN work; blue-side passivity is the difference.)
+
+### 6o. Search-algorithm survey (founder Q, 2026-09-29)
+Game shape: ~373 legal moves, paired double-actions, 120 actions/game,
+deterministic, 5s/move WASM. Verdicts:
+- NO: breadth-first (373^d explodes instantly), best-first/A* (no admissible
+  heuristic exists), expectimax (nothing stochastic).
+- KEEP: beam minimax backbone — branching needs width control; the disease is
+  the REPLY MODEL, not the backbone (M7). Fix replies first.
+- PILOT (M10): MCTS/UCT as a separate lane. Fits the shape: anytime (fills
+  any clock exactly), huge branching handled by UCB instead of width caps,
+  pair-turns natural in playouts, no leaf eval needed. Gumbel variant for
+  tight budgets (few sims, sequential halving — built for 5s-class limits).
+  Pilot vs beam on: pick-flip rate, tactical shots (cut lines) found/missed,
+  h2h. Needs engine playout speed first (measure random-playout cost).
+- SPECIALIST: proof-number search for BINARY questions (is this wall
+  cuttable? does this loop survive?) — feeds M9 threat detection, not the
+  main engine. Cheap to try, narrow scope.
+Order: replies (running) → MCTS pilot → alpha-beta re-vote with real replies.
