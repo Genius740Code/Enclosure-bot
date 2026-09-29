@@ -223,6 +223,106 @@ fn deny_targets(position: &Position, mover: Player, opp: Player) -> Vec<Point> {
         .collect()
 }
 
+/// Lane E v7 Q12 reinforce-vs-prevent (2026-09-29): price thick-line play
+/// directly — two sub-terms, one dose variable each, swept against each
+/// other (reinforce-only vs prevent-only, 1-2 doses max):
+/// - REINFORCE (r): bonus for OUR non-breaking first actions that
+///   EXTEND our 2+ touch lines (source already a shared node, degree >= 2
+///   before the move — the Q2-extend form) or ANCHOR to them (target lands
+///   within Chebyshev 1 of one of our shared nodes). Binary r x hz, the
+///   shipped DENSE form. NOTE overlap, stated not hidden: EXTEND repeats
+///   Q2-extend (REJECTED: no dose beat control), ANCHOR overlaps the
+///   shipped DENSE_BONUS (target near 2+ own nodes) but is topological —
+///   adjacency to an actual junction, not a head-count. The dose measures
+///   the marginal top-up over DENSE.
+/// - PREVENT (p): bonus for OUR non-breaking first actions that CONTEST
+///   foe near-thick lines: foe frontier pairs (a,b) — both endpoints foe
+///   nodes of degree exactly 1 (wall ends, not yet thick), no edge between
+///   them, geometrically closable in one move (`Move::between` exists:
+///   placing it makes both endpoints degree 2, i.e. shared-node thick).
+///   Our move contests the pair by landing within Chebyshev 3 of either
+///   endpoint (the DENY contest standard; CONTACT still bans the free
+///   graze on top). Priced p x (pairs contested) x hz, the Deny form.
+///   Structural only: the foe close's legality is NOT checked here (it is
+///   not foe's turn) — geometry is the proxy.
+/// Full-horizon units (x hz = area x min(events,12)) throughout,
+/// deterministic tiebreak by move index. Dose via `E_THICK="r,p"`;
+/// (0,0)/unset = OFF = the doom-OFF control. HEADWIND (stated): the
+/// C2 census (same day) finds touches do not predict close survival with
+/// win control (sign flips across strata, confounded with gain) — a pure
+/// touch bonus has no survival mechanism behind it; the prevent half at
+/// least prices denial of foe structure rather than our own.
+/// Q12 verdict 2026-09-29: (see scoreboard; filled after gates).
+#[derive(Clone, Copy, PartialEq)]
+pub struct Thick {
+    pub r: f64,
+    pub p: f64,
+}
+
+impl Thick {
+    /// OFF: the doom-OFF control (byte-identical).
+    pub const OFF: Self = Self { r: 0.0, p: 0.0 };
+    /// Parse the `E_THICK` probe env ("r,p", e.g. "1,0"). Absent/unparseable = OFF.
+    pub fn from_env() -> Self {
+        match std::env::var("E_THICK") {
+            Ok(v) => {
+                let mut it = v.split(',');
+                match (it.next().and_then(|s| s.parse().ok()), it.next().and_then(|s| s.parse().ok())) {
+                    (Some(r), Some(p)) => Self { r, p },
+                    _ => Self::OFF,
+                }
+            }
+            Err(_) => Self::OFF,
+        }
+    }
+    /// Whether either weight is non-zero (the term fires at all).
+    pub fn on(self) -> bool {
+        self.r != 0.0 || self.p != 0.0
+    }
+}
+
+/// Chebyshev radius within which our landing anchors to our thick wall
+/// (adjacency: the DENSE standard) vs contests a foe frontier pair
+/// (presence: the DENY contest standard).
+const THICK_ANCHOR_DIST: i8 = 1;
+const THICK_CONTEST_DIST: i8 = 3;
+
+/// Foe near-thick frontier pairs: both endpoints foe wall-ends (degree
+/// exactly 1), no edge between them, one geometric move from shared-node
+/// thickness. Computed once per ranking, not per candidate.
+fn prevent_targets(position: &Position, foe: Player) -> Vec<(Point, Point)> {
+    let nodes: Vec<Point> = position.nodes(foe).iter().collect();
+    let mut out = Vec::new();
+    for (i, a) in nodes.iter().enumerate() {
+        if node_degree(position, foe, *a) != 1 {
+            continue;
+        }
+        for b in nodes.iter().skip(i + 1) {
+            if node_degree(position, foe, *b) != 1 {
+                continue;
+            }
+            if Move::between(*a, *b).is_none() {
+                continue;
+            }
+            if position.edges(foe).iter().any(|e| e.has_endpoint(*a) && e.has_endpoint(*b)) {
+                continue;
+            }
+            out.push((*a, *b));
+        }
+    }
+    out
+}
+
+/// Whether `target` anchors to one of `player`'s thick lines: within
+/// Chebyshev 1 of one of their shared nodes (degree >= 2 before the move).
+fn anchors_thick(position: &Position, player: Player, target: Point) -> bool {
+    position.nodes(player).iter().any(|n| {
+        node_degree(position, player, n) >= 2
+            && (n.x() - target.x()).abs() <= THICK_ANCHOR_DIST
+            && (n.y() - target.y()).abs() <= THICK_ANCHOR_DIST
+    })
+}
+
 /// Cut-threat steal (rival-analysis #3: GB's cut bonus / spacebot's cut-threat
 /// model): at each leaf, prefer moves that cut high-value enemy edges and
 /// avoid leaving own big-loop edges exposed. The term scores the net cut
@@ -427,7 +527,7 @@ pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move
     // the gate defaults stay the published doom-OFF control, and this path
     // keeps the shipped routing semantics (flat penalty) for any avoid set
     // the caller passes.
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF, Thick::OFF)
 }
 
 /// Lane E v7 Q1 break-fix valuation: charge only MISSED scoring events
@@ -487,7 +587,7 @@ pub fn breakfix_best_move_with_avoid(
     avoid: &[Point],
     b: Breakfix,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, b, Delay::OFF, Deny::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, b, Delay::OFF, Deny::OFF, Thick::OFF)
 }
 
 /// The Lane E v7 Q2 term under test: the doom-OFF control plus the
@@ -500,7 +600,7 @@ pub fn unbreak_best_move_with_avoid(
     avoid: &[Point],
     u: Unbreak,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, u, false, Breakfix::OFF, Delay::OFF, Deny::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, u, false, Breakfix::OFF, Delay::OFF, Deny::OFF, Thick::OFF)
 }
 
 /// Lane E v7 Q5 delayed-close bonus scaled by open space (2026-09-29,
@@ -551,7 +651,7 @@ pub fn delay_best_move_with_avoid(
     avoid: &[Point],
     d: Delay,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, d, Deny::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, d, Deny::OFF, Thick::OFF)
 }
 
 /// The Lane E v7 Q4 term under test: the doom-OFF control plus the
@@ -561,7 +661,18 @@ pub fn deny_best_move_with_avoid(
     avoid: &[Point],
     d: Deny,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, d)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, d, Thick::OFF)
+}
+
+/// The Lane E v7 Q12 term under test: the doom-OFF control plus the
+/// reinforce-vs-prevent thick-line bonuses in dose `t` (see [`Thick`]).
+/// Q12 verdict 2026-09-29: (see scoreboard; filled after gates).
+pub fn thick_best_move_with_avoid(
+    position: &Position,
+    avoid: &[Point],
+    t: Thick,
+) -> Option<Move> {
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF, t)
 }
 
 /// The B-3 term under test: the shipped anti-rebuild routing plus the
@@ -573,7 +684,7 @@ pub fn farm_best_move_with_avoid(
     avoid: &[Point],
     form: Rebuild,
 ) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF)
+    best_move_features(position, MOVE_BUDGET, avoid, false, false, false, false, form, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF, Thick::OFF)
 }
 
 /// The shipped `search::best_move` exactly: the doom discount ON, no added
@@ -582,7 +693,7 @@ pub fn farm_best_move_with_avoid(
 /// the gate keeps per-example dead-code quiet.)
 #[allow(dead_code)]
 pub fn baseline_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, true, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF, Thick::OFF)
 }
 
 /// The CLOSE_B2 ablation control: doom OFF (the B-2 recommendation) with the
@@ -591,7 +702,7 @@ pub fn baseline_best_move(position: &Position) -> Option<Move> {
 /// term alone.
 #[allow(dead_code)]
 pub fn ablation_best_move(position: &Position) -> Option<Move> {
-    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF)
+    best_move_features(position, MOVE_BUDGET, &[], false, false, false, false, Rebuild::Off, Unbreak::OFF, false, Breakfix::OFF, Delay::OFF, Deny::OFF, Thick::OFF)
 }
 
 /// The skeleton's selection loop, with the doom discount and the added terms
@@ -611,6 +722,7 @@ fn best_move_features(
     breakfix: Breakfix,
     delay: Delay,
     deny: Deny,
+    thick: Thick,
 ) -> Option<Move> {
     if let Some(open) = blue_opener(position) {
         return Some(open);
@@ -618,7 +730,7 @@ fn best_move_features(
     let mover = position.to_move();
     let opp = mover.opponent();
     let budget = budget.clamp(SMALLEST_BUDGET, MOVE_BUDGET);
-    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild, unbreak, cut_threat, delay, deny);
+    let first_actions = ranked(position, budget / 2, true, avoid, close, rebuild, unbreak, cut_threat, delay, deny, thick);
     let nodes = first_actions.len();
     let width = first_actions.len().min(WIDTH);
     let reply_budget = (budget - nodes) / width.max(1);
@@ -626,7 +738,7 @@ fn best_move_features(
     // (adjusted score for ordering, the move it belongs to).
     let mut scored: Vec<(f64, Move)> = Vec::new();
     for (mv, after, _, _) in first_actions.into_iter().take(width) {
-        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off, Unbreak::OFF, false, Delay::OFF, Deny::OFF);
+        let replies = ranked(&after, reply_budget, false, &[], false, Rebuild::Off, Unbreak::OFF, false, Delay::OFF, Deny::OFF, Thick::OFF);
         let mut pv = vec![mv];
         let mut evaluation = value(&after);
         if let Some((reply, _, reply_value, _)) = replies.first() {
@@ -688,6 +800,32 @@ fn best_move_features(
                         .count();
                     if contested > 0 {
                         adjusted += deny.w * contested as f64 * hz_sel;
+                    }
+                }
+                // Q12 reinforce-vs-prevent at selection (gated): the same
+                // extend/anchor + frontier-contest terms as in ranking, so
+                // the pick itself thickens our lines and contests foe
+                // near-thick pairs. Non-breaking only (the Q2v2 lesson).
+                if thick.on() {
+                    if thick.r != 0.0
+                        && (node_degree(position, mover, mv.source) >= 2
+                            || anchors_thick(position, mover, tgt))
+                    {
+                        adjusted += thick.r * hz_sel;
+                    }
+                    if thick.p != 0.0 {
+                        let contested = prevent_targets(position, opp)
+                            .iter()
+                            .filter(|(a, b)| {
+                                ((a.x() - tgt.x()).abs() <= THICK_CONTEST_DIST
+                                    && (a.y() - tgt.y()).abs() <= THICK_CONTEST_DIST)
+                                    || ((b.x() - tgt.x()).abs() <= THICK_CONTEST_DIST
+                                        && (b.y() - tgt.y()).abs() <= THICK_CONTEST_DIST)
+                            })
+                            .count();
+                        if contested > 0 {
+                            adjusted += thick.p * contested as f64 * hz_sel;
+                        }
                     }
                 }
             }
@@ -919,6 +1057,7 @@ fn ranked(
     cut_threat: bool,
     delay: Delay,
     deny: Deny,
+    thick: Thick,
 ) -> Vec<(Move, Position, f64, f64)> {
     let mover = position.to_move();
     let opp = mover.opponent();
@@ -929,6 +1068,14 @@ fn ranked(
     // per-candidate loop below is free on the control path.
     let deny_list: Vec<Point> = if deny.on() && heat >= FIGHT_HEAT {
         deny_targets(position, mover, opp)
+    } else {
+        Vec::new()
+    };
+    // Q12 prevent targets (gated): foe near-thick frontier pairs, computed
+    // once per ranking. Empty when OFF, so the per-candidate loop below is
+    // free on the control path.
+    let prevent_list: Vec<(Point, Point)> = if thick.p != 0.0 {
+        prevent_targets(position, opp)
     } else {
         Vec::new()
     };
@@ -1078,6 +1225,33 @@ fn ranked(
                         .count();
                     if contested > 0 {
                         priority += deny.w * contested as f64 * hz;
+                    }
+                }
+                // Q12 reinforce-vs-prevent (gated): extend/anchor our 2+
+                // touch lines (binary r x hz, the DENSE form) + contest foe
+                // near-thick frontier pairs (p x pairs x hz, the Deny
+                // form). Non-breaking only (Q2v2); CONTACT below still bans
+                // the free graze.
+                if thick.on() && outcome.broken.is_none() {
+                    if thick.r != 0.0
+                        && (node_degree(position, mover, mv.source) >= 2
+                            || anchors_thick(position, mover, target))
+                    {
+                        priority += thick.r * hz;
+                    }
+                    if !prevent_list.is_empty() {
+                        let contested = prevent_list
+                            .iter()
+                            .filter(|(a, b)| {
+                                ((a.x() - target.x()).abs() <= THICK_CONTEST_DIST
+                                    && (a.y() - target.y()).abs() <= THICK_CONTEST_DIST)
+                                    || ((b.x() - target.x()).abs() <= THICK_CONTEST_DIST
+                                        && (b.y() - target.y()).abs() <= THICK_CONTEST_DIST)
+                            })
+                            .count();
+                        if contested > 0 {
+                            priority += thick.p * contested as f64 * hz;
+                        }
                     }
                 }
                 // Fix 2: don't graze the enemy frontier for free.

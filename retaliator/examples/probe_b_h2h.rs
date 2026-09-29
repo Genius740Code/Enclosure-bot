@@ -28,6 +28,13 @@ std::thread_local! {
     static MISSED_DOSE: std::cell::RefCell<(f64, f64)> = std::cell::RefCell::new((0.0, 0.0));
     static DELAY_DOSE: std::cell::RefCell<f64> = std::cell::RefCell::new(0.0);
     static DENY_DOSE: std::cell::RefCell<f64> = std::cell::RefCell::new(0.0);
+    static THICK_DOSE: std::cell::RefCell<(f64, f64)> = std::cell::RefCell::new((0.0, 0.0));
+}
+
+/// Variant picker for `E_THICK=r,p`: the Q12 dose via a thread-local.
+fn thick_pick(position: &Position) -> Option<Move> {
+    let (r, p) = THICK_DOSE.with(|d| *d.borrow());
+    eval_phases::thick_best_move_with_avoid(position, &[], eval_phases::Thick { r, p })
 }
 
 /// Variant picker for `E_DENY=w`: the Q4 dose via a thread-local.
@@ -93,7 +100,16 @@ fn main() {
         return;
     }
 
-    let laneb: fn(&Position) -> Option<Move> = match std::env::var("E_DENY") {
+    let laneb: fn(&Position) -> Option<Move> = match std::env::var("E_THICK") {
+        Ok(v) => {
+            let mut it = v.split(',');
+            let r: f64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0.0);
+            let p: f64 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0.0);
+            println!("laneE Q12 config: E_THICK r={r} p={p}");
+            THICK_DOSE.with(|d| *d.borrow_mut() = (r, p));
+            thick_pick
+        }
+        Err(_) => match std::env::var("E_DENY") {
         Ok(v) => {
             let w: f64 = v.parse().unwrap_or(0.0);
             println!("laneE Q4 config: E_DENY w={w}");
@@ -130,6 +146,7 @@ fn main() {
                 println!("laneE config: control (doom-OFF best_move)");
                 wra(eval_phases::best_move)
             }
+        },
         },
         },
         },

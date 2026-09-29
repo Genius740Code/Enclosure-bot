@@ -21,9 +21,12 @@ struct Side {
 }
 
 fn variant_pick(position: &Position, uq: (f64, f64), b: eval_phases::Breakfix) -> Option<Move> {
+    let t = eval_phases::Thick::from_env();
     let y = eval_phases::Deny::from_env();
     let d = eval_phases::Delay::from_env();
-    if y.on() {
+    if t.on() {
+        eval_phases::thick_best_move_with_avoid(position, &[], t)
+    } else if y.on() {
         eval_phases::deny_best_move_with_avoid(position, &[], y)
     } else if d.on() {
         eval_phases::delay_best_move_with_avoid(position, &[], d)
@@ -42,7 +45,7 @@ fn main() {
     let u = eval_phases::Unbreak::from_env();
     let dose = (u.extend_w, u.create_w);
     let b = eval_phases::Breakfix::from_env();
-    println!("life config: E_DENY={} E_UNBREAK extend={} create={} E_MISSED={},{}", eval_phases::Deny::from_env().w, dose.0, dose.1, b.missed, b.floor);
+    println!("life config: E_THICK={},{} E_DENY={} E_UNBREAK extend={} create={} E_MISSED={},{}", eval_phases::Thick::from_env().r, eval_phases::Thick::from_env().p, eval_phases::Deny::from_env().w, dose.0, dose.1, b.missed, b.floor);
     // Aggregate (variant, shipped) across games.
     let (mut va, mut sa) = (Side::default(), Side::default());
     let (mut vb, mut sb) = (0.0, 0.0);

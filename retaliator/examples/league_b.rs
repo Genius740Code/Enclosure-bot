@@ -54,11 +54,16 @@ fn play(
         let played = u16::from(game.position().actions_played());
         let ret_moves = (to_move == Player::Blue) == ret_blue;
         let mv = if ret_moves {
+            let t = eval_phases::Thick::from_env();
             let y = eval_phases::Deny::from_env();
             let b = eval_phases::Breakfix::from_env();
             let u = eval_phases::Unbreak::from_env();
             let d = eval_phases::Delay::from_env();
-            if y.on() {
+            if t.on() {
+                // Lane E v7 Q12: dose via E_THICK (one variable; others unset).
+                let avoid = avoid_points(cuts, to_move, played, mem);
+                eval_phases::thick_best_move_with_avoid(game.position(), &avoid, t)
+            } else if y.on() {
                 // Lane E v7 Q4: dose via E_DENY (one variable; others unset).
                 let avoid = avoid_points(cuts, to_move, played, mem);
                 eval_phases::deny_best_move_with_avoid(game.position(), &avoid, y)
@@ -107,7 +112,7 @@ fn play(
 fn main() {
     let mem: usize = std::env::var("B3_MEM").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
     let scale: u8 = std::env::var("B3_SCALE").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
-    println!("B3 config: mem={mem} scale={scale} E_DENY={:?} E_UNBREAK={:?} E_MISSED={:?} E_DELAY={:?}", std::env::var("E_DENY").unwrap_or_default(), std::env::var("E_UNBREAK").unwrap_or_default(), std::env::var("E_MISSED").unwrap_or_default(), std::env::var("E_DELAY").unwrap_or_default());
+    println!("B3 config: mem={mem} scale={scale} E_THICK={:?} E_DENY={:?} E_UNBREAK={:?} E_MISSED={:?} E_DELAY={:?}", std::env::var("E_THICK").unwrap_or_default(), std::env::var("E_DENY").unwrap_or_default(), std::env::var("E_UNBREAK").unwrap_or_default(), std::env::var("E_MISSED").unwrap_or_default(), std::env::var("E_DELAY").unwrap_or_default());
     let mut sum = 0.0; let mut n = 0;
     for skip in [0usize, 10, 20, 30] {
         for ret_blue in [true, false] {
