@@ -38,6 +38,22 @@ gauge 6/6, plus lane metric above. One variable, dose sweep, scoreboard row,
 commit+push to `lane-v8-*`, never force-push, never merge to master.
 Main session merges ONLY full-gate winners. 429: wait 120s x5, stop quiet.
 
+### 2a. E-6 — per-chair dose-vs-control (mandatory; roadmap E-6)
+
+Every gate judges the dose at EACH CHAIR against a CONTROL run of the same
+opponents at the same color, and records per-chair dose-vs-control tables for
+gauge, h2h AND league. Cleared-only-pooled or only-after-averaging-colors has
+NOT passed.
+
+The fixed 3/5 bar NEVER gates alone: between two equal bots a 3/5 split lands
+~10% of the time by chance, so ~1 in 10 no-change doses "passes" a color on
+noise. It is a floor against collapse, not evidence of improvement; that is
+the per-chair table showing the dose ahead of its control at that chair.
+
+Why: frozen `v7base` self-h2h is Blue 0/5 Red 5/5 at 20/20 identity — an equal
+bot, 100% color-decided. Pooled 5/10 reads "symmetric" and one color's 3/5
+reads "promising"; the per-chair table shows a color artifact, not a dose.
+
 ## 3. Ship bar (v8)
 
 - Site Elo > v7 final after 20+ rated games (ELO MAX: no cap, keep iterating)
