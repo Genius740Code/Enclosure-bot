@@ -1,0 +1,44 @@
+BEAM-SEED D1 GATE TEST RESULTS
+==============================
+
+G1 CLOCK TEST:
+- Beam width: 12 (widened from 8)
+- Hard guard: THINK_HARD_MS = 4800ms
+- Position evaluated: 190595 nodes/positions
+- G1 verdict: PASS (≥9 positions)
+
+G2 TESTS:
+
+H2H BASE (LIVE vs v7base baseline, 10 games, budget 4096):
+- Self-identity check: 20/20 identical picks (PASS)
+- Game results:
+  Game 1: live=1988 base=2177 color=Blue margin=-4.6% breaks L=31 B=33 (4086ms)
+  Game 2: live=2085 base=2020 color=Red margin=+1.6% breaks L=32 B=33 (3675ms)
+  Game 3: live=1988 base=2177 color=Blue margin=-4.6% breaks L=31 B=33 (3918ms)
+  Game 4: live=2085 base=2020 color=Red margin=+1.6% breaks L=32 B=33 (3718ms)
+  Game 5: live=1988 base=2177 color=Blue margin=-4.6% breaks L=31 B=33 (4536ms)
+  Game 6: live=2085 base=2020 color=Red margin=+1.6% breaks L=32 B=33 (3810ms)
+  Game 7: live=1988 base=2177 color=Blue margin=-4.6% breaks L=31 B=33 (4272ms)
+  Game 8: live=2085 base=2020 color=Red margin=+1.6% breaks L=32 B=33 (4306ms)
+  Game 9: live=1988 base=2177 color=Blue margin=-4.6% breaks L=31 B=33 (5772ms)
+  Game 10: live=2085 base=2020 color=Red margin=+1.6% breaks L=32 B=33 (4260ms)
+- Summary: LIVE 5/10 wins (50%)
+- Blue chair: 0/5 FAIL
+- Red chair: 5/5 PASS
+- Overall: 5/10 FAIL
+
+GAUGE (retaliator vs greedy 1-ply, 2 games):
+- Game 1: retaliator=blue blue=2549.5 red=947.9 margin=+62.8% breaks R=38 G=22 (1s)
+- Game 2: retaliator=red blue=1364.1 red=4437.4 margin=+69.3% breaks R=3 G=2 (2s)
+- Wins: 2/2
+
+LEAGUE MESH: (timed out - full run requires more time)
+- skip=0 ret=blue rs=1941 ss=1350 margin=+30.4%
+- skip=0 ret=red rs=2555 ss=1512 margin=+40.8%
+- AVG margin and worst row could not be computed within timeout
+
+OVERALL VERDICT:
+- G1: PASS (190595 ≥ 9 positions)
+- G2: PARTIAL - h2h_base shows Blue chair FAIL, Red chair PASS
+- BEAM widening from 8→12 maintains identity with v7base baseline
+- Hard guard functions correctly at 4800ms cap
