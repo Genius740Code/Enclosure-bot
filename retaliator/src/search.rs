@@ -798,7 +798,10 @@ fn length(mv: Move) -> i8 {
 /// Chebyshev distance from a move's target to the board center (9,9 on 19×19).
 /// Used by D1 for exact-tie breaking: nearest-first.
 fn distance_to_center(mv: &Move) -> f64 {
-    let target = mv.target().expect("move has target");
+    let target = match mv.target() {
+        Some(t) => t,
+        None => return f64::MAX,
+    };
     let cx = 9.0f64;
     let cy = 9.0f64;
     let dx = (target.x() as f64 - cx).abs();
