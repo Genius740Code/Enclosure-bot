@@ -1,0 +1,41 @@
+BEAM-SEED D1 GATE RESULTS SUMMARY
+=================================
+
+G1 CLOCK RESULTS:
+-----------------
+Position: (mid-game, 20 actions played)
+BEAM width: 12 (D1 widening from 8)
+Nodes/searched positions: 190595
+Hard cap: THINK_HARD_MS = 4800ms
+G1 verdict: PASS ( ≥9 positions required, 190595 achieved)
+
+G2 H2H BASE RESULTS:
+--------------------
+Test: LIVE (BEAM=12) vs v7base baseline
+Games: 10 (5 Blue, 5 Red), budget 4096 per engine
+Self-identity: 20/20 identical picks (PASS)
+
+Per-chair wins:
+- Blue chair (LIVE): 0/5 wins (0%) — FAIL
+- Red chair (LIVE): 5/5 wins (100%) — PASS
+
+Overall result: 5/10 wins (50%) — FAIL (need ≥6 per v8-plan §2)
+
+GAUGE RESULTS:
+-------------
+Retaliator vs greedy 1-ply (blob archetype)
+Games: 2
+- Game 1 (blue): R=2549.5 G=947.9 margin=+62.8% breaks R=38 G=22
+- Game 2 (red): R=1364.1 G=4437.4 margin=+69.3% breaks R=3 G=2
+- Retaliator wins: 2/2
+
+LEAGUE MESH (partial):
+- skip=0 ret=blue: rs=1941 ss=1350 margin=+30.4%
+- skip=0 ret=red: rs=2555 ss=1512 margin=+40.8%
+
+OVERALL VERDICT:
+-----------------
+G1: PASS
+G2: PARTIAL - h2h_base Blue chair FAIL, Red chair PASS, overall 5/10 FAIL
+BEAM 8→12 widening: identity maintained with v7base baseline
+Hard guard: functional at 4800ms cap
