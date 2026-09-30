@@ -12,8 +12,8 @@
 
 ### 1. Early Bank Construction (Moves 1-40)
 - Builds **shared-node 2-wall** structures by move 20-30
-- Achieves **49.2 area bank by move 40** (3a414aad as Red) — never broken
-- As Blue (1c69056c): builds 36.2 area by move 30, 60.0 by move 40
+- Achieves **49.2 area bank by move 40** (3a414aad as Red) — survives, but is not unbroken (see §3)
+- As Blue (1c69056c): builds 33.0 area by move 30, 60.0 by move 40
 - **Method**: Thicket → mesh → 2-wall shared node → depth extension
 - **Key difference from v7**: VladNet's banks have **depth** (3+ moves from edge), v7's are often shallow (1-2 moves)
 
@@ -24,10 +24,10 @@
 - **Never breaks randomly** — only when we donate a breakable corridor
 
 ### 3. Bank Defense / Never Donates Back
-- **3a414aad**: VladNet's 49.2 area bank takes **0 breaks** across 120 moves
+- **3a414aad**: VladNet's 49.2 area bank is resilient but **not break-proof** — v7 landed **7 breaks** (one ≥10: **15.0 at move 113**, dropping it 53.25 → 38.25); VladNet rebuilt back to 49.25 by move 119 and won on **11 faces**
 - **1c69056c**: VladNet as Blue **won 2255–1530**, but its bank did **not** hold — area 60.0 @40 → 33.0 @80, peak 64.8 @85, ended 35.3, and it took **6 catastrophic breaks** (≥10 area; worst −31.8 @86). The earlier "36.2→19.7, no catastrophic break" reading was v7's own area, not VladNet's
-- Our breaks on VladNet: 29 attempts in 3a414aad, only 4 effective (≥10 area)
-- VladNet's structure: **redundant shared nodes** — breaking one corridor doesn't collapse the bank
+- Our breaks on VladNet: in 3a414aad, 7 of our 60 moves dealt damage at all, only **1** effective (≥10) — 31.26 area total off a bank that still ended at 49.25
+- VladNet's structure: shared nodes make it **game-dependent, not reliably redundant** — in 3a414aad a 15.0 break did not hold and it rebuilt to 49.25, but in 1c69056c v7's 31.8 break at move 86 collapsed it 64.8 → 33.0 in one shot
 
 ### 4. Tempo Control
 - As Red (3a414aad): Uses pair-turn advantage (moves 1-2 Red) to establish corridor control before Blue's first Connect
@@ -108,7 +108,7 @@
 | Weakness | Evidence | Exploit |
 |----------|----------|---------|
 | **No proactive break hunting** | Only breaks when we donate corridor | Never donate breakable corridors; force VladNet to attack intact banks |
-| **Single bank dependency** | 3a414aad: one 49.2 bank, no backup | Split our area: 2-3 smaller banks → VladNet can only break one at a time |
+| **Bank is broad, not a single fragile cell** | 3a414aad: 49.25 area spread over **11 faces** at the end; a 15.0 break at move 113 dented it to 38.25 but it recovered to 49.25 — "one bank, no backup" overstates it | Split our area 2-3 ways too — broad banks survive single breaks on either side |
 | **Predictable break timing** | Always immediately after our Connect | Bait: play Extend in corridor → VladNet waits → we close elsewhere |
 | **"Red-only dominance"** — *not supported* | As Blue, VladNet **won 2255–1530** and its area **collapsed** 60.0@40 → 33.0@80 (peak 64.8@85, end 35.3). It does not lose Blue gradually (1c69056c) | No Blue-specific counter to copy — VladNet won on both colors here; the transferable gap is our own bank construction (Cluster 2) |
 | **No endgame technique** | 1c69056c: VladNet 60.0@40 → 33.0@80 (peak 64.8@85, ended 35.3) yet still banked the win 2255–1530. The "36.2→19.7" pair is **v7's own** area (36.25@40 → 19.74@120), not VladNet's | In endgame, out-maneuver: VladNet has no plan when board fills |
@@ -128,18 +128,19 @@
 
 ## Game 1c69056c (VladNet as Blue) — Additional Notes
 
-**VladNet Blue opener**: Move 1: Extend, Move 2: Extend, Move 6: Extend, Move 7: Extend +1.2, Move 10: Connect +1.2
-- Very passive first 10 moves (area 2.5)
-- Then: Move 14: Connect +13.8 (thicket→bank transition)
-- Move 40: OPP BREAK -2.4 (first break taken)
+**VladNet Blue opener** (VladNet's own moves only — in 1c69056c it plays Blue, so its moves are the odd-numbered ones): Move 1: Extend A10-A12, Move 4: Extend D10-A13, Move 5: Connect A13-A12 (+4.5), Move 8: Extend A13-D11, Move 9: Extend D10-A7
+- Very passive first 10 moves (VladNet area **4.5** at move 10; the 2.5 there is v7's Red area)
+- Then: Move 17: Connect A10-A7 (+4.5) → 12.0 — VladNet's own thicket→bank transition, its first move past 10 area
+- The "+13.8 at move 14" line was **v7's** (Red) move, M13-P10 Connect +13.75, not VladNet's
+- Move 40: OPP BREAK -2.4 (first break taken) — VladNet's first break, correct
 - **Key insight**: VladNet as Blue **accepts early passivity** to build thicket, then converts to bank
 - v7 as Red (us) had only **29.0** area at move 50 — the 48.0 there is **VladNet's**, and v7 did not regain 48 until move 118 (peak 48.2)
 - v7 **did** break VladNet's bank: **6 breaks ≥10 area** (12.0@43, 15.0@67, 15.0@78, 31.8@86, 15.0@103, 15.0@119). The "-2.4, -2.1, -3.4, -2.7, -4.0, -7.5" series is **VladNet's** breaks on us (moves 40-53), not ours
-- VladNet's bank had **redundancy** — breaking one corridor didn't collapse it
+- VladNet's bank was **not** redundant: v7's **31.8 break at move 86** collapsed it 64.8 → 33.0, all the way back to the move-80 floor
 
 **What we did wrong as Red**: 
 - Built area (**29.0 at move 50**, well behind VladNet's 48.0) but in **wrong places** — not contesting VladNet's bank roots
-- Our breaks were shallow (max -7.5) vs VladNet's breaks on us (max -28.4 at move 120)
+- Our breaks were **deeper** (max **-31.8 at move 86**) vs VladNet's breaks on us (max -28.5 at move 120); the -7.5 was VladNet's break on us at move 53, not ours
 
 > **Correction note (2026-09-30, round 2 re-run).** Three further claims in this file were
 > misattributed between the two bots; all three verify as wrong and are fixed inline above.
@@ -162,22 +163,39 @@
 >   "Red-only dominance" label survives; §3 and "What Beats VladNet" #4 already recorded the
 >   same result, and the two lines previously contradicted each other.
 >
-> **Deliberately left unchanged** (same blue/red-inversion family, but outside this round's
-> scope — flagged for a follow-up, *not* verified-correct):
-> - §1 "As Blue (1c69056c): builds 36.2 area by move 30, 60.0 by move 40" — VladNet Blue is
->   **33.0 @30**; 36.25 is v7's area at move 40. The "60.0 by move 40" half is correct.
-> - The "VladNet Blue opener" list (Move 1/2/6/7/10/14 + the 2.5 and +13.8 figures): moves 2,
->   6, 10 and 14 are **v7's Red** moves (move 14 = M13-P10 Connect +13.75), and at move 10
->   VladNet Blue holds **4.5** area while v7 Red holds 2.5 — so the list mixes both colors.
->   (Move 1 Extend and Move 40's −2.4 break are VladNet's and are correct.)
-> - "VladNet's bank had **redundancy** — breaking one corridor didn't collapse it": v7's 31.8
->   break at move 86 did collapse VladNet 64.8 → 33.0.
-> - "Our breaks were shallow (max -7.5) vs VladNet's breaks on us (max -28.4 at move 120)" —
->   inverted: **v7's** max on VladNet was **31.8 @86**, and the 28.4 @120 was VladNet's break
->   on v7.
-> - §3 "VladNet's 49.2 area bank takes **0 breaks**" and §1 "never broken" for 3a414aad:
->   VladNet (Red) there ended on **11 faces / 49.25** and *did* take a **15.0** break, so
->   "no backup" in the weaknesses table overstates it too.
+> **Round 3 (2026-09-30) — all five deferred items above are now verified and fixed inline.**
+> Same method: replayed `1c69056c` and `3a414aad` from `research/games/` through the vendored
+> engine action-by-action with the +9 shift; replay reconciles exactly with each JSON's final
+> `state.areas`/`state.score`, and all 55 new numbers are assertion-gated.
+> - §1 "builds **36.2** area by move 30" → **33.0**. VladNet Blue is 33.0 @30; 36.25 is v7's
+>   Red area at move 40 (v7 Red is only 28.37 @30). The "60.0 by move 40" half was correct and
+>   is untouched.
+> - The "VladNet Blue opener" list mixed both colors. VladNet's real first 10: **M1 Extend
+>   A10-A12, M4 Extend D10-A13, M5 Connect A13-A12 (+4.5), M8 Extend A13-D11, M9 Extend
+>   D10-A7**, holding **4.5** area at move 10 (2.5 there is v7's Red). Moves 2, 6, 7, 10 and
+>   14 are all **v7 Red**; move 14 = M13-P10 Connect **+13.75**. VladNet's own thicket→bank
+>   transition is **move 17** (Connect A10-A7, +4.5 → 12.0, its first move past 10 area).
+>   Move 1 and move 40's −2.4 break were already VladNet's and are untouched.
+> - "bank had **redundancy**" → **false**: v7's 31.8 break at move 86 took it 64.8 → 33.0,
+>   exactly back to the move-80 floor.
+> - "Our breaks were shallow (max -7.5)" → **inverted**: v7's max on VladNet was **-31.8 @86**
+>   (6 breaks ≥10). VladNet's max on v7 was 28.45 @120; the −7.5 was VladNet's break on us
+>   at move 53.
+> - 3a414aad "**0 breaks**" / "**never broken**" / "**no backup**" → all three overstated it.
+>   v7 landed **7 breaks**, one ≥10: **15.0 at move 113** (53.25 → 38.25). VladNet rebuilt to
+>   49.25 by move 119 and won on **11 faces** (12 @60, 13 @80), so the "single bank, no backup"
+>   weakness cell is now stated as a broad multi-face bank.
+> - Two adjacent §3 lines in the same 3a414aad block were also wrong and left the section
+>   self-contradicting, so they are folded in here: "**29 attempts** in 3a414aad, only **4
+>   effective** (≥10)" → of our **60** moves, **7** dealt any damage and only **1** cleared 10
+>   (31.26 area total). And "VladNet's structure: **redundant shared nodes** — breaking one
+>   corridor doesn't collapse the bank" → true in 3a414aad (the 15.0 break did not hold) but
+>   false in 1c69056c (31.8@86 collapsed it), so it is now stated as game-dependent.
+>
+> **Still open, NOT verified this round** (left untouched, flagged for round 4): §2 "In 3a414aad:
+> 4 breaks in moves 42-47 against our moves 41, 45" — VladNet's breaks in that window are
+> **3** (@42=4.5, @43=3.375, @47=19.375), not 4; and our moves 41/45 were v7 Blue *Connects*,
+> not the trigger being described. Same family of error, but out of this round's scope.
 
 ---
 
