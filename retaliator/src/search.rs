@@ -51,6 +51,57 @@ const DEADWOOD_ENEMY_DIST: i8 = 3;
 /// Penalty for a non-breaking first action landing within this radius.
 const CUT_RADIUS: i8 = 3;
 const REBUILD_PENALTY: f64 = 3.0;
+/// GB-tell toggle: 0.0=OFF, 1.0=ON. When OFF, all picks are byte-identical
+/// to control (the gb_like flag takes absolutely no effect).
+const GB_TELL_W: f64 = 0.0;
+
+/// Opponent close-rate tracker: accumulated over the game so far.
+/// Updated by init_opp_close_tracker; used by gb_like().
+static OPP_CONNECTS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static OPP_MOVES: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// Computed gb_like flag: TRUE when opp_closes/opp_moves < 0.25 with opp_moves >= 20.
+/// This is cheap to compute and has no effect when GB_TELL_W is 0.0 (OFF).
+fn gb_like() -> bool {
+    let opp_moves = OPP_MOVES.load(std::sync::atomic::Ordering::Relaxed);
+    if opp_moves < 20 {
+        return false;
+    }
+    let opp_closes = OPP_CONNECTS.load(std::sync::atomic::Ordering::Relaxed);
+    let rate = opp_closes as f64 / opp_moves as f64;
+    rate < 0.25
+}
+
+/// Initialize the opponent close-rate tracker from the game's move history.
+// Replays `moves` from the starting position, counting opponent Connect moves
+// and total opponent moves. Must be called once at the start of a new game.
+pub fn init_opp_close_tracker(moves: &[Move], to_move: Player) {
+    let mut pos = Position::new();
+    let opp = to_move.opponent();
+    let mut opp_moves_count = 0usize;
+    let mut opp_connects_count = 0usize;
+    let mut ply = 0usize; // ply 0 = first move by to_move, ply 1 = opponent, etc.
+
+    for mv in moves.iter() {
+        // Determine who is to move before this ply.
+        // Players alternate: ply even -> to_move, ply odd -> opponent.
+        let current_player = if ply % 2 == 0 { to_move } else { opp };
+
+        // Play the move and capture the outcome kind.
+        let outcome = pos.apply_unchecked(*mv);
+
+        if current_player == opp {
+            opp_moves_count += 1;
+            if outcome.kind == MoveKind::Connect {
+                opp_connects_count += 1;
+            }
+        }
+        ply += 1;
+    }
+
+    OPP_MOVES.store(opp_moves_count, std::sync::atomic::Ordering::Relaxed);
+    OPP_CONNECTS.store(opp_connects_count, std::sync::atomic::Ordering::Relaxed);
+}
 /// Blue's forced first action: D10-F7. Measured over 12 games vs three
 /// opponents (v1, v2, scout-class): +20% to +41% margins, 12/12 positive,
 /// vs -4% to +14% unforced. The search walks backward (D10-A7) on
@@ -199,6 +250,10 @@ pub fn best_move_routed(
     history: &[Move],
     avoid: &[Point],
 ) -> Option<Move> {
+    // Initialize opponent close-rate tracker from game move history.
+    // This counts opponent Connect moves over the game so far,
+    // enabling the GB-tell feature.
+    init_opp_close_tracker(history, position.to_move());
     if let Some(prefix) = mesh_prefix(position, history) {
         return Some(prefix);
     }
