@@ -411,7 +411,8 @@ pub const THINK_HARD_MS: u64 = 4800;
 /// thinking to the hard cap.
 const VOLATILE_GAP: f64 = 2.0;
 /// Beam width for timed deepening (matches WIDTH).
-const BEAM: usize = 8;
+/// D1: widened from 8 to 12 for greater breadth; provenance: BEAM-8→12-expand.
+const BEAM: usize = 12;
 
 struct BeamLine {
     mv: Move,
@@ -503,7 +504,12 @@ pub fn analyze_timed(position: &Position, avoid: &[Point]) -> Analysis {
     if beam.iter().all(|l| l.solved) {
         return finish_timed(position, beam, nodes);
     }
+    let line_ms = t0.elapsed().as_millis() as u64 / BEAM as u64; // measured from beam construction
     loop {
+        let elapsed = t0.elapsed().as_millis() as u64;
+        if elapsed + line_ms * beam.len() as u64 >= THINK_HARD_MS {
+            break; // round-aware hard guard: cannot finish this round
+        }
         for line in beam.iter_mut().filter(|l| !l.solved) {
             if line.end.is_finished() {
                 line.solved = true;
