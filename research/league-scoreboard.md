@@ -175,3 +175,9 @@ Main-session re-ran ALL gates on the pushed code (agent's run died pre-row):
   same code — run variance noted, both pass bars comfortably).
 - gauge: **6/6**. cargo test: pre-existing failure only (unchanged).
 Verdict: **STACK layer 2** (first Elo-positive dose; neutral POP already layer 1).
+
+## 2026-09-30 — v8 UPLOADED ("Riposte v8" 820a7b3d-e24c-47f7-af49-eb0b83e5bbc5)
+WASM 310831 bytes, sha256 16eb15d70e32c822b175ea4de80d58f4d3eaf640068f0aaa54934454191f9f1a,
+from master 244e4ef (stack POP+TIE). Exports verified, site_check 12/12 (ship-prep).
+Rated evals queued (pairs=2, both colors): vs GB 0bfd634b, vs VladNet c47e2280,
+vs AngelBot-WASM a2d70517 (12 games, ~8h). Tag v8 on validation.
