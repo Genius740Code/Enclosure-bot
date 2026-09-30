@@ -413,7 +413,7 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
 /// Forced moves (0-1 legal), prefix and opener return instantly.
 /// Machine-speed-dependent depth, NOT probe-deterministic: probes and the
 /// analysis endpoint keep fixed node budgets via `analyze_with_avoid`.
-pub const THINK_SOFT_MS: u64 = 2000;
+pub const THINK_SOFT_MS: u64 = 3000; // v8-think: soft-think raised 2000→3000ms (hard cap 4800 untouched)
 pub const THINK_HARD_MS: u64 = 4800;
 /// Mover-relative adjusted gap below which the lead is undecided: keep
 /// thinking to the hard cap.
