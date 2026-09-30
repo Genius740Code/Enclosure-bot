@@ -296,6 +296,13 @@ const REMOTE_BONUS: f64 = 1.0;
 const DENSE_DIST: i8 = 1;
 const DENSE_COUNT: u32 = 2;
 const DENSE_BONUS: f64 = 1.0;
+/// S2 deny-the-border (wire dose, default OFF via GB_TELL_W): when the
+/// opponent plays GB-like (low close rate), contest their open border run
+/// instead of closing our own loop. Bonus for first actions landing on a
+/// border cell near enemy nodes. Full-horizon units (x hz) like all terms.
+/// OFF (GB_TELL_W == 0.0): short-circuits false, zero behavior change.
+const DENY_DIST: i8 = 3;
+const DENY_BORDER_W: f64 = 1.0;
 /// Doom discount: DISABLED (V5, 2026-09-28). Lane B ablations: the discount
 /// prices the enemy's one-action pop at ×12, but the re-make is shield-delayed
 /// two turns (the pop's placed edge crosses the re-place path and shields it),
@@ -739,6 +746,16 @@ fn ranked(
                 // Thicket density: land next to 2+ own nodes.
                 if near_own_count(position, mover, target) >= DENSE_COUNT {
                     priority += DENSE_BONUS * hz;
+                }
+                // S2 deny-the-border: GB-like opp + border cell near enemy
+                // nodes = contest their open run. OFF short-circuits.
+                if first
+                    && GB_TELL_W > 0.0
+                    && gb_like()
+                    && (target.x().abs() == 9 || target.y().abs() == 9)
+                    && near_enemy_node(position, opp, target, DENY_DIST)
+                {
+                    priority += DENY_BORDER_W * hz;
                 }
                 // Do-nothing filter.
                 if outcome.broken.is_none()
