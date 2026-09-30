@@ -50,3 +50,29 @@ Verdict: **REJECTED (over budget; W/L unmeasurable on this box)**. The exact
 draw-check optimization is kept on lane-a-search for future search work; depth
 needs a time-budget/iterative-deepening layer (outside Lane A scope) or a much
 faster box before these gates can run.
+
+## Experiment P-dose-1 (lane-v8-pop) — POP-PRICE `DOOM_TAIL_W` 0->0.5 — 2026-09-29 — NEUTRAL (stack-or-kill pending)
+Hypothesis: pricing the beyond-horizon tail (`events_left - hz_doom`) at parity with
+`HORIZON_WEIGHT` lets doomed lines pay for their own horizon instead of collapsing.
+Single-constant dose; no other term touched.
+Change: `DOOM_TAIL_W` 0.0 -> 0.5 in `retaliator/src/search.rs` (`af35f50`,
+`origin/lane-v8-pop`), 12 insertions / 4 deletions, engine-only, no harness change.
+Gates (run 2026-09-29):
+- gauge: **6/6 PASS**.
+- league_mesh: **AVG +29.3%** (baseline -20.0%), worst row **-42.7%** — PASS per bar
+  (requires >-9.9% and no row < -300%).
+- h2h vs `v7base`: **Blue 0/5 Red 5/5 = 0/10** — identical to `v7base` self-h2h
+  (Blue 0/5 Red 5/5), i.e. dose == control per chair. NEUTRAL, not a winner.
+PRELIMINARY: figures transcribed from `research/v8-roadmap.md` (POP-PRICE entry,
+lines 36-43). No `poprice-ledger.md`, league table, or h2h log is committed on
+`lane-v8-pop` (only the `research/scoreboard.jsonl` placeholder, verdict
+"pending", `h2h 0/10`, `league_avg N/A`). Numbers are unbacked by committed
+artifacts on the branch and need re-verification before any ship call.
+Lineage caveat: `af35f50` is **not reachable** from `origin/lane-v8-pop` — the
+remote head was force-overwritten to `0c7352c`, a docs-only lineage off `eb100e9`
+that also lacks master's P-dose-2 KILL row. The engine dose lives on local
+`lane-v8-pop` = `af35f50` only. This row was appended fast-forward; no
+force-push, no merge to master, no engine changes.
+Verdict: **NEUTRAL** — no per-chair movement over control. Neutral single-variable
+fixes are stackable, so the founder decision is stack-or-kill; gate D2
+(`DOOM_PAIR_W`) only if stacking, else close the lane.
