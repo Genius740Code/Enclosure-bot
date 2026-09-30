@@ -66,7 +66,12 @@
 
 | Lane | Dose | h2h | league_avg | gauge | verdict | branch |
 |------|------|-----|-----------|-------|---------|--------|
-| (populated as lanes complete) | | | | | | |
+| POP | initial | 0/10 | N/A | N/A | ✅ lane-v8-pop | lane-v8-pop |
+| TIE | center-first D1 | ✅ | ✅ | ✅ | pushed | lane-v8-tiesym-d1 |
+| R | blue-free-vs-red | pending | pending | pending | pending | lane-v8-r |
+| P | dose-3 (MEMORY 20) | pending | pending | pending | pending | lane-v8-p |
+
+*Populated as lanes complete.*
 
 ---
 

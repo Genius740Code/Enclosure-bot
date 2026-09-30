@@ -1,0 +1,2 @@
+{"lane": "POP", "dose": "initial", "h2h": "0/10 (pending full gate)", "league_avg": "N/A", "gauge": "N/A", "verdict": "\u2705 initial row recorded", "branch": "lane-v8-pop", "timestamp": "2026-09-29T21:26:29.623985"}
+{"lane": "TIE", "dose": "center-first D1", "h2h": "pending", "league_avg": "pending", "gauge": "pending", "verdict": "implemented, gates pending", "branch": "lane-v8-tiesym-d1", "timestamp": "2026-09-29T21:44:37.674575"}
