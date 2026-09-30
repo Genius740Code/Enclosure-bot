@@ -110,3 +110,27 @@ in gate lines (same disease as Lane E). Matches POP-PRICE prediction: the flat
 penalty can't outbid re-close gains, so memory length isn't the binding constraint.
 Verdict: **KILL dose 2.** Doses 1 (12, strictly weaker) and 3 (20, diagnostic
 plateau with 15) ungated — gate 20 once, expect same, then close the lane.
+
+## POP-PRICE D1 part 2 — gates + logs + scoreboard row — 2026-09-30 (lane-v8-pop-r2, commit 5b745f0)
+
+**h2h vs v7base control** (10 games, 5 Blue / 5 Red, fixed budget 4096):
+- Blue chair: 0/5 wins (FAIL per §2 per-chair gate)
+- Red chair: 5/5 wins (PASS per §2 per-chair gate)
+- Overall: 5/10 wins (50%)
+- Self-identity: 20/20 picks byte-identical (v7base faithful snapshot)
+- h2h log: gate-logs/h2h.log
+
+**league_mesh** (mesh8 prefix, DOOM_W=1.0, no avoid):
+- AVG margin (ret perspective): +25.0%
+- Worst row: -94.9% (skip=30, red)
+- league bar: AVG must be better than -9.9% — PASSES (+25.0% > -9.9%), but worst row -94.9% < -300% bar
+- league log: gate-logs/league.log
+
+**gauge** (6 games, alternating colors, DOOM_W=1.0):
+- Wins: 6/6 (deterministic repeat)
+- Margins: +62.8% (Blue), +69.3% (Red), +62.8%, +69.3%, +62.8%, +69.3%
+- gauge log: gate-logs/gauge.log
+
+**Verdict**: STACK candidate — gauge passes (6/6), h2h per-chair RED PASSES (5/5 Blue FAILS, Red PASSES),
+league AVG passes bar (+25.0% > -9.9%) though worst row exceeds -300%. Net: gauge + league AVG viable,
+h2h asymmetric (Red OK, Blue fail) — conditional stack pending per-chair remedy.
