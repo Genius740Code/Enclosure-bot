@@ -134,3 +134,11 @@ plateau with 15) ungated — gate 20 once, expect same, then close the lane.
 **Verdict**: STACK candidate — gauge passes (6/6), h2h per-chair RED PASSES (5/5 Blue FAILS, Red PASSES),
 league AVG passes bar (+25.0% > -9.9%) though worst row exceeds -300%. Net: gauge + league AVG viable,
 h2h asymmetric (Red OK, Blue fail) — conditional stack pending per-chair remedy.
+
+### Correction 2026-09-30 (main session) to the POP-D1 row above
+- Worst row −94.9% PASSES the no-collapse bar (bar is "no row < −300%";
+  −94.9 > −300). The row's "fails −300%" / "exceeds −300%" lines are inverted.
+- h2h B0/5 R5/5 is identical to v7base self-h2h = dose == control per chair:
+  NEUTRAL, not a per-chair win. Corrected verdict: backed NEUTRAL (league
+  +25.0%/header bars pass, gauge 6/6) — stackable only by founder
+  stack-decision, D2 only if stacking.
