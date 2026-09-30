@@ -32,7 +32,7 @@ pathological number is `−39.7 @101`.*
 **1c69056c** — best our-lead `+8.2` @20 and never again. The collapse window is **moves
 20→40**, not 40→60: VladNet ran 12.0 → 60.0 (+48.0) while we went 20.2 → 36.2 (+16.0), so a
 `+8.2` lead became `−23.8`; in 40→60 we lost only 6.1. VladNet's bank was **not** unbroken — it
-peaked 60.0 @40, ended 35.3, giving back **24.7** to our 6 effective breaks (103.8, best of the
+peaked 64.8 @85, ended 35.3, giving back **29.5** to our 6 effective breaks (103.8, best of the
 three games). 40 opponent breaks took **179.3**; 4 catastrophic; `−28.4` @120 confirmed.
 → *Verdict: **CITABLE** — early bank-race loss (20→40) and the counter-example that opponent
 banks are breakable.*
@@ -54,7 +54,7 @@ The old per-game `B/R` area **tables were arithmetically correct**; the **Cluste
 4. Residual in `e1b82d3` itself, flagged so it is not re-cited: for `30c7653b` it says "We led
    at 60" (we led at 40/50, `+47.6`/`+1.2`; at 60 we were `−64.3`) and "`−39.7` at move 101"
    (that is b0ac4141's; 30c7653b's move 101 was `−3.4`, worst `−22.8 @120`). "Unbroken all game"
-   also overstates it — GB gave back 4.5 (117.0 @90 → 112.5).
+   also overstates it — GB's bank peaked 133.5 @116, ended 112.5, giving back 21.0).
 
 **Citable now:** b0ac4141 and 1c69056c, with the per-game verdicts above. The `30c7653b`
 paragraph in `rival-vladnet.md` is still not citable until item 4 is fixed.
