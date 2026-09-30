@@ -376,7 +376,15 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
         scored.push((adjusted, Candidate { mv, evaluation, pv, visits }));
     }
     scored.sort_by(|a, b| {
-        b.0.total_cmp(&a.0).then(a.1.mv.index().cmp(&b.1.mv.index()))
+        let gap = (b.0 - a.0).abs();
+        if gap < 1e-9 {
+            // D1: exact tie — break by distance-to-center nearest-first, then mv.index()
+            let da = distance_to_center(&a.1.mv);
+            let db = distance_to_center(&b.1.mv);
+            da.total_cmp(&db).then(a.1.mv.index().cmp(&b.1.mv.index()))
+        } else {
+            b.0.total_cmp(&a.0).then(a.1.mv.index().cmp(&b.1.mv.index()))
+        }
     });
     let candidates = scored.into_iter().map(|(_, c)| c).collect::<Vec<_>>();
     let evaluation = candidates.first().map_or_else(|| value(position), |best| best.evaluation);
@@ -460,7 +468,15 @@ fn selection_adjusted(
 
 fn sort_beam(beam: &mut [BeamLine]) {
     beam.sort_by(|a, b| {
-        b.adjusted.total_cmp(&a.adjusted).then(a.mv.index().cmp(&b.mv.index()))
+        let gap = (b.adjusted - a.adjusted).abs();
+        if gap < 1e-9 {
+            // D1: exact tie — break by distance-to-center nearest-first, then mv.index()
+            let da = distance_to_center(&a.mv);
+            let db = distance_to_center(&b.mv);
+            da.total_cmp(&db).then(a.mv.index().cmp(&b.mv.index()))
+        } else {
+            b.adjusted.total_cmp(&a.adjusted).then(a.mv.index().cmp(&b.mv.index()))
+        }
     });
 }
 
@@ -777,6 +793,17 @@ fn repeats_a_connection(position: &Position, mv: Move) -> bool {
 
 fn length(mv: Move) -> i8 {
     mv.direction.dx().abs().max(mv.direction.dy().abs())
+}
+
+/// Chebyshev distance from a move's target to the board center (9,9 on 19×19).
+/// Used by D1 for exact-tie breaking: nearest-first.
+fn distance_to_center(mv: &Move) -> f64 {
+    let target = mv.target().expect("move has target");
+    let cx = 9.0f64;
+    let cy = 9.0f64;
+    let dx = (target.x() as f64 - cx).abs();
+    let dy = (target.y() as f64 - cy).abs();
+    dx.max(dy)
 }
 
 /// For a first action the second can close into a triangle: the room it adds, up to that

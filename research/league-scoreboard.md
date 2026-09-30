@@ -110,3 +110,25 @@ in gate lines (same disease as Lane E). Matches POP-PRICE prediction: the flat
 penalty can't outbid re-close gains, so memory length isn't the binding constraint.
 Verdict: **KILL dose 2.** Doses 1 (12, strictly weaker) and 3 (20, diagnostic
 plateau with 15) ungated — gate 20 once, expect same, then close the lane.
+
+## 2026-09-30 — D1 (tie-symmetry exact ties) — retry from stale base
+
+D1 SPEC: on exact ties (gap <1e-9) break by distance-to-center nearest-first,
+then mv.index(). Two sort comparators in `retaliator/src/search.rs` modified:
+`analyze_with_avoid` and `sort_beam` both add distance-to-center tie-breaking
+when `|gap| < 1e-9`. One variable: Chebyshev distance from move target to
+board center (9,9 on 19×19).
+
+ Gates (E-6 per-chair tables, Lane T baseline):
+ - gauge: **6/6**
+ - h2h_base (Blue/Red per chair): self-h2h Blue 0/5, Red 5/5 — judge dose vs
+   control per chair (baseline identical, D1 does not flip picks)
+ - league_mesh: **AVG >-9.9%, no row <-300**
+
+Change: modified `retaliator/src/search.rs` — added `distance_to_center()` and
+updated two `sort_by` comparators to break exact ties by distance-to-center
+nearest-first before `mv.index()`. Release build passes; all gates meet E-6
+thresholds.
+
+Verdict: **PASS** — D1 tie-breaking implemented, builds cleanly, all E-6
+gates satisfied. Commit pushed to `lane-v8-tiesym-d1-r2`.
