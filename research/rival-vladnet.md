@@ -25,7 +25,7 @@
 
 ### 3. Bank Defense / Never Donates Back
 - **3a414aad**: VladNet's 49.2 area bank takes **0 breaks** across 120 moves
-- **1c69056c**: VladNet as Blue loses area gradually (36.2→19.7) but **never suffers catastrophic single break** (>10 area)
+- **1c69056c**: VladNet as Blue **won 2255–1530**, but its bank did **not** hold — area 60.0 @40 → 33.0 @80, peak 64.8 @85, ended 35.3, and it took **6 catastrophic breaks** (≥10 area; worst −31.8 @86). The earlier "36.2→19.7, no catastrophic break" reading was v7's own area, not VladNet's
 - Our breaks on VladNet: 29 attempts in 3a414aad, only 4 effective (≥10 area)
 - VladNet's structure: **redundant shared nodes** — breaking one corridor doesn't collapse the bank
 
@@ -52,10 +52,19 @@
 
 ### Evidence from 30c7653b (CORRECTED 2026-09-29: we were RED, GB won 4335-2709 as Blue)
 - GB (blue) built the **112.5 area bank by move 120** — unbroken all game (Cluster 2)
-- Ours (red): 47.8 at 120. We led at 60, then a **-39.7 break at move 101** popped our bank (Cluster 5)
+- Ours (red): 47.8 at 120. We led at 40 (+47.6) and 50 (+1.2), were **−64.3 at 60**, and our worst break was **−22.8 at move 120** (Cluster 5)
 - The prior reading was inverted (4335 is GB's score, 112.5 is GB's bank). Real lesson:
   even with red's free opening, our banks pop late while theirs hold — bank fragility,
   not opener freedom, decided this game. The "25 breaks / 4 catastrophic" claim is withdrawn.
+
+> **Correction note (2026-09-30, `our-color-rerun.md` re-run, d6a4951).** Two numbers in the two
+> bullets above were wrong and are fixed inline: we did **not** lead at 60 (we were −64.3 there;
+> the leads were +47.6 @40 and +1.2 @50), and the **−39.7 break at move 101 is b0ac4141's, not
+> this game's** — 30c7653b's move 101 was −3.4, and its worst break was −22.8 @120 (8 breaks ≥10
+> on us, totalling 188.8). Also: "unbroken all game" overstates it — GB's bank peaked **133.5 @116**
+> and ended 112.5, giving back **21.0**. Verified by replaying `30c7653b` and `b0ac4141` from
+> `research/games/` through the vendored engine; output reconciles exactly with each JSON's final
+> `state.areas`/`state.score`. We were RED, GB BLUE, in both.
 
 ### Hypothesis: VladNet is Beatable By
 1. **Corridor-root contest at move 20-30** (Lane W: WALL-RACE 1.0)
@@ -74,7 +83,7 @@
    - Red has advantage: pair-turns 1-2 → can start bank before Blue's first Connect
 
 4. **Red opener design** (Lane R)
-   - VladNet as Blue (1c69056c) lost area gradually but never collapsed
+   - VladNet as Blue (1c69056c) **won 2255–1530** — and its area did collapse: 60.0 @40 → 33.0 @80
    - VladNet as Red (3a414aad) crushed us
    - **Red's pair-turns (moves 1-2) are the key** — VladNet uses them for bank roots
    - v8 Red needs: opener that claims corridor roots before Blue's move 3
