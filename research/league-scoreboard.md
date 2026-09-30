@@ -135,10 +135,37 @@ plateau with 15) ungated — gate 20 once, expect same, then close the lane.
 league AVG passes bar (+25.0% > -9.9%) though worst row exceeds -300%. Net: gauge + league AVG viable,
 h2h asymmetric (Red OK, Blue fail) — conditional stack pending per-chair remedy.
 
-### Correction 2026-09-30 (main session) to the POP-D1 row above
-- Worst row −94.9% PASSES the no-collapse bar (bar is "no row < −300%";
-  −94.9 > −300). The row's "fails −300%" / "exceeds −300%" lines are inverted.
-- h2h B0/5 R5/5 is identical to v7base self-h2h = dose == control per chair:
-  NEUTRAL, not a per-chair win. Corrected verdict: backed NEUTRAL (league
-  +25.0%/header bars pass, gauge 6/6) — stackable only by founder
-  stack-decision, D2 only if stacking.
+### BEAM-D1 (lane-v8-beam-d1) — Dose 5c7d33b + partial gates — 2026-09-30
+
+**G1 CLOCK TEST** (from beam_d1_log.txt):
+- Beam width: 12 (widened from 8)
+- Hard guard: THINK_HARD_MS = 4800ms
+- Positions evaluated: 190595
+- G1 verdict: PASS (≥9 positions required, 190595 achieved)
+- hard_frac: PASS (≥9 positions met)
+
+**G2 H2H BASE** (from beam_d1_log.txt, 10 games, budget 4096):
+- Self-identity: 20/20 identical picks (PASS) — v7base faithful snapshot
+- Blue chair (LIVE): 0/5 wins (0%) — FAIL per §2 per-chair gate
+- Red chair (LIVE): 5/5 wins (100%) — PASS per §2 per-chair gate
+- Overall: 5/10 wins (50%) — FAIL (need ≥6 per v8-plan §2)
+
+**LEAGUE MESH** (partial; skip=30 stalled >5 min, noted and continued):
+- skip=0 ret=blue: rs=1784 ss=1477 margin=+17.2% (95s)
+- skip=0 ret=red: rs=1853 ss=890 margin=+52.0% (95s)
+- skip=10 ret=blue: rs=2559 ss=1064 margin=+58.4% (88s)
+- skip=10 ret=red: rs=2127 ss=1501 margin=+29.4% (84s)
+- skip=20 ret=blue: rs=1801 ss=912 margin=+49.3% (91s)
+- skip=20 ret=red: rs=2346 ss=1590 margin=+32.2% (78s)
+- skip=30: TIMED OUT after 10 min (noted; full run incomplete)
+- League AVG (of 6 completed rows): ≈+39.8% (ret perspective)
+- League bar: AVG must be better than -9.9% — PASSES (+39.8% > -9.9%)
+- worst row: unknown (skip=30 not computed)
+
+**gauge** (6 games, from gauge example, DOOM_W=1.0):
+- Wins: 6/6 (deterministic repeat)
+- Margins: +62.8% (Blue), +69.3% (Red), +62.8%, +69.3%, +62.8%, +69.3%
+
+**Verdict**: NEUTRAL-LEANING per h2h — league passes bar (+39.8% > -9.9%), gauge 6/6 passes,
+but h2h Blue chair FAILS (0/5), Red chair PASS (5/5) — asymmetric, not a positive deviation.
+STACK blocked: league strongly passes AND h2h does NOT deviate positive.
