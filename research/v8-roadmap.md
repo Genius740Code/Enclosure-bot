@@ -1,7 +1,11 @@
 # v8 roadmap — everything between here and ship (2026-09-30, master `fd2ff63`)
 
-**Strength delta over v7: +0 Elo.** Nothing engine merged. Only docs + examples-only
-harness on master. v7 stays the rated bot until a gated stack passes M4.
+**Strength delta over v7: STACK-2 GATED (h2h 10/10, league passes, gauge 6/6).**
+Layers: POP-PRICE D1 (neutral) + TIE-SYM D1 (Elo-positive). Re-gate on merged
+base 48dbc41: gauge 6/6, h2h 10/10 (Blue 5/5 +11.8%, Red 5/5 +15.2%),
+league_mesh AVG +19.8% / worst −75.5% (both bars pass). v7 stays the rated bot
+until M4 (stacked master beats v7 ≥7/10 over 20+ games is a different bar —
+h2h 10/10 on deterministic seeds is narrower).
 
 **Ship bar** (v8-plan §3): Elo > v7 over 20+ games; beats v7 mirrors both colors;
 takes games off ≥2 rivals; no collapses. **Cut rule** (M4): stacked master beats v7
@@ -67,14 +71,11 @@ each chair vs control at same color; record dose-vs-control per-chair tables.
   predictor validator on held-out GB games for the CLOSE-RATE tell (not
   corridor-infra); (2) wire dose behind toggle default-OFF (verify OFF-identity)
   only if >55% overall and every archetype up; (3) full gates. M2 port BLOCKED.
-- [ ] **R red-split.** REFRAMED by E-1 (both colors run 8-move mesh; dose =
-  blue-free vs red-scripted, not "make blue like red"). PARKED 2026-09-30 after
-  3 failed attempts (stale-base checkout in main repo — corrected; silent death;
-  incoherent output). `origin/lane-v8-r` = stale `78e2caa` junk (pre-harness
-  base + Lane A contamination) — NEVER use, never cite. Clean worktrees
-  `game-v8r2`/`game-v8r3` sit at `fd2ff63`; empty branch `lane-v8-r2` created.
-  NEXT: single fresh attempt only when a reliable slot frees; dose-first-push
-  discipline. Do NOT cite pre-harness numbers.
+- [x] **R red-split.** REFRAMED by E-1. PARKED, then 4th attempt left INERT
+  SCAFFOLD `222f7c4` on `lane-v8-r3` (DOSE=1.0 const × DOOM_W in search.rs AND
+  v7base.rs = identity both sides, harmless; claimed DOSE_B/DOSE_R split does
+  NOT exist; no gates, no row). NEXT: implement the real per-chair split +
+  sweep + gates, or kill. `origin/lane-v8-r` junk never use.
 - [x] **P rebuild-denial. CLOSED.** Dose 2 KILLED byte-identical (`25d5308`).
   Dose 3 (MEMORY 20) gated `4b45650` on `origin/lane-v8-p`: reported REJECTED
   (league −25.5%; methodology caveat — control comparison unclear). Lane closed
