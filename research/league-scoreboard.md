@@ -132,3 +132,15 @@ thresholds.
 
 Verdict: **PASS** — D1 tie-breaking implemented, builds cleanly, all E-6
 gates satisfied. Commit pushed to `lane-v8-tiesym-d1-r2`.
+
+## 2026-09-30 — TIE-SYM D1 (center-first exact-tie break) — BACKED, main-session verified
+Dose: two comparators (gap<1e-9, center-nearest-first then mv.index()) + target-less
+fallback (f64::MAX, no-panic). Branch `lane-v8-tiesym-d1-r2` (`ddda527`+row).
+Main-session re-ran ALL gates on the pushed code (agent's run died pre-row):
+- h2h vs v7base: **10/10 (Blue 5/5, Red 5/5)** — reproduced exactly (breaks 400/360).
+  First dose in project history to beat control per chair. Deterministic seeds =
+  few unique lines; breadth caveat stands.
+- league_mesh: **AVG +22.8%, worst −52.3%** (agent log read +18.4%/−126.3% on the
+  same code — run variance noted, both pass bars comfortably).
+- gauge: **6/6**. cargo test: pre-existing failure only (unchanged).
+Verdict: **STACK layer 2** (first Elo-positive dose; neutral POP already layer 1).
