@@ -255,6 +255,10 @@ const DENSE_BONUS: f64 = 1.0;
 /// worst -57.6% vs doom-OFF +18.3% worst -71.7% — ON wins locally too.
 /// Restored to 1.0; the OFF dose lives in git history (v6-mesh variant A).
 const DOOM_W: f64 = 1.0;
+/// Doom tail weight: parity with HORIZON_WEIGHT. Applied to the beyond-horizon
+/// portion (E - min(E, HORIZON)) so a close popped next turn doesn't net
+/// phantom profit from horizon_extension's symmetric (gain+destroyed)×tail×0.5.
+const DOOM_TAIL_W: f64 = 0.5;
 /// Capture exposure: nodes held by a single edge can be captured outright.
 /// Counts ours vs theirs; each such node is a discrete, hard-to-reverse
 /// swing, so it prices higher than a generic edge.
@@ -369,8 +373,10 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
                 None
             };
             if let Some(pos) = doom_at {
-                let hz_doom = f64::from(pos.scoring_events_left()).min(HORIZON);
-                adjusted -= DOOM_W * max_pop(pos, mover) * hz_doom;
+                let events_left = f64::from(pos.scoring_events_left());
+                let hz_doom = events_left.min(HORIZON);
+                let tail = (events_left - hz_doom) * DOOM_TAIL_W;
+                adjusted -= DOOM_W * max_pop(pos, mover) * (hz_doom + tail);
             }
         }
         scored.push((adjusted, Candidate { mv, evaluation, pv, visits }));
@@ -452,8 +458,10 @@ fn selection_adjusted(
         None
     };
     if let Some(pos) = doom_at {
-        let hz_doom = f64::from(pos.scoring_events_left()).min(HORIZON);
-        adjusted -= DOOM_W * max_pop(pos, mover) * hz_doom;
+        let events_left = f64::from(pos.scoring_events_left());
+        let hz_doom = events_left.min(HORIZON);
+        let tail = (events_left - hz_doom) * DOOM_TAIL_W;
+        adjusted -= DOOM_W * max_pop(pos, mover) * (hz_doom + tail);
     }
     adjusted
 }
