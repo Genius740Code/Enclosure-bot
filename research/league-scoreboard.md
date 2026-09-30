@@ -31,6 +31,17 @@ league -20.0%, gauge 6/6. Term never flips a pick in any measured line.
 Verdict: **REJECTED (no effect)**. Reverted to 2.0 with provenance comment.
 
 ## Experiment V5-2 — Lane A deep search: negamax alpha-beta, depth 3 (`search_deep.rs`) — 2026-09-28
+
+## Experiment V5-3 — rebuild-denial v2 dose 3: CUT_MEMORY 6->20 — 2026-09-30
+Hypothesis: extending farming memory from 6 to 20 (dose 3) would further reduce rebuild-denial effects, expecting plateau/neutral gate versus control.
+Change: `CUT_MEMORY` 6 -> 20 in `retaliator/src/search.rs`.
+
+Gate results (once vs control, per-chair tables E-6):
+- **h2h (probe_b_h2h)**: Faithfulness: 0 mismatches in 239 positions (control vs shipped ✓). Per-opening margins: open=None a=blue +48.4% A WINS, a=red -123.8% b wins; open=4864 a=blue -49.0% b wins, a=red +13.8% A WINS; open=5589 a=blue -35.0% b wins, a=red +11.1% A WINS; open=11723 a=blue -17.7% b wins, a=red +6.9% A WINS; open=9199 a=blue -13.9% b wins, a=red -6.5% b wins. 4/10 blue wins, 3/5 red wins avg.
+- **league (league_b)**: AVG margin (ret perspective): **-25.5%**. skip=0: blue +26.5%, red +8.5%; skip=10: blue +26.5%, red -120.7%; skip=20: blue +26.5%, red -120.7%; skip=30: blue +55.7%, red -105.9%.
+- **gauge (6 games)**: 6/6 deterministic repeat. Game 1: retaliator=blue margin=+66.0% breaks R=26 G=18; Game 2: retaliator=red margin=+69.3% breaks R=3 G=2. Overall: retaliator wins 2/2.
+
+Verdict: **REJECTED** — league margin -25.5% is not plateau/neutral; h2h faithfulness passes (0 mismatches) but league shows significant negative drift. Close lane regardless after gating.
 Hypothesis: fixed 3-ply NAIVE deepening scored -58% league; real alpha-beta with
 move ordering (turn-aware negation, ordered children, beyond-horizon extension
 along the line, no doom discount) fixes it. Evaluation, D10-F7 opener and root

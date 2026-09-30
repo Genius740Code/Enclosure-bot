@@ -69,7 +69,7 @@ fn blue_opener(position: &Position) -> Option<Move> {
 }
 
 /// How many of the latest actions count as "recent" for cut avoidance.
-pub const CUT_MEMORY: usize = 6;
+pub const CUT_MEMORY: usize = 20;
 /// Fresh/shielded-wall avoidance: enemy edges placed last turn can't be
 /// cut this turn, so contesting them burns tempo. Penalty for a
 /// non-breaking first action landing near them.
