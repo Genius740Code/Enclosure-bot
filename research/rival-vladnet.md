@@ -192,10 +192,24 @@
 >   corridor doesn't collapse the bank" → true in 3a414aad (the 15.0 break did not hold) but
 >   false in 1c69056c (31.8@86 collapsed it), so it is now stated as game-dependent.
 >
-> **Still open, NOT verified this round** (left untouched, flagged for round 4): §2 "In 3a414aad:
-> 4 breaks in moves 42-47 against our moves 41, 45" — VladNet's breaks in that window are
-> **3** (@42=4.5, @43=3.375, @47=19.375), not 4; and our moves 41/45 were v7 Blue *Connects*,
-> not the trigger being described. Same family of error, but out of this round's scope.
+> **Round 4 (2026-09-30) — the one item deferred to this round is verified CORRECT and is left
+> untouched.** Same method: replayed `3a414aad` through the vendored engine action-by-action with
+> the +9 shift; the replay reconciles exactly with the JSON's final `state.areas`/`state.score`
+> (blue 1370.669502719 / red 2377.597222223; areas 15.277777778 / 49.25). Breaks were re-detected
+> from **engine segment state** (segment sets before/after each move) rather than trusting the
+> JSON's own `broken` field, and the two agree on all 120 moves.
+> - §2 "In 3a414aad: 4 breaks in moves 42-47 against our moves 41, 45" → **verified as written.**
+>   VladNet (Red) breaks a blue segment on exactly **4** moves in that window: **@42** (M6-K9,
+>   4.5 area), **@43** (K9-I9, 3.375), **@46** (I9-F7, **0 area**), **@47** (F7-F10, 19.375).
+>   The round-3 objection counted only the three that *dealt area*; move 46 is a genuine break
+>   that happens to cost Blue no territory, so the count of 4 is correct.
+> - The companion objection ("our moves 41/45 were v7 Blue *Connects*, not the trigger being
+>   described") is **backwards**. §2's own thesis is "breaks immediately after our Connect",
+>   and 41 (M9-J10) and 45 (B15-E15) are both **v7 Blue Connects**: the break at 42 is the very
+>   next opponent move after our connect at 41, and the break at 46 likewise follows 45. The two
+>   cited moves are exactly the trigger the sentence describes.
+>
+> All 18 assertions in the round-4 gate pass; no numbers in §2 were changed.
 
 ---
 
