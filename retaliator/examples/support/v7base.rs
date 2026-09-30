@@ -229,6 +229,10 @@ const DENSE_BONUS: f64 = 1.0;
 /// wins locally too. Restored to 1.0; the OFF dose lives in git history
 /// (v6-mesh variant A).
 const DOOM_W: f64 = 1.0;
+/// E-1 dose: per-chair doom scaling factor. Blue chair: DOSE_B, Red chair: DOSE_R.
+/// Sweep variable for gate protocol: "One variable, dose sweep, scoreboard row".
+/// Both colors run the mesh; the dose differs by chair.
+const DOSE: f64 = 1.0;
 /// Capture exposure: nodes held by a single edge can be captured outright.
 /// Counts ours vs theirs; each such node is a discrete, hard-to-reverse
 /// swing, so it prices higher than a generic edge.
@@ -364,7 +368,7 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
             };
             if let Some(pos) = doom_at {
                 let hz_doom = f64::from(pos.scoring_events_left()).min(HORIZON);
-                adjusted -= DOOM_W * max_pop(pos, mover) * hz_doom;
+                adjusted -= DOSE * DOOM_W * max_pop(pos, mover) * hz_doom;
             }
         }
         scored.push((adjusted, Candidate { mv, evaluation, pv, visits }));
@@ -447,7 +451,7 @@ fn selection_adjusted(
     };
     if let Some(pos) = doom_at {
         let hz_doom = f64::from(pos.scoring_events_left()).min(HORIZON);
-        adjusted -= DOOM_W * max_pop(pos, mover) * hz_doom;
+        adjusted -= DOSE * DOOM_W * max_pop(pos, mover) * hz_doom;
     }
     adjusted
 }

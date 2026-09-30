@@ -255,6 +255,10 @@ const DENSE_BONUS: f64 = 1.0;
 /// worst -57.6% vs doom-OFF +18.3% worst -71.7% — ON wins locally too.
 /// Restored to 1.0; the OFF dose lives in git history (v6-mesh variant A).
 const DOOM_W: f64 = 1.0;
+/// E-1 dose: per-chair doom scaling factor. Blue chair: DOSE_B, Red chair: DOSE_R.
+/// Sweep variable for gate protocol: "One variable, dose sweep, scoreboard row".
+/// Both colors run the mesh; the dose differs by chair.
+const DOSE: f64 = 1.0;
 /// Doom tail weight: parity with HORIZON_WEIGHT. Applied to the beyond-horizon
 /// portion (E - min(E, HORIZON)) so a close popped next turn doesn't net
 /// phantom profit from horizon_extension's symmetric (gain+destroyed)×tail×0.5.
@@ -376,7 +380,7 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
                 let events_left = f64::from(pos.scoring_events_left());
                 let hz_doom = events_left.min(HORIZON);
                 let tail = (events_left - hz_doom) * DOOM_TAIL_W;
-                adjusted -= DOOM_W * max_pop(pos, mover) * (hz_doom + tail);
+                adjusted -= DOSE * DOOM_W * max_pop(pos, mover) * (hz_doom + tail);
             }
         }
         scored.push((adjusted, Candidate { mv, evaluation, pv, visits }));
@@ -461,7 +465,7 @@ fn selection_adjusted(
         let events_left = f64::from(pos.scoring_events_left());
         let hz_doom = events_left.min(HORIZON);
         let tail = (events_left - hz_doom) * DOOM_TAIL_W;
-        adjusted -= DOOM_W * max_pop(pos, mover) * (hz_doom + tail);
+        adjusted -= DOSE * DOOM_W * max_pop(pos, mover) * (hz_doom + tail);
     }
     adjusted
 }
