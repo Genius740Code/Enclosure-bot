@@ -142,3 +142,16 @@ h2h asymmetric (Red OK, Blue fail) — conditional stack pending per-chair remed
   NEUTRAL, not a per-chair win. Corrected verdict: backed NEUTRAL (league
   +25.0%/header bars pass, gauge 6/6) — stackable only by founder
   stack-decision, D2 only if stacking.
+
+## 2026-09-30 — S2 deny-border wire dose (main-session implemented)
+Dose `977618e` on `lane-v8-s2`: DENY_BORDER_W=1.0 bonus for our border-cell moves
+near enemy nodes, gated by GB_TELL_W=1.0 AND gb_like() (<25% opp closes, ≥20
+moves). Infra `61de05d` underneath. Three subagent attempts died garbled with
+zero disk output; main session implemented directly.
+- OFF (default 0.0): gauge 6/6, h2h B0/5 R5/5 = control-identical (short-circuit,
+  gb_like not even evaluated). OFF-safe PROVEN, not just argued.
+- ON (scratch 1.0, uncommitted): h2h B0/5 R5/5 = control-identical. Tell DORMANT
+  by construction: v7base closes ~35% > 25% threshold, gb_like never fires in
+  mirror lines. Effect UNGATED — needs a GB-line gate (low-close opponent),
+  which no harness provides. Next: build GB-opponent gate or park lane.
+Verdict: INFRA+WIRE LANDED, OFF-safe; Elo effect unmeasured. Branch stays OFF.
