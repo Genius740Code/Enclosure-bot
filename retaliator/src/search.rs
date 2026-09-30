@@ -80,12 +80,12 @@ pub fn init_opp_close_tracker(moves: &[Move], to_move: Player) {
     let opp = to_move.opponent();
     let mut opp_moves_count = 0usize;
     let mut opp_connects_count = 0usize;
-    let mut ply = 0usize; // ply 0 = first move by to_move, ply 1 = opponent, etc.
 
     for mv in moves.iter() {
-        // Determine who is to move before this ply.
-        // Players alternate: ply even -> to_move, ply odd -> opponent.
-        let current_player = if ply % 2 == 0 { to_move } else { opp };
+        // Engine turn model: two-action turns (B,R,R,B,B,R...) — strict
+        // alternation is WRONG (59 non-alternations/game). Read mover from
+        // the position before applying. (GB-gate design defect 1.)
+        let current_player = pos.to_move();
 
         // Play the move and capture the outcome kind.
         let outcome = pos.apply_unchecked(*mv);
@@ -96,7 +96,6 @@ pub fn init_opp_close_tracker(moves: &[Move], to_move: Player) {
                 opp_connects_count += 1;
             }
         }
-        ply += 1;
     }
 
     OPP_MOVES.store(opp_moves_count, std::sync::atomic::Ordering::Relaxed);
