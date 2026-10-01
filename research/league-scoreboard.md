@@ -61,3 +61,27 @@ Verdict: **REJECTED (over budget; W/L unmeasurable on this box)**. The exact
 draw-check optimization is kept on lane-a-search for future search work; depth
 needs a time-budget/iterative-deepening layer (outside Lane A scope) or a much
 faster box before these gates can run.
+
+## Experiment V5-4 — rebuild-denial v2 dose 4: penalize ALL re-closes near cuts — 2026-10-01
+Hypothesis: The REBUILD_PENALTY only applied to non-breaking moves (outcome.broken.is_none()),
+but re-closes typically DO break the enemy's loop (the loop that cut us), so they were
+exempt. This allowed the farming cycle: we get cut -> we re-close (breaking their loop) ->
+they cut again. Fix: remove the outcome.broken.is_none() check so that ALL moves near
+recent cuts are penalized, regardless of break status. CUT_MEMORY=20 (from dose 3).
+
+Change: Removed `outcome.broken.is_none() &&` from REBUILD_PENALTY checks in:
+- `retaliator/src/search.rs` (2 locations: analyze_with_avoid, ranked)
+- `retaliator/examples/support/v2base.rs` (1 location: ranked)
+
+Gate results (vs control CUT_MEMORY=20 with old logic):
+- **gauge (6 games)**: **6/6** (deterministic repeat, identical margins to control)
+- **probe_league (8 games)**: **-20.0%** avg margin (identical to control — probes don't use avoid points)
+- **h2h v1 (10 games)**: 4/10 (identical to control — probes don't use avoid points)
+
+Note: Probe tests (gauge, probe_league, probe_v3all) call `best_move()` which passes
+empty avoid slice. The fix only takes effect when avoid points are provided (actual bot
+via lib.rs replay function). Probe results are identical to control as expected.
+
+Verdict: **PENDING SITE TEST** — fix is correct for actual bot (uses avoid points),
+but probes cannot measure the effect. Need site eval with avoid points active to
+verify re-closes DOWN and league improvement.
