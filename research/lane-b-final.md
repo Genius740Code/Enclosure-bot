@@ -103,3 +103,21 @@ threshold), -1 on v2, +10.1pp league, collapse improved on all three rows,
 gauge equal. The as-Blue chair (0/4 from forced openings vs v1) is
 untouched by everything this lane tested — it needs Lane A depth or a
 different mechanism, not eval terms.
+
+## Site outcome (recorded 2026-10-01, closes the loop)
+
+The merge recommendation above was falsified by the site judge. The main
+session ported it as **v5 (DOOM_W 1.0 -> 0.0, SHIP)**; site Elo rated
+**v5 = 1349, record 4-36** — far below v3 (1477) and v4 (1428), both
+doom-ON — and the doom discount was restored to 1.0 for v6+. The local
++10.1pp league win did not transfer. Recorded suspects (main session, V5
+port row): the rig ran **without the avoid path** (site play includes
+lib.rs replay routing), it only **tied** (not beat) v1, and the as-Blue
+chair cost (2/5 -> 1/5) was real. Scoreboard: the 2026-09-28 V5/V6 rows.
+
+Lesson for future eval lanes (this lane's legacy, alongside the "Lane-E
+disease" the v9 roadmap cites): a local league win on the 2-ply rig is
+NOT site-Elo evidence — v5 is the counterexample. Rig numbers justify a
+PORT (one constant), never a ship claim; the port must be re-gated with
+the avoid path wired before any Elo expectation. Do not re-litigate
+doom-OFF from this note's local numbers alone.
