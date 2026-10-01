@@ -181,3 +181,12 @@ WASM 310831 bytes, sha256 16eb15d70e32c822b175ea4de80d58f4d3eaf640068f0aaa549344
 from master 244e4ef (stack POP+TIE). Exports verified, site_check 12/12 (ship-prep).
 Rated evals queued (pairs=2, both colors): vs GB 0bfd634b, vs VladNet c47e2280,
 vs AngelBot-WASM a2d70517 (12 games, ~8h). Tag v8 on validation.
+
+## 2026-10-01 — v8 VALIDATION (Riposte v8 820a7b3d, 12 rated games) — 0-12
+vs GB 0/4 (2168/4462, 2706/4371, 2557/4485, 2433/4438 — ~2x margins, both
+chairs); vs VladNet 0/4 (1180/2446, 1893/2631, 1476/2536, 1636/2123);
+vs AngelWASM 0/4 (479/1809, 2169/3317, 212/1076, 1319/2084 — worst as Blue).
+Game JSONs filed on lane-v8-autopsy (12073d2). Mirrors v7's rival profile
+(v7 also winless vs these three) — v8's mirror gains do NOT transfer.
+Verdict: v8 NOT shippable on validation. Ship path now requires a rival-beating
+layer (K-CLASS/VladNet, Angel-circle, PROT-BLOCK/Blue). v7 stays rated.
