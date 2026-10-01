@@ -43,6 +43,9 @@ const HORIZON_WEIGHT: f64 = 0.5;
 const CONTACT_PENALTY: f64 = 1.0;
 /// Penalty for a no-area reinforcement between own nodes far from the enemy.
 const DEADWOOD_PENALTY: f64 = 2.0;
+const ZERO_CUT_PENALTY: f64 = 1.0;
+/// Whether to apply the zero-yield-cut penalty (cut that gains no area).
+const ZERO_CUT_PENALTY_ON: bool = false;
 /// Beyond this Chebyshev distance to the nearest enemy node, a no-area
 /// reinforcement counts as dead wood in the back.
 const DEADWOOD_ENEMY_DIST: i8 = 3;
@@ -739,6 +742,14 @@ fn ranked(
                 {
                     priority -= DEADWOOD_PENALTY * hz;
                 }
+    // Fix 4 (conditional): penalize first actions that break but gain zero.
+    if ZERO_CUT_PENALTY_ON
+        && outcome.broken.is_some()
+        && position.area(opp).to_f64() - after.area(opp).to_f64() <= 0.0
+        && own_gain <= 0.0
+    {
+        priority -= ZERO_CUT_PENALTY * hz;
+    }
             }
             Ranked { mv, after, value, priority }
         })
