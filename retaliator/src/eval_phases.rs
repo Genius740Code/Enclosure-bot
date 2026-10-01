@@ -36,7 +36,7 @@
 
 use std::cmp::Reverse;
 
-use meridian_engine::{Edge, IllegalMove, Move, MoveKind, Outcome, Player, Point, Position};
+use meridian_engine::{Direction, Edge, IllegalMove, Move, MoveKind, Outcome, Player, Point, Position};
 
 /// Positions searched for a move in a game. Analysis asks for its own number, up to this.
 pub const MOVE_BUDGET: usize = 4096;
@@ -922,4 +922,316 @@ fn cross(a: Point, b: Point, c: Point) -> i32 {
 /// 1 for Blue and -1 for Red, to turn Blue's lead into the mover's.
 fn sign(player: Player) -> f64 {
     if player == Player::Blue { 1.0 } else { -1.0 }
+}
+
+// =====================================================================
+// Lane B phase-aware terms (2026-10-01): pure functions + probe support.
+//
+// The mission terms, all read-only over `&Position` in the f64 Blue-lead
+// convention: phase gates, one-move loop-closing potential (ALL closable
+// pairs, not just `loop_bonus`'s triangles), mobility, legal-cuts-only
+// cuttable-edge counts, frontier/node differentials. Nothing below is
+// called by the rig above; the terms enter the bot only through
+// `replay_adjusted` + `probe_eval` (external re-ranking of
+// `search::analyze`'s candidates, one term at a time), per the mission's
+// "call search::analyze and recompute ordering with your terms" option.
+// The KEY question — the true banked-score swing of cut+make vs
+// make-only lines, and whether the beyond-horizon denial weight (shipped:
+// symmetric 0.5) is right — is answered by `probe_eval`'s cutline mode,
+// whose pricing model (leaf value + `destroyed x beyond-horizon events
+// x 0.5`) lives there beside the playouts it prices.
+// =====================================================================
+
+/// Phase gates: opening before this many actions, endgame from this many
+/// scoring events left, middlegame in between (the mission's gates; the
+/// opening gate matches PATIENCE_WINDOW).
+pub const OPENING_ACTIONS: u8 = 12;
+pub const ENDGAME_EVENTS: u8 = 12;
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Phase {
+    Opening,
+    Middlegame,
+    Endgame,
+}
+
+impl Phase {
+    pub fn index(self) -> usize {
+        match self {
+            Phase::Opening => 0,
+            Phase::Middlegame => 1,
+            Phase::Endgame => 2,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Phase::Opening => "opening",
+            Phase::Middlegame => "middlegame",
+            Phase::Endgame => "endgame",
+        }
+    }
+}
+
+pub fn phase(position: &Position) -> Phase {
+    if position.actions_played() < OPENING_ACTIONS {
+        Phase::Opening
+    } else if position.scoring_events_left() <= ENDGAME_EVENTS {
+        Phase::Endgame
+    } else {
+        Phase::Middlegame
+    }
+}
+
+/// The same board with `player` to move: edges and scores frozen, the
+/// action parity flipped (one action at a turn start, two mid-turn, none
+/// at the last action), shielded/fresh cleared. A static hypothetical —
+/// "what could each side do if it were their turn now" — never a played
+/// position; `Position::setup` allows exactly that (recent edges AtMost).
+/// Clearing the shields only ever ADDS enemy cuts, so cut counts taken
+/// here are the honest "could they, from this board" reads.
+fn as_if_to_move(position: &Position, player: Player) -> Option<Position> {
+    if position.is_finished() {
+        return None;
+    }
+    if position.to_move() == player {
+        return Some(position.clone());
+    }
+    let a = position.actions_played();
+    let flip = u16::from(a) + if a % 2 == 0 { 1 } else { 2 };
+    let blue: Vec<Edge> = position.edges(Player::Blue).iter().collect();
+    let red: Vec<Edge> = position.edges(Player::Red).iter().collect();
+    Position::setup(
+        &blue,
+        &red,
+        flip as u8,
+        [position.score(Player::Blue), position.score(Player::Red)],
+        &[],
+    )
+    .ok()
+}
+
+/// One-move loop-closing potential: the distinct pairs of `player`'s
+/// nodes that a single LEGAL action could connect (king-3 apart, legal
+/// by the engine's own `check_move`). `loop_bonus` prices only the
+/// triangles hanging off the move's source; this counts every closable
+/// pair — any legal connect closes some cycle and banks from the next
+/// scoring event on.
+pub fn closable_pairs(position: &Position, player: Player) -> usize {
+    let Some(probe) = as_if_to_move(position, player) else { return 0 };
+    let nodes: Vec<Point> = probe.nodes(player).iter().collect();
+    let mut count = 0usize;
+    for (i, &a) in nodes.iter().enumerate() {
+        for &b in &nodes[i + 1..] {
+            if let Some(mv) = Move::between(a, b) {
+                if probe.check_move(mv).is_ok() {
+                    count += 1;
+                }
+            }
+        }
+    }
+    count
+}
+
+/// Mobility: the player's legal-move count, by the engine's own
+/// movegen — the real set when it is their turn, the frozen-board
+/// hypothetical when it is not.
+pub fn mobility(position: &Position, player: Player) -> usize {
+    as_if_to_move(position, player).map_or(0, |probe| probe.legal_moves().len())
+}
+
+/// Speed cap for `cuttable_edges`: enemy moves tried per read. The
+/// engine's legal order (source, then direction) makes the capped read
+/// a deterministic prefix.
+pub const CUTTABLE_CAP: usize = 512;
+
+/// Distinct edges of `victim` the enemy can LEGALLY cut in one action
+/// (one touch only — dense clusters and shielded walls price zero), by
+/// playing the enemy's legal set on the enemy-to-move board and reading
+/// the engine's own `broken` edge, once per distinct edge. The
+/// count-based cousin of the rig's area-based (and rejected) VULN term.
+pub fn cuttable_edges(position: &Position, victim: Player) -> usize {
+    let Some(probe) = as_if_to_move(position, victim.opponent()) else { return 0 };
+    let mut seen: Vec<Edge> = Vec::new();
+    for mv in probe.legal_moves().iter().take(CUTTABLE_CAP) {
+        let mut next = probe.clone();
+        if let Some(cut) = next.apply_unchecked(mv).broken {
+            if !seen.contains(&cut) {
+                seen.push(cut);
+            }
+        }
+    }
+    seen.len()
+}
+
+/// Frontier: `player`'s nodes with at least one geometrically free
+/// direction — on the board, not on either side's node, not strictly
+/// inside the player's own edge. An "alive nodes" proxy (bases with
+/// room to extend), computed without the full legality machinery.
+pub fn frontier_nodes(position: &Position, player: Player) -> usize {
+    let mut inside: Vec<Point> = Vec::new();
+    for edge in position.edges(player).iter() {
+        inside.extend(edge.interior_points());
+    }
+    let blocked = |p: Point| {
+        position.nodes(Player::Blue).contains(p)
+            || position.nodes(Player::Red).contains(p)
+            || inside.contains(&p)
+    };
+    position
+        .nodes(player)
+        .iter()
+        .filter(|&n| Direction::all().any(|d| n.step(d).is_some_and(|t| !blocked(t))))
+        .count()
+}
+
+pub fn node_count(position: &Position, player: Player) -> usize {
+    position.nodes(player).len()
+}
+
+/// The shipped blue opener, for probes that must play the exact shipped
+/// move at action 1 before their own selection takes over.
+pub fn opener(position: &Position) -> Option<Move> {
+    blue_opener(position)
+}
+
+/// Everything the phase-aware terms read off one position. Per-player
+/// counts in [Blue, Red] order; the differentials are Blue-lead.
+pub struct TermSnapshot {
+    pub actions_played: u8,
+    pub events_left: u8,
+    pub phase: Phase,
+    pub area: [f64; 2],
+    pub closable: [usize; 2],
+    pub mobility: [usize; 2],
+    pub cuttable: [usize; 2],
+    pub frontier: [usize; 2],
+    pub nodes: [usize; 2],
+}
+
+pub fn term_snapshot(position: &Position) -> TermSnapshot {
+    TermSnapshot {
+        actions_played: position.actions_played(),
+        events_left: position.scoring_events_left(),
+        phase: phase(position),
+        area: [position.area(Player::Blue).to_f64(), position.area(Player::Red).to_f64()],
+        closable: [closable_pairs(position, Player::Blue), closable_pairs(position, Player::Red)],
+        mobility: [mobility(position, Player::Blue), mobility(position, Player::Red)],
+        cuttable: [cuttable_edges(position, Player::Blue), cuttable_edges(position, Player::Red)],
+        frontier: [frontier_nodes(position, Player::Blue), frontier_nodes(position, Player::Red)],
+        nodes: [node_count(position, Player::Blue), node_count(position, Player::Red)],
+    }
+}
+
+/// Probe-side term weights for `replay_adjusted`. Defaults reproduce the
+/// shipped selection arithmetic exactly (claim = deny = 1, every count
+/// term off); a term is "on" by giving it a nonzero weight.
+#[derive(Clone, Copy)]
+pub struct ProbeTerms {
+    /// Beyond-horizon weight on own area gained along the line.
+    pub claim_w: f64,
+    /// Beyond-horizon weight on enemy area destroyed along the line
+    /// (shipped: 1.0, i.e. the symmetric `HORIZON_WEIGHT` 0.5 on both).
+    pub deny_w: f64,
+    pub close_w: f64,
+    pub mob_w: f64,
+    pub vuln_edge_w: f64,
+    pub node_w: f64,
+    pub frontier_w: f64,
+}
+
+impl Default for ProbeTerms {
+    fn default() -> Self {
+        ProbeTerms {
+            claim_w: 1.0,
+            deny_w: 1.0,
+            close_w: 0.0,
+            mob_w: 0.0,
+            vuln_edge_w: 0.0,
+            node_w: 0.0,
+            frontier_w: 0.0,
+        }
+    }
+}
+
+impl ProbeTerms {
+    fn counts_on(&self) -> bool {
+        self.close_w != 0.0
+            || self.mob_w != 0.0
+            || self.vuln_edge_w != 0.0
+            || self.node_w != 0.0
+            || self.frontier_w != 0.0
+    }
+}
+
+/// The shipped selection score for one analyzed candidate, replayed from
+/// `search::analyze`'s output, then extended by the [`ProbeTerms`]:
+/// `sign(mover) * evaluation + horizon_extension` (with the claim/denial
+/// split) + the selection-time fresh-wall poison − the doom discount,
+/// + every count term on `end`. Must reproduce the shipped ordering of
+/// `analyze`'s own candidates with default terms — `probe_eval` checks
+/// that position for position (its fidelity line) before trusting any
+/// ablation flip.
+pub fn replay_adjusted(
+    position: &Position,
+    mv: Move,
+    evaluation: f64,
+    pv: &[Move],
+    terms: &ProbeTerms,
+) -> f64 {
+    let mover = position.to_move();
+    let opp = mover.opponent();
+    let mut after = position.clone();
+    let oc = after.apply_unchecked(mv);
+    let end = position_after_pv(position, pv);
+
+    // Sign*evaluation, then the beyond-horizon extension with the
+    // claim/denial split (claim_w = deny_w = 1.0 is the shipped pricing).
+    let gained = (end.area(mover).to_f64() - position.area(mover).to_f64()).max(0.0);
+    let destroyed =
+        (position.area(opp).to_f64() - end.area(opp).to_f64()).max(0.0);
+    let events = f64::from(end.scoring_events_left());
+    let beyond = events - events.min(HORIZON);
+    let mut adjusted =
+        sign(mover) * evaluation + (gained * terms.claim_w + destroyed * terms.deny_w) * beyond * HORIZON_WEIGHT;
+
+    // Selection-time poison: fresh walls (the avoid/rebuild part never
+    // fires on probe positions, which analyze with avoid = []).
+    if oc.broken.is_none() {
+        let hz_sel = f64::from(position.scoring_events_left()).min(HORIZON);
+        if let Some(tgt) = mv.target() {
+            if near_fresh_enemy(position, tgt) {
+                adjusted -= FRESH_PENALTY * hz_sel;
+            }
+        }
+    }
+
+    // Doom discount: the shipped worst one-action pop (pop_cut_remake's
+    // first component is exactly `search::max_pop`).
+    let doom_at = if end.to_move() == opp {
+        Some(&end)
+    } else if after.to_move() == opp {
+        Some(&after)
+    } else {
+        None
+    };
+    if let Some(pos) = doom_at {
+        let hz_doom = f64::from(pos.scoring_events_left()).min(HORIZON);
+        adjusted -= DOOM_W * pop_cut_remake(pos, mover).0 * hz_doom;
+    }
+
+    // The phase-aware count terms, all on `end` (the line's leaf).
+    if terms.counts_on() {
+        let own_close = closable_pairs(&end, mover);
+        let (own_mob, opp_mob) = (mobility(&end, mover), mobility(&end, opp));
+        let (own_cut, opp_cut) = (cuttable_edges(&end, mover), cuttable_edges(&end, opp));
+        let (own_nodes, opp_nodes) = (node_count(&end, mover), node_count(&end, opp));
+        let (own_front, opp_front) = (frontier_nodes(&end, mover), frontier_nodes(&end, opp));
+        adjusted += terms.close_w * own_close as f64
+            + terms.mob_w * (own_mob as f64 - opp_mob as f64)
+            + terms.vuln_edge_w * (opp_cut as f64 - own_cut as f64)
+            + terms.node_w * (own_nodes as f64 - opp_nodes as f64)
+            + terms.frontier_w * (own_front as f64 - opp_front as f64);
+    }
+    adjusted
 }
