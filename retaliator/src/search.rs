@@ -204,7 +204,7 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
             if near_points(avoid.iter().copied(), tgt, CUT_RADIUS) {
                 adjusted -= REBUILD_PENALTY * hz_sel;
             }
-            if oc.broken.is_none() && near_fresh_enemy(position, tgt) {
+            if near_fresh_enemy(position, tgt) {
                 adjusted -= FRESH_PENALTY * hz_sel;
             }
         }
