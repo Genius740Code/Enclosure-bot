@@ -181,3 +181,35 @@ WASM 310831 bytes, sha256 16eb15d70e32c822b175ea4de80d58f4d3eaf640068f0aaa549344
 from master 244e4ef (stack POP+TIE). Exports verified, site_check 12/12 (ship-prep).
 Rated evals queued (pairs=2, both colors): vs GB 0bfd634b, vs VladNet c47e2280,
 vs AngelBot-WASM a2d70517 (12 games, ~8h). Tag v8 on validation.
+
+## 2026-10-01 — C: CUT-YIELD census (lane-v9-cutyield) — KILL-0 FAILED
+Kill-0 (roadmap lane 3): replay flip census ≥10% of zero-yield cuts → dose;
+else KILL. Probe `probe_cutyield.rs` (read-only) on the 46-game local corpus
+(5520 actions, old-bot line; v8 eval games not landed yet).
+Census: cuts us 566 / opp 342; zero-yield (broken + 0-destroyed + 0-gain)
+us 214 (37.8%) / opp 42. Zero-yield rate in WINS 49.7% vs LOSSES 17.6% —
+dominance artifact, not a loss driver.
+Flip census (209/214 measured): current engine also plays a zero-yield cut at
+24 decision points (dose targets); outcome flips vs CONTROL 2 = 0.9% of all
+recorded zero-yield cuts (8.3% of targets), one improving one regressing; vs
+RECORDED 9.1% (drift-inflated, old-bot corpus). Verdict: **KILL the dose** —
+0.9% << 10% gate; engine already suppresses the symptom at 88.5% of recorded
+decision points; where it acts it is a coin flip; the population it taxes
+concentrates in winning positions. Same disease family as PATIENCE-off /
+CUT_MEMORY-15. Report: research/lane-cutyield-census.md. Re-run on v8 eval
+games before reopening the lane.
+
+## 2026-10-01 — C: ANGEL-CIRCLE census (lane-v9-cutyield) — analysis complete, no dose
+Lane 7 analysis (unscored). Probe `probe_angel.rs` (read-only; territory-face
+port of the site engine's area computation, validated 92/92 vs engine area)
+on the 46-game local corpus. Circles (opponent close trapping our nodes):
+4 in 3 games (0.9% of gaining closes; 0.09/game) — all vs neck (0.75/game)
+and blob (0.25/game). Shape: mid loops (8-30 area) around 2-4 trapped nodes,
+mid/late phase, embedded in thickets (avg 15.5 deg≥2 nodes). What breaks it:
+circle edges cuttable at first our-turn 4/4 (avg 2.5) — but we cut a circle
+edge in 4/4 and the bank fell back in **0/4**: post-close cutting never
+un-banks the score; only prevention (M9 discipline, kill-0 unrun) can matter.
+Circled games win 1/3 = 33.3% vs 30/43 = 69.8% uncircled (n=3, directional).
+**NO AngelWASM games yet** (evals queued, not landed) — re-run probe_angel on
+them when they land; until then no dose, no engine change. Report:
+research/lane-angel-circle-census.md.
