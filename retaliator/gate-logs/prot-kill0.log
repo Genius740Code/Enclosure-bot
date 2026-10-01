@@ -1,0 +1,12 @@
+    Finished `release` profile [optimized] target(s) in 0.03s
+     Running `target/release/examples/prot_kill0`
+game 0: denials=448 red16=17.5 blue9=0.0 FAIL
+game 1: denials=829 red16=17.5 blue9=0.0 FAIL
+game 2: denials=762 red16=17.5 blue9=0.0 FAIL
+game 3: denials=448 red16=17.5 blue9=0.0 FAIL
+game 4: denials=829 red16=17.5 blue9=0.0 FAIL
+game 5: denials=762 red16=17.5 blue9=0.0 FAIL
+game 6: denials=448 red16=17.5 blue9=0.0 FAIL
+game 7: denials=829 red16=17.5 blue9=0.0 FAIL
+game 8: denials=762 red16=17.5 blue9=0.0 FAIL
+PROT-KILL0 KILL
