@@ -17,6 +17,8 @@ mod scoutbase;
 mod v1base;
 #[path = "support/v2base.rs"]
 mod v2base;
+#[path = "support/v5base.rs"]
+mod v5base;
 #[path = "opp_gbstyle.rs"]
 mod opp_gbstyle;
 #[path = "opp_vladstyle.rs"]
@@ -27,6 +29,8 @@ mod opp_angelstyle;
 mod opp_blobstyle;
 #[path = "opp_sacstyle.rs"]
 mod opp_sacstyle;
+#[path = "opp_longfarm.rs"]
+mod opp_longfarm;
 
 use std::collections::HashMap;
 
@@ -41,6 +45,23 @@ const SOLOS: [&str; 8] = [
 
 type Engine<'a> = &'a dyn Fn(&Position, &[Point]) -> Option<Move>;
 
+/// 1-ply greedy: maximize own enclosed area after the move, ties by move id
+/// (the `gauge` baseline — the blob archetype that beat the old bot 0-2).
+fn greedy(position: &Position) -> Option<Move> {
+    let mover = position.to_move();
+    let mut best: Option<(f64, usize, Move)> = None;
+    for mv in position.legal_moves().iter() {
+        let mut after = position.clone();
+        after.apply_unchecked(mv);
+        let v = after.area(mover).to_f64();
+        let id = mv.index();
+        if best.is_none_or(|(bv, bid, _)| v > bv || (v == bv && id < bid)) {
+            best = Some((v, id, mv));
+        }
+    }
+    best.map(|(_, _, mv)| mv)
+}
+
 #[derive(Default, Clone, Copy)]
 struct Stats {
     closes: u32,
@@ -53,6 +74,8 @@ struct GameOut {
     margin: f64,
     /// The baseline's own score (margin as a % of it).
     ret_score: f64,
+    /// The mimic's own score (its margin as a % of it).
+    opp_score: f64,
     ret: Stats,
     opp: Stats,
     ret_area: f64,
@@ -128,7 +151,7 @@ fn play(ret_blue: bool, solo: &str, ret: Engine, opp: Engine) -> GameOut {
     } else {
         (game.position().area(Player::Red).to_f64(), game.position().area(Player::Blue).to_f64())
     };
-    GameOut { margin: ret_score - opp_score, ret_score, ret: ret_stats, opp: opp_stats, ret_area, opp_area }
+    GameOut { margin: ret_score - opp_score, ret_score, opp_score, ret: ret_stats, opp: opp_stats, ret_area, opp_area }
 }
 
 fn fmt_stats(s: &Stats) -> String {
@@ -163,6 +186,8 @@ fn matchup(name: &str, ret: Engine, opp: Engine, opp_name: &str) {
     let draws = outs.iter().filter(|o| o.margin == 0.0).count();
     let avg_pct = outs.iter().map(|o| o.margin / o.ret_score * 100.0).sum::<f64>() / outs.len() as f64;
     let avg_diff = outs.iter().map(|o| o.margin).sum::<f64>() / outs.len() as f64;
+    // The mimic's own perspective: its margin as a % of its own score.
+    let avg_pct_opp = outs.iter().map(|o| -o.margin / o.opp_score * 100.0).sum::<f64>() / outs.len() as f64;
     let side_avg = |side: fn(&GameOut) -> Stats| -> (f64, f64, f64, u32) {
         let lost: Vec<_> = outs.iter().filter(|o| o.margin < 0.0).collect();
         if lost.is_empty() {
@@ -179,7 +204,7 @@ fn matchup(name: &str, ret: Engine, opp: Engine, opp_name: &str) {
     let (rl, rc, rf, rn) = side_avg(|o| o.ret);
     let (ol, oc, of_, on) = side_avg(|o| o.opp);
     println!(
-        "== {name} vs {opp_name}: W-L {wins}-{wins_loss} D{draws} avg_margin={avg_pct:+.1}% avg_diff={avg_diff:+.0} | in {rn} losses: base[close={rl:.1} cut={rc:.1} first={rf:.1}] | in {on} losses: {opp_name}[close={ol:.1} cut={oc:.1} first={of_:.1}]",
+        "== {name} vs {opp_name}: W-L {wins}-{wins_loss} D{draws} avg_margin={avg_pct:+.1}% (base persp, {avg_diff:+.0}) | {opp_name} persp: {wins_loss}-{wins} avg_margin={avg_pct_opp:+.1}% | in {rn} losses: base[close={rl:.1} cut={rc:.1} first={rf:.1}] | in {on} losses: {opp_name}[close={ol:.1} cut={oc:.1} first={of_:.1}]",
         wins_loss = 8 - draws - wins,
     );
 }
@@ -188,6 +213,7 @@ fn main() {
     let mut styles: HashMap<&str, Engine> = HashMap::new();
     styles.insert("blob", &|pos, _| opp_blobstyle::best_move(pos) as Option<Move>);
     styles.insert("sac", &|pos, avoid| opp_sacstyle::best_move(pos, avoid));
+    styles.insert("longfarm", &|pos, avoid| opp_longfarm::best_move(pos, avoid));
     let mut old: Vec<(&str, Engine)> = vec![
         ("gb", &|pos, _| opp_gbstyle::best_move(pos)),
         ("vlad", &|pos, _| opp_vladstyle::best_move(pos)),
@@ -195,10 +221,10 @@ fn main() {
         ("scout", &|pos, _| scoutbase::best_move(pos)),
     ];
     // Add each new mimic here as it lands:
-    // ("longfarm", &|pos, avoid| opp_longfarm::best_move(pos, avoid)),
     let d2: Vec<(&str, Engine)> = vec![
         ("blob", &|pos, _| opp_blobstyle::best_move(pos)),
         ("sac", &|pos, avoid| opp_sacstyle::best_move(pos, avoid)),
+        ("longfarm", &|pos, avoid| opp_longfarm::best_move(pos, avoid)),
     ];
     let mut chosen: Vec<(&str, Engine)> = Vec::new();
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -213,13 +239,17 @@ fn main() {
             }
         }
     }
-    let baselines: [(&str, Engine); 3] = [
+    let baselines: Vec<(&str, Engine)> = vec![
         ("v3", &|pos, _| retaliator::search::best_move(pos)),
         ("v1", &|pos, _| v1base::best_move(pos)),
         ("v2", &|pos, _| v2base::best_move(pos)),
+        // The deployed search (master's current tip, the v8 stack; probe path).
+        ("v8", &|pos, _| v5base::best_move(pos)),
+        ("scout", &|pos, _| scoutbase::best_move(pos)),
+        ("greedy", &|pos, _| greedy(pos)),
     ];
     for (style_name, style) in chosen {
-        for (base_name, base) in baselines {
+        for (base_name, base) in baselines.iter() {
             // Baseline as `ret`: margin and W-L read from our perspective.
             matchup(base_name, base, style, style_name);
         }

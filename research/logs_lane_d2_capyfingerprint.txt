@@ -1,0 +1,287 @@
+warning: variable does not need to be mutable
+   --> src/search.rs:189:13
+    |
+189 |         let mut end = position_after_pv(position, &pv);
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/search.rs:209:13
+    |
+209 |         let mut visits = 1 + replies.len();
+    |             ----^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: `retaliator` (lib) generated 2 warnings (run `cargo fix --lib -p retaliator` to apply 2 suggestions)
+warning: unused variable: `opp`
+   --> examples/probe_capyfingerprint.rs:141:9
+    |
+141 |     let opp = me.opponent();
+    |         ^^^ help: if this is intentional, prefix it with an underscore: `_opp`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `capy_score`
+   --> examples/probe_capyfingerprint.rs:353:26
+    |
+353 |             let (margin, capy_score, base, capy, recloses, farmed, largest) =
+    |                          ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_capy_score`
+
+warning: unused variable: `recloses`
+   --> examples/probe_capyfingerprint.rs:353:50
+    |
+353 |             let (margin, capy_score, base, capy, recloses, farmed, largest) =
+    |                                                  ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_recloses`
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/scoutbase.rs:27:9
+   |
+25 | pub struct Analysis {
+   |            -------- fields in this struct
+26 |     /// Blue's lead after the best move and its reply.
+27 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+28 |     /// 2 when replies were searched.
+29 |     pub depth: usize,
+   |         ^^^^^
+30 |     /// Positions searched.
+31 |     pub nodes: usize,
+   |         ^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/scoutbase.rs:41:9
+   |
+36 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+41 |     pub pv: Vec<Move>,
+   |         ^^
+42 |     /// 1, plus the replies searched.
+43 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/v2base.rs:63:9
+   |
+61 | pub struct Analysis {
+   |            -------- fields in this struct
+62 |     /// Blue's lead after the best move and its reply.
+63 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+64 |     /// 2 when replies were searched.
+65 |     pub depth: usize,
+   |         ^^^^^
+66 |     /// Positions searched.
+67 |     pub nodes: usize,
+   |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/v2base.rs:78:9
+   |
+72 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+78 |     pub pv: Vec<Move>,
+   |         ^^
+79 |     /// 1, plus the replies searched.
+80 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: function `best_move` is never used
+  --> examples/support/v2base.rs:83:8
+   |
+83 | pub fn best_move(position: &Position) -> Option<Move> {
+   |        ^^^^^^^^^
+
+warning: function `analyze` is never used
+  --> examples/support/v2base.rs:94:8
+   |
+94 | pub fn analyze(position: &Position, budget: usize) -> Analysis {
+   |        ^^^^^^^
+
+warning: constant `MESH_B_TXT` is never used
+  --> examples/support/v5base.rs:92:7
+   |
+92 | const MESH_B_TXT: [[&str; 2]; 8] = [
+   |       ^^^^^^^^^^
+
+warning: constant `MESH_R_TXT` is never used
+   --> examples/support/v5base.rs:103:7
+    |
+103 | const MESH_R_TXT: [[&str; 2]; 8] = [
+    |       ^^^^^^^^^^
+
+warning: function `decode_pair` is never used
+   --> examples/support/v5base.rs:114:4
+    |
+114 | fn decode_pair(pair: [&str; 2]) -> Move {
+    |    ^^^^^^^^^^^
+
+warning: function `decode_prefix` is never used
+   --> examples/support/v5base.rs:123:4
+    |
+123 | fn decode_prefix(txt: [[&str; 2]; 8]) -> [Move; 8] {
+    |    ^^^^^^^^^^^^^
+
+warning: static `MESH_B` is never used
+   --> examples/support/v5base.rs:127:8
+    |
+127 | static MESH_B: LazyLock<[Move; 8]> = LazyLock::new(|| decode_prefix(MESH_B_TXT));
+    |        ^^^^^^
+
+warning: static `MESH_R` is never used
+   --> examples/support/v5base.rs:128:8
+    |
+128 | static MESH_R: LazyLock<[Move; 8]> = LazyLock::new(|| decode_prefix(MESH_R_TXT));
+    |        ^^^^^^
+
+warning: function `side_to_move` is never used
+   --> examples/support/v5base.rs:133:4
+    |
+133 | fn side_to_move(total: usize) -> Player {
+    |    ^^^^^^^^^^^^
+
+warning: function `mesh_prefix` is never used
+   --> examples/support/v5base.rs:153:8
+    |
+153 | pub fn mesh_prefix(position: &Position, history: &[Move]) -> Option<Move> {
+    |        ^^^^^^^^^^^
+
+warning: function `best_move_routed` is never used
+   --> examples/support/v5base.rs:206:8
+    |
+206 | pub fn best_move_routed(
+    |        ^^^^^^^^^^^^^^^^
+
+warning: constant `CUT_MEMORY` is never used
+   --> examples/support/v5base.rs:224:11
+    |
+224 | pub const CUT_MEMORY: usize = 6;
+    |           ^^^^^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+   --> examples/support/v5base.rs:292:9
+    |
+290 | pub struct Analysis {
+    |            -------- fields in this struct
+291 |     /// Blue's lead after the best move and its reply.
+292 |     pub evaluation: f64,
+    |         ^^^^^^^^^^
+293 |     /// 2 when replies were searched.
+294 |     pub depth: usize,
+    |         ^^^^^
+295 |     /// Positions searched.
+296 |     pub nodes: usize,
+    |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+   --> examples/support/v5base.rs:307:9
+    |
+301 | pub struct Candidate {
+    |            --------- fields in this struct
+...
+307 |     pub pv: Vec<Move>,
+    |         ^^
+308 |     /// 1, plus the replies searched.
+309 |     pub visits: usize,
+    |         ^^^^^^
+
+warning: function `best_move` is never used
+   --> examples/support/v5base.rs:312:8
+    |
+312 | pub fn best_move(position: &Position) -> Option<Move> {
+    |        ^^^^^^^^^
+
+warning: function `analyze` is never used
+   --> examples/support/v5base.rs:326:8
+    |
+326 | pub fn analyze(position: &Position, budget: usize) -> Analysis {
+    |        ^^^^^^^
+
+warning: constant `THINK_SOFT_MS` is never used
+   --> examples/support/v5base.rs:425:11
+    |
+425 | pub const THINK_SOFT_MS: u64 = 2000;
+    |           ^^^^^^^^^^^^^
+
+warning: constant `THINK_HARD_MS` is never used
+   --> examples/support/v5base.rs:426:11
+    |
+426 | pub const THINK_HARD_MS: u64 = 4800;
+    |           ^^^^^^^^^^^^^
+
+warning: constant `VOLATILE_GAP` is never used
+   --> examples/support/v5base.rs:429:7
+    |
+429 | const VOLATILE_GAP: f64 = 2.0;
+    |       ^^^^^^^^^^^^
+
+warning: constant `BEAM` is never used
+   --> examples/support/v5base.rs:431:7
+    |
+431 | const BEAM: usize = 8;
+    |       ^^^^
+
+warning: struct `BeamLine` is never constructed
+   --> examples/support/v5base.rs:433:8
+    |
+433 | struct BeamLine {
+    |        ^^^^^^^^
+
+warning: function `selection_adjusted` is never used
+   --> examples/support/v5base.rs:447:4
+    |
+447 | fn selection_adjusted(
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `sort_beam` is never used
+   --> examples/support/v5base.rs:486:4
+    |
+486 | fn sort_beam(beam: &mut [BeamLine]) {
+    |    ^^^^^^^^^
+
+warning: function `analyze_timed` is never used
+   --> examples/support/v5base.rs:500:8
+    |
+500 | pub fn analyze_timed(position: &Position, avoid: &[Point]) -> Analysis {
+    |        ^^^^^^^^^^^^^
+
+warning: function `finish_timed` is never used
+   --> examples/support/v5base.rs:577:4
+    |
+577 | fn finish_timed(position: &Position, beam: Vec<BeamLine>, nodes: usize) -> Analysis {
+    |    ^^^^^^^^^^^^
+
+warning: `retaliator` (example "probe_capyfingerprint") generated 32 warnings (run `cargo fix --example "probe_capyfingerprint" -p retaliator` to apply 3 suggestions)
+    Finished `release` profile [optimized] target(s) in 0.10s
+     Running `target/release/examples/probe_capyfingerprint`
+v8 vs capy game 1 capy=blue: margin=+25 base[closes=30 cuts=30 first=2 reclose=12 farmed=1] capy[closes=24 cuts=36 first=3 largest=38]
+  farmed re-closes at own actions [52]
+v8 vs capy game 2 capy=blue: margin=-260 base[closes=24 cuts=20 first=2 reclose=7 farmed=0] capy[closes=34 cuts=34 first=2 largest=58]
+v8 vs capy game 3 capy=blue: margin=+80 base[closes=24 cuts=23 first=2 reclose=13 farmed=2] capy[closes=32 cuts=34 first=2 largest=48]
+  farmed re-closes at own actions [38, 56]
+v8 vs capy game 4 capy=blue: margin=-160 base[closes=27 cuts=34 first=2 reclose=9 farmed=0] capy[closes=29 cuts=36 first=2 largest=42]
+v8 vs capy game 5 capy=red: margin=-276 base[closes=25 cuts=30 first=3 reclose=9 farmed=0] capy[closes=29 cuts=33 first=4 largest=44]
+v8 vs capy game 6 capy=red: margin=+139 base[closes=15 cuts=36 first=2 reclose=5 farmed=0] capy[closes=42 cuts=32 first=4 largest=44]
+v8 vs capy game 7 capy=red: margin=+628 base[closes=22 cuts=31 first=3 reclose=8 farmed=2] capy[closes=31 cuts=33 first=4 largest=47]
+  farmed re-closes at own actions [49, 55]
+v8 vs capy game 8 capy=red: margin=+246 base[closes=25 cuts=32 first=2 reclose=14 farmed=0] capy[closes=29 cuts=36 first=4 largest=40]
+== v8 vs capy: W-L 5-3 D0 avg_margin=+53
+v2a vs capy game 1 capy=blue: margin=+322 base[closes=21 cuts=26 first=2 reclose=3 farmed=0] capy[closes=35 cuts=29 first=3 largest=54]
+v2a vs capy game 2 capy=blue: margin=+203 base[closes=20 cuts=33 first=2 reclose=5 farmed=0] capy[closes=33 cuts=30 first=2 largest=50]
+v2a vs capy game 3 capy=blue: margin=+406 base[closes=20 cuts=32 first=2 reclose=5 farmed=0] capy[closes=29 cuts=31 first=2 largest=42]
+v2a vs capy game 4 capy=blue: margin=+248 base[closes=23 cuts=32 first=2 reclose=11 farmed=1] capy[closes=29 cuts=29 first=2 largest=46]
+  farmed re-closes at own actions [54]
+v2a vs capy game 5 capy=red: margin=-109 base[closes=17 cuts=27 first=3 reclose=5 farmed=0] capy[closes=35 cuts=32 first=4 largest=39]
+v2a vs capy game 6 capy=red: margin=+709 base[closes=22 cuts=23 first=2 reclose=7 farmed=0] capy[closes=32 cuts=30 first=4 largest=42]
+v2a vs capy game 7 capy=red: margin=+731 base[closes=25 cuts=35 first=3 reclose=12 farmed=1] capy[closes=30 cuts=33 first=4 largest=45]
+  farmed re-closes at own actions [39]
+v2a vs capy game 8 capy=red: margin=+410 base[closes=25 cuts=31 first=2 reclose=13 farmed=2] capy[closes=25 cuts=35 first=4 largest=36]
+  farmed re-closes at own actions [33, 49]
+== v2a vs capy: W-L 7-1 D0 avg_margin=+365
