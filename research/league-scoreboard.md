@@ -85,3 +85,34 @@ tiebreak). Probes `opp_blobstyle`/`opp_sacstyle`/`opp_longfarm`, harness
 
 D2 running total: blob 0/32, sac 7/32 taken off us. Style ranking so far by
 damage: sac (25-7 for us) >> blob (32-0). Details: `lane-d2-sac.md`.
+
+## Lane D2 long-farm + sac-arms + capybara fingerprint — 2026-09-28 (branch `lane-d2-opp`, run 2)
+
+Tournament extended: the sac arms the task's list adds (scout/greedy/deployed
+search) + the long-farm mimic + the capybara fingerprint probe. Baselines now
+v3/v1/v2/v8 (deployed search, master's tip, probe path)/scout/greedy + the
+v2+avoid arm; 8 games/matchup, 4 per color. All four published sac rows
+REPRODUCE EXACTLY (deterministic protocol verified across runs). Logs:
+`logs_lane_d2_longfarm.txt`, `logs_lane_d2_sac_arms.txt`,
+`logs_lane_d2_capyfingerprint.txt`.
+
+| variant (matchup) | margins (W-L, avg) | verdict + note |
+|---|---|---|
+| longfarm (no-decay farm ledger, center mesh, prompt re-cuts) vs v3 | **1-7, -18.4% (-247)** | **most dangerous opponent measured in this repo**; its cuts 44-50/game in wins; loses both colors |
+| longfarm vs v1 | 3-5, -8.3% (-22) | 0-4 as Blue, WINS 3-1 as Red (our cut volume farms it back, its area collapses to 1.1-9.7) |
+| longfarm vs v2 | 5-3, -13.2% (+22) | same color split (1-3 as Blue, 3-1 as Red) |
+| longfarm vs v8 (deployed search) | **1-7, -62.9% (-484)** | **the deployed search loses BOTH colors** — worse than v2+avoid (5-3); TIE-SYM/doom-tail do not price the farm cycle |
+| longfarm vs scout | 3-5, -17.9% (-122) | 0-4 as Blue, 3-1 as Red |
+| longfarm vs greedy | **0-8, -169.9% (-1751)** | worst local matchup on record; the farm not even needed (greedy never rebuilds, out-banked 62.3%) |
+| longfarm vs v2+avoid | 5-3, -7.9% (+42) | **NOT a sweep (vs the Vlad farmer's 8-0): CUT_MEMORY 6 fails the 20-40-action cycle (C2 §4 H1 CONFIRMED locally)** — avoid set expires mid-cycle (spans 14-24 engine actions), re-closes on farm ground still outrank fresh ground |
+| sac vs scout | 6-2, +19.5% (+318) | NEW arm; the rusher out-farms the floor-3 banker but loses the trade |
+| sac vs greedy | **0-8, -204.5% (-2168)** | NEW arm; worst local matchup now (-2168 > longfarm's -1751) |
+| sac vs v8 (deployed search) | 5-3, +9.1% (+165) | NEW arm; the deployed search beats sac 5-3 (like v3) |
+| capybara fingerprint: v8 vs capy (mesh book + no-floor banker + detector-gated farm) | 5-3, +1.6% (+53) | contained locally; farmed re-closes 0-2/game (the ≥2x detector never fires vs our bots — the avoid wiring stops the rebuild pattern) |
+| capybara fingerprint: v2a vs capy | 7-1, +7.4% (+365) | the anti-rebuild arm wins; same 0-2 farm rate |
+
+D2 running total after run 2: blob 0/56, sac 20/56, longfarm **38/56**
+taken off us (7 arms each for sac/longfarm, 6 for blob's earlier rows +
+this run's additions). Style ranking by damage: **longfarm >> sac >> blob**.
+Hypotheses: `d2-longfarm.md` (H-B-D2-FARM1/2), `d2-capyfingerprint.md`,
+`lane-d2-sac.md` (H-B-D2-SAC1/2/3), `lane-d2-blob.md` (H-B-D2-BLOB1/2).

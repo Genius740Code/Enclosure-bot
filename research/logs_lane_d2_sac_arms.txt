@@ -1,0 +1,396 @@
+warning: variable does not need to be mutable
+   --> src/search.rs:189:13
+    |
+189 |         let mut end = position_after_pv(position, &pv);
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/search.rs:209:13
+    |
+209 |         let mut visits = 1 + replies.len();
+    |             ----^^^^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: `retaliator` (lib) generated 2 warnings (run `cargo fix --lib -p retaliator` to apply 2 suggestions)
+warning: unnecessary parentheses around pattern
+  --> examples/opp_sacstyle.rs:57:39
+   |
+57 |     if let (Some((popped, cut)), Some(((_, gain, _))) ) = (best_cut, best_close) {
+   |                                       ^            ^
+   |
+   = note: `#[warn(unused_parens)]` (part of `#[warn(unused)]`) on by default
+help: remove these parentheses
+   |
+57 -     if let (Some((popped, cut)), Some(((_, gain, _))) ) = (best_cut, best_close) {
+57 +     if let (Some((popped, cut)), Some((_, gain, _)) ) = (best_cut, best_close) {
+   |
+
+warning: value assigned to `area_after` is never read
+   --> examples/opp_gbstyle.rs:92:30
+    |
+ 92 |         let mut area_after = 0.0;
+    |                              ^^^ this value is reassigned later and never used
+...
+103 |                 area_after = game.position().area(if me_blue { Player::Blue } else { Player::Red }).to_f64();
+    |                 -------------------------------------------------------------------------------------------- `area_after` is overwritten here before the previous value is read
+    |
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/scoutbase.rs:27:9
+   |
+25 | pub struct Analysis {
+   |            -------- fields in this struct
+26 |     /// Blue's lead after the best move and its reply.
+27 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+28 |     /// 2 when replies were searched.
+29 |     pub depth: usize,
+   |         ^^^^^
+30 |     /// Positions searched.
+31 |     pub nodes: usize,
+   |         ^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/scoutbase.rs:41:9
+   |
+36 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+41 |     pub pv: Vec<Move>,
+   |         ^^
+42 |     /// 1, plus the replies searched.
+43 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/v1base.rs:47:9
+   |
+45 | pub struct Analysis {
+   |            -------- fields in this struct
+46 |     /// Blue's lead after the best move and its reply.
+47 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+48 |     /// 2 when replies were searched.
+49 |     pub depth: usize,
+   |         ^^^^^
+50 |     /// Positions searched.
+51 |     pub nodes: usize,
+   |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/v1base.rs:62:9
+   |
+56 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+62 |     pub pv: Vec<Move>,
+   |         ^^
+63 |     /// 1, plus the replies searched.
+64 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/v2base.rs:63:9
+   |
+61 | pub struct Analysis {
+   |            -------- fields in this struct
+62 |     /// Blue's lead after the best move and its reply.
+63 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+64 |     /// 2 when replies were searched.
+65 |     pub depth: usize,
+   |         ^^^^^
+66 |     /// Positions searched.
+67 |     pub nodes: usize,
+   |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/v2base.rs:78:9
+   |
+72 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+78 |     pub pv: Vec<Move>,
+   |         ^^
+79 |     /// 1, plus the replies searched.
+80 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: function `analyze` is never used
+  --> examples/support/v2base.rs:94:8
+   |
+94 | pub fn analyze(position: &Position, budget: usize) -> Analysis {
+   |        ^^^^^^^
+
+warning: constant `MESH_B_TXT` is never used
+  --> examples/support/v5base.rs:92:7
+   |
+92 | const MESH_B_TXT: [[&str; 2]; 8] = [
+   |       ^^^^^^^^^^
+
+warning: constant `MESH_R_TXT` is never used
+   --> examples/support/v5base.rs:103:7
+    |
+103 | const MESH_R_TXT: [[&str; 2]; 8] = [
+    |       ^^^^^^^^^^
+
+warning: function `decode_pair` is never used
+   --> examples/support/v5base.rs:114:4
+    |
+114 | fn decode_pair(pair: [&str; 2]) -> Move {
+    |    ^^^^^^^^^^^
+
+warning: function `decode_prefix` is never used
+   --> examples/support/v5base.rs:123:4
+    |
+123 | fn decode_prefix(txt: [[&str; 2]; 8]) -> [Move; 8] {
+    |    ^^^^^^^^^^^^^
+
+warning: static `MESH_B` is never used
+   --> examples/support/v5base.rs:127:8
+    |
+127 | static MESH_B: LazyLock<[Move; 8]> = LazyLock::new(|| decode_prefix(MESH_B_TXT));
+    |        ^^^^^^
+
+warning: static `MESH_R` is never used
+   --> examples/support/v5base.rs:128:8
+    |
+128 | static MESH_R: LazyLock<[Move; 8]> = LazyLock::new(|| decode_prefix(MESH_R_TXT));
+    |        ^^^^^^
+
+warning: function `side_to_move` is never used
+   --> examples/support/v5base.rs:133:4
+    |
+133 | fn side_to_move(total: usize) -> Player {
+    |    ^^^^^^^^^^^^
+
+warning: function `mesh_prefix` is never used
+   --> examples/support/v5base.rs:153:8
+    |
+153 | pub fn mesh_prefix(position: &Position, history: &[Move]) -> Option<Move> {
+    |        ^^^^^^^^^^^
+
+warning: function `best_move_routed` is never used
+   --> examples/support/v5base.rs:206:8
+    |
+206 | pub fn best_move_routed(
+    |        ^^^^^^^^^^^^^^^^
+
+warning: constant `CUT_MEMORY` is never used
+   --> examples/support/v5base.rs:224:11
+    |
+224 | pub const CUT_MEMORY: usize = 6;
+    |           ^^^^^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+   --> examples/support/v5base.rs:292:9
+    |
+290 | pub struct Analysis {
+    |            -------- fields in this struct
+291 |     /// Blue's lead after the best move and its reply.
+292 |     pub evaluation: f64,
+    |         ^^^^^^^^^^
+293 |     /// 2 when replies were searched.
+294 |     pub depth: usize,
+    |         ^^^^^
+295 |     /// Positions searched.
+296 |     pub nodes: usize,
+    |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+   --> examples/support/v5base.rs:307:9
+    |
+301 | pub struct Candidate {
+    |            --------- fields in this struct
+...
+307 |     pub pv: Vec<Move>,
+    |         ^^
+308 |     /// 1, plus the replies searched.
+309 |     pub visits: usize,
+    |         ^^^^^^
+
+warning: function `analyze` is never used
+   --> examples/support/v5base.rs:326:8
+    |
+326 | pub fn analyze(position: &Position, budget: usize) -> Analysis {
+    |        ^^^^^^^
+
+warning: constant `THINK_SOFT_MS` is never used
+   --> examples/support/v5base.rs:425:11
+    |
+425 | pub const THINK_SOFT_MS: u64 = 2000;
+    |           ^^^^^^^^^^^^^
+
+warning: constant `THINK_HARD_MS` is never used
+   --> examples/support/v5base.rs:426:11
+    |
+426 | pub const THINK_HARD_MS: u64 = 4800;
+    |           ^^^^^^^^^^^^^
+
+warning: constant `VOLATILE_GAP` is never used
+   --> examples/support/v5base.rs:429:7
+    |
+429 | const VOLATILE_GAP: f64 = 2.0;
+    |       ^^^^^^^^^^^^
+
+warning: constant `BEAM` is never used
+   --> examples/support/v5base.rs:431:7
+    |
+431 | const BEAM: usize = 8;
+    |       ^^^^
+
+warning: struct `BeamLine` is never constructed
+   --> examples/support/v5base.rs:433:8
+    |
+433 | struct BeamLine {
+    |        ^^^^^^^^
+
+warning: function `selection_adjusted` is never used
+   --> examples/support/v5base.rs:447:4
+    |
+447 | fn selection_adjusted(
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: function `sort_beam` is never used
+   --> examples/support/v5base.rs:486:4
+    |
+486 | fn sort_beam(beam: &mut [BeamLine]) {
+    |    ^^^^^^^^^
+
+warning: function `analyze_timed` is never used
+   --> examples/support/v5base.rs:500:8
+    |
+500 | pub fn analyze_timed(position: &Position, avoid: &[Point]) -> Analysis {
+    |        ^^^^^^^^^^^^^
+
+warning: function `finish_timed` is never used
+   --> examples/support/v5base.rs:577:4
+    |
+577 | fn finish_timed(position: &Position, beam: Vec<BeamLine>, nodes: usize) -> Analysis {
+    |    ^^^^^^^^^^^^
+
+warning: function `main` is never used
+  --> examples/opp_gbstyle.rs:87:4
+   |
+87 | fn main() {
+   |    ^^^^
+
+warning: field `visits` is never read
+  --> examples/support/scoutbase.rs:43:9
+   |
+36 | pub struct Candidate {
+   |            --------- field in this struct
+...
+43 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: function `best_move` is never used
+  --> examples/support/scoutbase.rs:46:8
+   |
+46 | pub fn best_move(position: &Position) -> Option<Move> {
+   |        ^^^^^^^^^
+
+warning: function `main` is never used
+  --> examples/opp_vladstyle.rs:65:4
+   |
+65 | fn main() {
+   |    ^^^^
+
+warning: function `main` is never used
+  --> examples/opp_angelstyle.rs:44:4
+   |
+44 | fn main() {
+   |    ^^^^
+
+warning: function `main` is never used
+   --> examples/opp_blobstyle.rs:182:4
+    |
+182 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> examples/opp_sacstyle.rs:125:4
+    |
+125 | fn main() {
+    |    ^^^^
+
+warning: function `main` is never used
+   --> examples/opp_longfarm.rs:218:4
+    |
+218 | fn main() {
+    |    ^^^^
+
+warning: `retaliator` (example "probe_match_d2") generated 39 warnings (run `cargo fix --example "probe_match_d2" -p retaliator` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 0.12s
+     Running `target/release/examples/probe_match_d2 sac`
+v3 vs sac game 1 base=blue: margin=+149 base[26.0 close=26 cut=33 first=3] sac[24.4 close=18 cut=42 first=2]
+v3 vs sac game 2 base=blue: margin=-136 base[51.8 close=24 cut=27 first=2] sac[35.6 close=26 cut=34 first=2]
+v3 vs sac game 3 base=blue: margin=-424 base[24.7 close=25 cut=28 first=3] sac[36.0 close=22 cut=37 first=2]
+v3 vs sac game 4 base=blue: margin=+79 base[38.2 close=33 cut=34 first=3] sac[27.8 close=22 cut=37 first=2]
+v3 vs sac game 5 base=red: margin=-179 base[5.6 close=21 cut=40 first=2] sac[0.0 close=31 cut=41 first=3]
+v3 vs sac game 6 base=red: margin=+520 base[16.0 close=22 cut=38 first=2] sac[10.0 close=26 cut=41 first=2]
+v3 vs sac game 7 base=red: margin=+610 base[49.5 close=25 cut=39 first=2] sac[44.1 close=26 cut=37 first=3]
+v3 vs sac game 8 base=red: margin=+145 base[12.9 close=25 cut=39 first=2] sac[4.5 close=29 cut=40 first=2]
+== v3 vs sac: W-L 5-3 D0 avg_margin=+6.0% (base persp, +95) | sac persp: 3-5 avg_margin=-11.9% | in 3 losses: base[close=23.3 cut=31.7 first=2.3] | in 3 losses: sac[close=26.3 cut=37.3 first=2.3]
+v1 vs sac game 1 base=blue: margin=+318 base[11.7 close=22 cut=42 first=5] sac[14.5 close=21 cut=44 first=2]
+v1 vs sac game 2 base=blue: margin=+565 base[39.4 close=22 cut=33 first=3] sac[18.9 close=22 cut=38 first=2]
+v1 vs sac game 3 base=blue: margin=+124 base[32.5 close=22 cut=33 first=3] sac[20.2 close=22 cut=37 first=2]
+v1 vs sac game 4 base=blue: margin=-104 base[12.7 close=19 cut=34 first=3] sac[21.5 close=27 cut=37 first=2]
+v1 vs sac game 5 base=red: margin=+351 base[37.0 close=25 cut=34 first=2] sac[38.5 close=22 cut=43 first=3]
+v1 vs sac game 6 base=red: margin=+633 base[26.3 close=20 cut=37 first=2] sac[14.7 close=30 cut=38 first=2]
+v1 vs sac game 7 base=red: margin=+533 base[22.5 close=20 cut=40 first=2] sac[4.5 close=30 cut=37 first=3]
+v1 vs sac game 8 base=red: margin=+927 base[47.5 close=10 cut=40 first=2] sac[28.1 close=43 cut=31 first=2]
+== v1 vs sac: W-L 7-1 D0 avg_margin=+26.5% (base persp, +418) | sac persp: 1-7 avg_margin=-41.9% | in 1 losses: base[close=19.0 cut=34.0 first=3.0] | in 1 losses: sac[close=27.0 cut=37.0 first=2.0]
+v2 vs sac game 1 base=blue: margin=+281 base[16.9 close=24 cut=40 first=5] sac[7.6 close=21 cut=45 first=2]
+v2 vs sac game 2 base=blue: margin=+258 base[35.0 close=25 cut=34 first=2] sac[18.6 close=20 cut=42 first=2]
+v2 vs sac game 3 base=blue: margin=-209 base[20.0 close=23 cut=30 first=3] sac[27.0 close=22 cut=38 first=2]
+v2 vs sac game 4 base=blue: margin=+72 base[13.2 close=18 cut=31 first=2] sac[8.9 close=28 cut=40 first=2]
+v2 vs sac game 5 base=red: margin=+72 base[11.7 close=30 cut=38 first=2] sac[9.3 close=17 cut=41 first=3]
+v2 vs sac game 6 base=red: margin=+458 base[21.6 close=22 cut=34 first=2] sac[10.3 close=25 cut=39 first=2]
+v2 vs sac game 7 base=red: margin=+230 base[22.9 close=17 cut=38 first=2] sac[0.8 close=28 cut=37 first=3]
+v2 vs sac game 8 base=red: margin=+27 base[18.8 close=21 cut=36 first=2] sac[41.4 close=22 cut=41 first=2]
+== v2 vs sac: W-L 7-1 D0 avg_margin=+12.2% (base persp, +149) | sac persp: 1-7 avg_margin=-16.9% | in 1 losses: base[close=23.0 cut=30.0 first=3.0] | in 1 losses: sac[close=22.0 cut=38.0 first=2.0]
+v8 vs sac game 1 base=blue: margin=-63 base[49.7 close=22 cut=37 first=3] sac[46.5 close=27 cut=40 first=2]
+v8 vs sac game 2 base=blue: margin=-39 base[41.0 close=28 cut=34 first=2] sac[39.0 close=26 cut=37 first=2]
+v8 vs sac game 3 base=blue: margin=+467 base[21.8 close=27 cut=42 first=3] sac[10.5 close=27 cut=38 first=2]
+v8 vs sac game 4 base=blue: margin=+174 base[19.4 close=31 cut=38 first=3] sac[19.5 close=26 cut=42 first=2]
+v8 vs sac game 5 base=red: margin=-1097 base[21.4 close=37 cut=31 first=2] sac[47.5 close=11 cut=43 first=3]
+v8 vs sac game 6 base=red: margin=+342 base[9.2 close=22 cut=39 first=2] sac[8.1 close=24 cut=41 first=2]
+v8 vs sac game 7 base=red: margin=+195 base[29.9 close=24 cut=36 first=2] sac[30.9 close=28 cut=39 first=3]
+v8 vs sac game 8 base=red: margin=+1344 base[37.6 close=23 cut=42 first=2] sac[3.2 close=25 cut=31 first=2]
+== v8 vs sac: W-L 5-3 D0 avg_margin=+9.1% (base persp, +165) | sac persp: 3-5 avg_margin=-31.8% | in 3 losses: base[close=29.0 cut=34.0 first=2.3] | in 3 losses: sac[close=21.3 cut=40.0 first=2.3]
+scout vs sac game 1 base=blue: margin=+510 base[3.2 close=21 cut=38 first=5] sac[0.7 close=14 cut=42 first=2]
+scout vs sac game 2 base=blue: margin=+429 base[21.0 close=21 cut=30 first=3] sac[7.8 close=20 cut=37 first=2]
+scout vs sac game 3 base=blue: margin=-85 base[18.3 close=24 cut=31 first=3] sac[22.5 close=18 cut=37 first=2]
+scout vs sac game 4 base=blue: margin=+9 base[22.4 close=20 cut=28 first=3] sac[13.5 close=20 cut=37 first=2]
+scout vs sac game 5 base=red: margin=-19 base[1.8 close=27 cut=39 first=2] sac[4.5 close=24 cut=42 first=3]
+scout vs sac game 6 base=red: margin=+112 base[15.3 close=15 cut=36 first=2] sac[27.0 close=34 cut=41 first=2]
+scout vs sac game 7 base=red: margin=+745 base[13.1 close=27 cut=36 first=2] sac[0.8 close=20 cut=39 first=3]
+scout vs sac game 8 base=red: margin=+844 base[29.0 close=20 cut=38 first=2] sac[4.8 close=32 cut=33 first=2]
+== scout vs sac: W-L 6-2 D0 avg_margin=+19.5% (base persp, +318) | sac persp: 2-6 avg_margin=-33.1% | in 2 losses: base[close=25.5 cut=35.0 first=2.5] | in 2 losses: sac[close=21.0 cut=39.5 first=2.5]
+greedy vs sac game 1 base=blue: margin=-2388 base[41.2 close=40 cut=13 first=3] sac[106.3 close=22 cut=8 first=2]
+greedy vs sac game 2 base=blue: margin=-2237 base[24.2 close=43 cut=18 first=2] sac[87.4 close=16 cut=24 first=2]
+greedy vs sac game 3 base=blue: margin=-2413 base[39.0 close=43 cut=12 first=2] sac[107.7 close=23 cut=11 first=2]
+greedy vs sac game 4 base=blue: margin=-2016 base[23.4 close=43 cut=22 first=2] sac[76.8 close=16 cut=28 first=2]
+greedy vs sac game 5 base=red: margin=-2534 base[22.5 close=34 cut=5 first=5] sac[106.4 close=20 cut=19 first=3]
+greedy vs sac game 6 base=red: margin=-1719 base[7.2 close=32 cut=12 first=5] sac[72.8 close=12 cut=37 first=2]
+greedy vs sac game 7 base=red: margin=-2443 base[36.9 close=36 cut=5 first=5] sac[121.5 close=22 cut=13 first=3]
+greedy vs sac game 8 base=red: margin=-1594 base[14.8 close=30 cut=8 first=5] sac[70.4 close=16 cut=29 first=2]
+== greedy vs sac: W-L 0-8 D0 avg_margin=-204.5% (base persp, -2168) | sac persp: 8-0 avg_margin=+66.5% | in 8 losses: base[close=37.6 cut=11.9 first=3.6] | in 8 losses: sac[close=18.4 cut=21.1 first=2.2]
+v2+avoid vs sac game 1 base=blue: margin=+349 base[10.2 close=25 cut=38 first=5] sac[8.0 close=18 cut=43 first=2]
+v2+avoid vs sac game 2 base=blue: margin=+175 base[28.3 close=25 cut=37 first=2] sac[21.6 close=20 cut=42 first=2]
+v2+avoid vs sac game 3 base=blue: margin=-130 base[31.9 close=22 cut=36 first=3] sac[32.9 close=28 cut=36 first=2]
+v2+avoid vs sac game 4 base=blue: margin=+84 base[44.1 close=19 cut=35 first=2] sac[15.0 close=22 cut=41 first=2]
+v2+avoid vs sac game 5 base=red: margin=-378 base[22.5 close=20 cut=40 first=2] sac[43.0 close=34 cut=43 first=3]
+v2+avoid vs sac game 6 base=red: margin=+456 base[7.4 close=23 cut=36 first=2] sac[5.9 close=24 cut=40 first=2]
+v2+avoid vs sac game 7 base=red: margin=+230 base[22.9 close=17 cut=38 first=2] sac[0.8 close=28 cut=37 first=3]
+v2+avoid vs sac game 8 base=red: margin=+65 base[2.1 close=19 cut=36 first=2] sac[5.0 close=21 cut=40 first=2]
+== v2+avoid vs sac: W-L 6-2 D0 avg_margin=+10.2% (base persp, +106) | sac persp: 2-6 avg_margin=-17.8% | in 2 losses: base[close=21.0 cut=38.0 first=2.5] | in 2 losses: sac[close=31.0 cut=39.5 first=2.5]
