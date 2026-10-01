@@ -1,0 +1,52 @@
+R-chall-aggro-botIsblue.moves.json: builds=38 survived=16 won=true
+R-chall-aggro-botIsred.moves.json: builds=34 survived=3 won=false
+R-chall-blob-botIsblue.moves.json: builds=52 survived=52 won=false
+R-chall-blob-botIsred.moves.json: builds=36 survived=35 won=false
+R-chall-junk-botIsblue.moves.json: builds=33 survived=33 won=true
+R-chall-junk-botIsred.moves.json: builds=20 survived=20 won=true
+R-chall-neck-botIsblue.moves.json: builds=46 survived=14 won=false
+R-chall-neck-botIsred.moves.json: builds=35 survived=3 won=false
+R-chall-random-botIsblue-s1000.moves.json: builds=49 survived=49 won=false
+R-chall-random-botIsblue-s1001.moves.json: builds=49 survived=49 won=false
+R-chall-random-botIsblue-s1002.moves.json: builds=48 survived=48 won=true
+R-chall-random-botIsblue-s1003.moves.json: builds=37 survived=37 won=true
+R-chall-random-botIsblue-s1004.moves.json: builds=52 survived=52 won=false
+R-chall-random-botIsblue-s1005.moves.json: builds=52 survived=52 won=false
+R-chall-random-botIsblue-s1006.moves.json: builds=45 survived=45 won=true
+R-chall-random-botIsblue-s1007.moves.json: builds=43 survived=43 won=false
+R-chall-random-botIsblue-s1008.moves.json: builds=42 survived=42 won=true
+R-chall-random-botIsblue-s1009.moves.json: builds=41 survived=41 won=true
+R-chall-random-botIsred-s2000.moves.json: builds=30 survived=30 won=true
+R-chall-random-botIsred-s2001.moves.json: builds=33 survived=33 won=true
+R-chall-random-botIsred-s2002.moves.json: builds=21 survived=19 won=true
+R-chall-random-botIsred-s2003.moves.json: builds=27 survived=27 won=true
+R-chall-random-botIsred-s2004.moves.json: builds=22 survived=20 won=true
+R-chall-random-botIsred-s2005.moves.json: builds=31 survived=29 won=true
+R-chall-random-botIsred-s2006.moves.json: builds=32 survived=32 won=true
+R-chall-random-botIsred-s2007.moves.json: builds=33 survived=27 won=true
+R-chall-random-botIsred-s2008.moves.json: builds=26 survived=24 won=true
+R-chall-random-botIsred-s2009.moves.json: builds=35 survived=35 won=true
+R-chall-sandbag-botIsblue.moves.json: builds=45 survived=45 won=true
+R-chall-sandbag-botIsred.moves.json: builds=39 survived=39 won=true
+R-chall-sprawl-botIsblue.moves.json: builds=43 survived=40 won=true
+R-chall-sprawl-botIsred.moves.json: builds=39 survived=34 won=true
+R-chall-turtle-botIsblue.moves.json: builds=45 survived=45 won=true
+R-chall-turtle-botIsred.moves.json: builds=37 survived=37 won=true
+chall-aggro-botIsblue.moves.json: builds=31 survived=2 won=false
+chall-aggro-botIsred.moves.json: builds=23 survived=1 won=false
+chall-blob-botIsblue.moves.json: builds=32 survived=32 won=false
+chall-blob-botIsred.moves.json: builds=16 survived=15 won=true
+chall-neck-botIsblue.moves.json: builds=30 survived=0 won=false
+chall-neck-botIsred.moves.json: builds=26 survived=2 won=false
+chall-sandbag-botIsblue.moves.json: builds=40 survived=40 won=true
+chall-sandbag-botIsred.moves.json: builds=16 survived=15 won=true
+chall-sprawl-botIsblue.moves.json: builds=45 survived=41 won=true
+chall-sprawl-botIsred.moves.json: builds=13 survived=13 won=true
+chall-turtle-botIsblue.moves.json: builds=40 survived=40 won=true
+chall-turtle-botIsred.moves.json: builds=16 survived=16 won=true
+-- survival = no later cut touching build nodes --
+CHAIR Blue loss: 345/436 = 79.1%
+CHAIR Blue win: 513/542 = 94.6%
+CHAIR Red loss: 44/154 = 28.6%
+CHAIR Red win: 465/486 = 95.7%
+POOLED 1367/1618 = 84.5%
