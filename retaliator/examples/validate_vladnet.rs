@@ -174,7 +174,14 @@ fn analyze_game(game_id: &str) -> Vec<PredictionResult> {
         }
     };
 
-    let game_json: serde_json::Value = match response.body_mut().read_json() {
+    let body = match response.body_mut().read_to_string() {
+        Ok(b) => b,
+        Err(e) => {
+            eprintln!("Failed to read body for {}: {}", game_id, e);
+            return vec![];
+        }
+    };
+    let game_json: serde_json::Value = match serde_json::from_str(&body) {
         Ok(j) => j,
         Err(e) => {
             eprintln!("Failed to parse JSON for {}: {}", game_id, e);
