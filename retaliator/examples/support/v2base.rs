@@ -211,8 +211,10 @@ fn ranked(
             if first {
                 // Anti-rebuild routing: our loops were cut near these points
                 // recently; re-closing there gets farmed. Counter-cutting
-                // (breaking something) is exempt. (Rival-analysis steal #1.)
-                if outcome.broken.is_none() && near_points(avoid.iter().copied(), target, CUT_RADIUS) {
+                // (breaking something) was exempt, but that IS the farming
+                // cycle: we get cut -> we re-close (breaking their loop) ->
+                // they cut again. Penalize the re-close regardless of break.
+                if near_points(avoid.iter().copied(), target, CUT_RADIUS) {
                     priority -= REBUILD_PENALTY * hz;
                 }
                 // Patience: don't snatch tiny loops in the opening while the

@@ -196,14 +196,16 @@ pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -
             let hz_sel = f64::from(position.scoring_events_left()).min(HORIZON);
             let mut probe = position.clone();
             let oc = probe.apply_unchecked(mv);
-            if oc.broken.is_none() {
-                let tgt = mv.target().expect("legal moves end on the board");
-                if near_points(avoid.iter().copied(), tgt, CUT_RADIUS) {
-                    adjusted -= REBUILD_PENALTY * hz_sel;
-                }
-                if near_fresh_enemy(position, tgt) {
-                    adjusted -= FRESH_PENALTY * hz_sel;
-                }
+            let tgt = mv.target().expect("legal moves end on the board");
+            // Anti-rebuild: penalize ALL moves near recent cuts (not just non-breaking).
+            // Re-closes that break enemy loops were exempt, but that IS the
+            // farming cycle: we get cut -> we re-close (breaking their loop) ->
+            // they cut again. Penalize the re-close regardless of break status.
+            if near_points(avoid.iter().copied(), tgt, CUT_RADIUS) {
+                adjusted -= REBUILD_PENALTY * hz_sel;
+            }
+            if oc.broken.is_none() && near_fresh_enemy(position, tgt) {
+                adjusted -= FRESH_PENALTY * hz_sel;
             }
         }
         let mut visits = 1 + replies.len();
@@ -367,8 +369,10 @@ fn ranked(
                 }
                 // Anti-rebuild routing: our loops were cut near these points
                 // recently; re-closing there gets farmed. Counter-cutting
-                // (breaking something) is exempt. (Rival-analysis steal #1.)
-                if outcome.broken.is_none() && near_points(avoid.iter().copied(), target, CUT_RADIUS) {
+                // (breaking something) was exempt, but that IS the farming
+                // cycle: we get cut -> we re-close (breaking their loop) ->
+                // they cut again. Penalize the re-close regardless of break.
+                if near_points(avoid.iter().copied(), target, CUT_RADIUS) {
                     priority -= REBUILD_PENALTY * hz;
                 }
                 // Patience: don't snatch tiny loops in the opening while the
