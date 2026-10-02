@@ -45,7 +45,7 @@ const CONTACT_PENALTY: f64 = 1.0;
 const DEADWOOD_PENALTY: f64 = 2.0;
 const ZERO_CUT_PENALTY: f64 = 1.0;
 /// Whether to apply the zero-yield-cut penalty (cut that gains no area).
-const ZERO_CUT_PENALTY_ON: bool = false;
+const ZERO_CUT_PENALTY_ON: bool = true;
 /// Beyond this Chebyshev distance to the nearest enemy node, a no-area
 /// reinforcement counts as dead wood in the back.
 const DEADWOOD_ENEMY_DIST: i8 = 3;
