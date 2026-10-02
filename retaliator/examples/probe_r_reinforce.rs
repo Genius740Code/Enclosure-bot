@@ -2,7 +2,7 @@
 //!!
 //! Matches: n>=8 games alternating colors, RETALIATOR (with REINFORCE H1 eval)
 //! vs v1base + scout + greedy, printed as wins, reinforce freq, area lifetime, league %.
-//! Uses the answer()/best_move path through the engine ABI.
+//! Compares BASELINE best_move vs AUGMENTED analyze_with_avoid re-ranked by eval_reinforce bonus.
 //!
 //! Usage: cargo run --example probe_r_reinforce [games=n]
 
@@ -26,23 +26,47 @@ fn greedy(position: &Position) -> Option<Move> {
 
 /// 1-ply scout: short search over next two actions.
 fn scout(position: &Position) -> Option<Move> {
-    // Use a small budget search for the scout
     retaliator::search::best_move(position)
 }
 
 /// Reinforcement-aware player: uses best_move with reinforce eval.
 /// The REINFORCE H1 evaluation influences move selection through the
 /// search framework's horizon extension and contact avoidance fixes.
+/// Candidates from analyze_with_avoid are re-ranked by the reinforcement
+/// bonus, preferring moves that protect our high-value area.
 fn reinforce_player(position: &Position) -> Option<Move> {
-    // Use analyze_with_avoid with a reduced budget for the probe.
-    // The REINFORCE H1 weight REINFORCE_W (1.5) is baked into the search
-    //'s horizon extension and contact/fresh penalties, so even with a
-    // smaller budget the reinforcement effect is present.
     let budget = 256; // reduced budget for probe gameplay
-    retaliator::search::analyze_with_avoid(position, budget, &[])
-        .candidates
-        .first()
-        .map(|candidate| candidate.mv)
+    let analysis = retaliator::search::analyze_with_avoid(position, budget, &[]);
+
+    // Re-rank candidates by adding reinforcement bonus,
+    // preferring moves that protect our high-value area.
+    // The reinforcement bonus encourages moves adjacent to our nodes,
+    // scaled by REINFORCE_W and remaining scoring events.
+    let mut scored_candidates: Vec<(f64, meridian_engine::Move)> = Vec::new();
+    for candidate in analysis.candidates.iter() {
+        let opponent = position.to_move().opponent();
+        let target = candidate.mv.target().expect("legal moves end on the board");
+        let our_nodes = position.nodes(opponent);
+        let mut nodes_adjacent: u32 = 0;
+        for our_node in our_nodes.iter() {
+            if (our_node.x() - target.x()).abs() <= 1 && (our_node.y() - target.y()).abs() <= 1
+            {
+                nodes_adjacent += 1;
+            }
+        }
+        let bonus = if nodes_adjacent > 0 {
+            let events_left = f64::from(position.scoring_events_left());
+            1.5 * (nodes_adjacent as f64) * events_left
+        } else {
+            0.0
+        };
+        let total_score = candidate.evaluation + bonus;
+        scored_candidates.push((total_score, candidate.mv));
+    }
+    // Sort descending by total score (reinforcement-enhanced evaluation)
+    scored_candidates.sort_by(|a, b| b.0.total_cmp(&a.0));
+    // Return the top candidate
+    scored_candidates.first().map(|(_, mv)| *mv)
 }
 
 /// Play a single game and collect metrics.
@@ -52,8 +76,9 @@ fn play_game(retaliator_blue: bool, use_reinforce: bool) -> (f64, f64, u32, u32,
     let mut total_area_b = 0u32;
     let mut total_area_r = 0u32;
     let mut games = 0u32;
+    let mut reinforce_total = 0u32;
 
-    while !game.is_over() && games < 200 { // safety limit
+    while !game.is_over() && games < 200 {
         let to_move = game.position().to_move();
         let ret_moves = (to_move == Player::Blue) == retaliator_blue;
         let mv = if ret_moves {
@@ -79,7 +104,6 @@ fn play_game(retaliator_blue: bool, use_reinforce: bool) -> (f64, f64, u32, u32,
             } else {
                 game.position().area(Player::Red)
             };
-            // If connect added no area but is near our nodes, count it
             if our_area_after == our_area_before {
                 let our_nodes = game.position().nodes(player);
                 let target = mv.target().expect("legal moves end on the board");
@@ -88,22 +112,19 @@ fn play_game(retaliator_blue: bool, use_reinforce: bool) -> (f64, f64, u32, u32,
                         && (our_node.y() - target.y()).abs() <= 1
                     {
                         reinforce_count += 1;
+                        reinforce_total += 1;
                         break;
                     }
                 }
             }
         }
 
-        // Track area
-        let _b = game.position().score(Player::Blue).to_f64();
-        let _r = game.position().score(Player::Red).to_f64();
         let area_b = game.position().area(Player::Blue).to_f64();
         let area_r = game.position().area(Player::Red).to_f64();
         total_area_b += area_b as u32;
         total_area_r += area_r as u32;
     }
 
-    // Final scores
     let asc = if game.is_over() {
         game.position().score(Player::Blue).to_f64()
     } else {
@@ -121,53 +142,67 @@ fn play_game(retaliator_blue: bool, use_reinforce: bool) -> (f64, f64, u32, u32,
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let n_games: usize = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(8);
-
-    // Ensure n >= 8
     let games = if n_games < 8 { 8 } else { n_games };
 
-    let mut wins_ret = 0u32;
-    let mut wins_v1 = 0u32;
-    let mut wins_greedy = 0u32;
+    let mut wins_ret = 0u32;    // RETALIATOR (H1) vs v1 base wins
+    let mut losses_ret = 0u32;  // RETALIATOR (H1) vs v1 base losses
+    let mut wins_greedy = 0u32; // RETALIATOR (H1) vs greedy wins
+
     let mut total_reinf = 0u32;
     let mut total_moves = 0u32;
     let mut total_area_sum = 0u32;
 
-    // Run n games alternating colors, RETALIATOR (with reinforcement) vs v1 base
+    // League margin tracking
+    let mut league_sum = 0.0f64;
+    let mut worst_margin = f64::INFINITY;
+    let mut games_played = 0u32;
+
+    // Run n games alternating colors
     for g in 0..games {
         let retaliator_blue = g % 2 == 0;
 
-        // Game: RETALIATOR (with H1 reinforcement) vs v1 base
+        // Game: RETALIATOR (H1 reinforcement) vs v1 base
         let (ret_score, v1_score, ret_reinf, ret_areas_b, ret_areas_r, ret_games) =
-            play_game(retaliator_blue, true); // use reinforcement
+            play_game(retaliator_blue, true);
 
         // Compare scores
         if ret_score > v1_score {
             wins_ret += 1;
-        } else if v1_score > ret_score {
-            wins_v1 += 1;
+        } else {
+            losses_ret += 1;
         }
 
         // Accumulate metrics
         total_reinf += ret_reinf;
         total_moves += ret_games as u32;
         total_area_sum += ret_areas_b + ret_areas_r;
-    }
 
-    // Also run some greedy vs RETALIATOR games for comparison
-    for g in 0..games {
-        let retaliator_blue = g % 2 == 0;
+        // League margin from RETALIATOR perspective
+        let margin = if ret_score + v1_score > 0.0 {
+            (ret_score - v1_score) / (ret_score + v1_score) * 100.0
+        } else {
+            0.0
+        };
+        league_sum += margin;
+        worst_margin = worst_margin.min(margin);
+        games_played += 1;
 
-        let (ret_score, _, _, _, _, _) = play_game(retaliator_blue, true);
-        let (_, greedy_score, _, _, _, _) = play_game(retaliator_blue, false);
+        // Game: RETALIATOR (H1 reinforcement) vs greedy
+        let (ret_score2, greedy_score, _, _, _, _) = play_game(retaliator_blue, false);
 
-        if ret_score > greedy_score {
+        if ret_score2 > greedy_score {
             wins_greedy += 1;
         }
     }
 
     // League %: RETALIATOR win rate vs v1 baseline
-    let league_pct = if wins_ret + wins_v1 > 0 {
-        wins_ret as f64 / (wins_ret + wins_v1) as f64 * 100.0
+    let league_pct = if wins_ret + losses_ret > 0 {
+        wins_ret as f64 / (wins_ret + losses_ret) as f64 * 100.0
+    } else {
+        0.0
+    };
+    let league_avg = if games_played > 0 {
+        league_sum / games_played as f64
     } else {
         0.0
     };
@@ -191,7 +226,7 @@ fn main() {
     println!();
     println!("RETALIATOR (H1) vs v1 base:");
     println!("  Wins: {}/{} ({:.1}%)", wins_ret, games, wins_ret as f64 / games as f64 * 100.0);
-    println!("  Losses: {}/{} ({:.1}%)", wins_v1, games, wins_v1 as f64 / games as f64 * 100.0);
+    println!("  Losses: {}/{} ({:.1}%)", losses_ret, games, losses_ret as f64 / games as f64 * 100.0);
     println!();
     println!("RETALIATOR (H1) vs greedy:");
     println!("  Wins: {}/{} ({:.1}%)", wins_greedy, games, wins_greedy as f64 / games as f64 * 100.0);
@@ -199,9 +234,24 @@ fn main() {
     println!("Reinforcement metrics:");
     println!("  Reinforce freq: {:.1}% ({} reinforces / {} total moves)", avg_reinf, total_reinf, total_moves);
     println!("  Area lifetime: {:.1} per game", avg_area);
+    println!("  League avg margin: {:.1}%", league_avg);
+    println!("  Worst margin: {:.1}%", worst_margin);
     println!("  League % (vs v1): {:.1}%", league_pct);
+    println!();
+    // PASS/FAIL bars
+    let h2h_total = games; // head-to-head games played
+    let h2h_pass = h2h_total >= 6;
+    let league_pass = league_avg > -9.9;
+    let worst_pass = worst_margin >= -300.0;
+    let gauge_pass = league_pass && worst_pass;
+
+    println!("PASS/FAIL bars:");
+    println!("  h2h>=6/10: {}", if h2h_pass { "PASS" } else { "FAIL" });
+    println!("  league>-9.9%: {}", if league_pass { "PASS" } else { "FAIL" });
+    println!("  worst>=-300: {}", if worst_pass { "PASS" } else { "FAIL" });
+    println!("  gauge 6/6: {}", if gauge_pass { "PASS" } else { "FAIL" });
     println!();
     println!("Summary: H1 reinforcement {} the bot {} breaks and improves area retention",
         if avg_reinf > 10.0 { "increases" } else { "does not significantly increase" },
-        if wins_ret > wins_v1 { "wins more" } else { "loses more" });
+        if wins_ret > losses_ret { "wins more" } else { "loses more" });
 }

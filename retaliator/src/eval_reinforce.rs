@@ -64,7 +64,7 @@ fn reinforcement_bonus(position: &Position, player: Player) -> f64 {
 ! threatens our high-value area.
 !
 ! # Pure function — takes a position and move; no game mutation.
-fn move_reinforcement_bonus(position: &Position, player: Player, mv: Move) -> f64 {
+pub fn move_reinforcement_bonus(position: &Position, player: Player, mv: Move) -> f64 {
     let opponent = player.opponent();
     let target = mv.target().expect("legal moves end on the board");
 
