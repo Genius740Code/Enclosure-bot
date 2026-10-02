@@ -7,14 +7,14 @@
 //!
 //! Deterministic tiebreak by move index. Sweep 1 weight at a time.
 
-use meridian_engine::{Edge, Move, MoveKind, Outcome, Player, Point, Position};
+use meridian_engine::{Edge, Move, Outcome, Player, Point, Position, MoveKind};
 
 /// Bonus for a 2-line connection sequence that can complete a large area in
 /// 2-3 rounds (triangle-close potential). Rewards moves that set up a close
 /// where the third edge will close a large triangle within the next 2-3 turns.
 /// The value scales with the triangle area and events remaining, kept fully
 /// horizon-uncapped so big long-term claims rank above immediate small gains.
-fn triangle_close_potential(position: &Position, mv: Move, after: &Position) -> f64 {
+pub fn triangle_close_potential(position: &Position, mv: Move, after: &Position) -> f64 {
     let mover = position.to_move();
     let target = mv.target().expect("legal moves end on the board");
 
@@ -45,7 +45,7 @@ fn triangle_close_potential(position: &Position, mv: Move, after: &Position) -> 
 /// has played fewer than TINY_LOOP_WINDOW actions, and applies a penalty scaled
 /// by events left (full-horizon scaling so the penalty is meaningful across
 /// the whole game but only triggers in the opening).
-fn tiny_loop_snatched_penalty(
+pub fn tiny_loop_snatched_penalty(
     position: &Position,
     mv: Move,
     after: &Position,
@@ -55,13 +55,19 @@ fn tiny_loop_snatched_penalty(
     let own_gain = after.area(mover).to_f64() - position.area(mover).to_f64();
 
     // Only trigger when: Connect move, tiny gain, opening stage
-    if mv.kind != MoveKind::Connect {
+    // Determine move kind: Connect if target is mover's node, Capture if target is opponent's node, Extend otherwise
+    let mv_kind = match position.node_owner(target) {
+        None => MoveKind::Extend,
+        Some(owner) if owner == mover => MoveKind::Connect,
+        Some(_) => MoveKind::Capture,
+    };
+    if mv_kind != MoveKind::Connect {
         return 0.0;
     }
-    if own_gain >= TINY_LOOP_MAX_AREA {
+    if own_gain >= constants::TINY_LOOP_MAX_AREA {
         return 0.0;
     }
-    if position.actions_played() >= TINY_LOOP_WINDOW {
+    if position.actions_played() >= constants::TINY_LOOP_WINDOW {
         return 0.0;
     }
 
@@ -70,7 +76,7 @@ fn tiny_loop_snatched_penalty(
     let events = f64::from(after.scoring_events_left());
     let hz_scale = events; // no min(HORIZON) cap - full-horizon
 
-    TINY_LOOP_PENALTY * hz_scale
+    constants::TINY_LOOP_PENALTY * hz_scale
 }
 
 /// Reward for committing to one anchor region vs scattered tiles.
@@ -78,7 +84,7 @@ fn tiny_loop_snatched_penalty(
 /// convex hull room per node) vs spread thin across many scattered positions.
 /// Uses the room-to-area ratio: larger room for given area means more
 /// committed/anchored development.
-fn anchor_commit_bonus(position: &Position) -> f64 {
+pub fn anchor_commit_bonus(position: &Position) -> f64 {
     let mover = position.to_move();
     let nodes = position.nodes(mover).len();
 
