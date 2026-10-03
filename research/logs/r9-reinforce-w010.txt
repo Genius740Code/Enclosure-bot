@@ -1,0 +1,22 @@
+--- league: dose and control vs scoutbase, skips 0/10/20/30 x 2 colors ---
+  skip= 0 dose=blue | dose 1125-1759 m=-56.4% | control 1525-1864 m=-22.3% | diff -34.1pp
+  skip= 0 dose=red | dose 1074-1543 m=-43.7% | control 1202-1255 m=-4.5% | diff -39.2pp
+  skip=10 dose=blue | dose 1379-670 m=+51.4% | control 1379-670 m=+51.4% | diff +0.0pp
+  skip=10 dose=red | dose 703-853 m=-21.3% | control 1364-1848 m=-35.5% | diff +14.2pp
+  skip=20 dose=blue | dose 1002-930 m=+7.2% | control 839-967 m=-15.4% | diff +22.6pp
+  skip=20 dose=red | dose 1433-1562 m=-9.0% | control 1364-1848 m=-35.5% | diff +26.5pp
+  skip=30 dose=blue | dose 1925-726 m=+62.3% | control 2098-687 m=+67.3% | diff -5.0pp
+  skip=30 dose=red | dose 1393-2172 m=-56.0% | control 1364-1829 m=-34.1% | diff -21.9pp
+  league AVG dose -8.2% vs control -3.6%, worst dose row -56.4% (bar: avg >, no row < -300%)
+--- h2h: dose vs control (v8), 5 openings x 2 chairs ---
+  open=None dose=blue 1923-1335 m=+30.5% DOSE | surv dose=16.3% ctrl=0.4%
+  open=None dose=red 1065-1249 m=-17.3% ctrl | surv dose=1.6% ctrl=6.8%
+  open=Some(4864) dose=blue 784-767 m=+2.2% DOSE | surv dose=7.6% ctrl=2.3%
+  open=Some(4864) dose=red 1524-579 m=+62.0% DOSE | surv dose=7.5% ctrl=0.5%
+  open=Some(5589) dose=blue 1345-1070 m=+20.5% DOSE | surv dose=6.8% ctrl=1.1%
+  open=Some(5589) dose=red 658-981 m=-49.2% ctrl | surv dose=0.7% ctrl=1.1%
+  open=Some(11723) dose=blue 1558-963 m=+38.1% DOSE | surv dose=24.7% ctrl=2.6%
+  open=Some(11723) dose=red 835-1398 m=-67.5% ctrl | surv dose=0.6% ctrl=11.3%
+  open=Some(9199) dose=blue 888-1181 m=-32.9% ctrl | surv dose=2.0% ctrl=4.3%
+  open=Some(9199) dose=red 1128-932 m=+17.4% DOSE | surv dose=9.4% ctrl=8.3%
+  h2h chairs: dose Blue 4/5, Red 2/5, total 6/10 (bar: >=6/10, no chair <2/5)

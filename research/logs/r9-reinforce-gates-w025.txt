@@ -1,0 +1,82 @@
+REINFORCE-LINES D1 gates — REINFORCE_W = 0.25
+BARS (stated before the run):
+  selftest : all machinery checks pass
+  identity : 0 mismatches over >= 239 positions
+  h2h      : dose >= 6/10 vs control, no chair < 2/5
+  league   : AVG(dose) > AVG(control), no dose row < -300%
+  gauge    : dose >= 7/8 vs greedy
+  v1       : dose wins >= control wins
+  survival : pooled dose surv > control surv (mechanism moves)
+
+=== selftest ===
+  t1 start durable 0/0: PASS
+    triangle area=4.5 durable=0
+  t2 single-touch triangle durable == 0: PASS
+    chorded triangle area=4.5 durable=2.25
+  t3 chorded triangle durable == 2.25: PASS
+  t4 unreachable triangle durable == area: PASS
+  t5 dose-off == control == shipped: PASS
+  t5 invariants (0 <= durable <= area, both sides, 12 actions): done
+
+=== identity ===
+identity: 239/239 control == shipped (bar: 0 mismatches over >= 239)
+
+=== gates ===
+--- h2h: dose vs control (v8), 5 openings x 2 chairs ---
+  open=None dose=blue 1981-1325 m=+33.1% DOSE | surv dose=22.0% ctrl=2.2%
+  open=None dose=red 943-1278 m=-35.6% ctrl | surv dose=3.3% ctrl=7.0%
+  open=Some(4864) dose=blue 784-767 m=+2.2% DOSE | surv dose=7.6% ctrl=2.3%
+  open=Some(4864) dose=red 1522-576 m=+62.1% DOSE | surv dose=13.8% ctrl=0.0%
+  open=Some(5589) dose=blue 1345-1070 m=+20.5% DOSE | surv dose=6.8% ctrl=1.1%
+  open=Some(5589) dose=red 740-932 m=-26.0% ctrl | surv dose=3.3% ctrl=2.2%
+  open=Some(11723) dose=blue 1456-978 m=+32.8% DOSE | surv dose=16.4% ctrl=1.6%
+  open=Some(11723) dose=red 828-1555 m=-87.8% ctrl | surv dose=0.7% ctrl=19.9%
+  open=Some(9199) dose=blue 942-1290 m=-36.9% ctrl | surv dose=5.6% ctrl=6.7%
+  open=Some(9199) dose=red 1012-904 m=+10.7% DOSE | surv dose=0.0% ctrl=5.0%
+  h2h chairs: dose Blue 4/5, Red 2/5, total 6/10 (bar: >=6/10, no chair <2/5)
+--- league: dose and control vs scoutbase, skips 0/10/20/30 x 2 colors ---
+  skip= 0 dose=blue | dose 1194-1838 m=-54.0% | control 1525-1864 m=-22.3% | diff -31.7pp
+  skip= 0 dose=red | dose 1102-1557 m=-41.2% | control 1202-1255 m=-4.5% | diff -36.8pp
+  skip=10 dose=blue | dose 1144-815 m=+28.8% | control 1379-670 m=+51.4% | diff -22.6pp
+  skip=10 dose=red | dose 1081-1090 m=-0.8% | control 1364-1848 m=-35.5% | diff +34.7pp
+  skip=20 dose=blue | dose 1002-930 m=+7.2% | control 839-967 m=-15.4% | diff +22.6pp
+  skip=20 dose=red | dose 1433-1562 m=-9.0% | control 1364-1848 m=-35.5% | diff +26.5pp
+  skip=30 dose=blue | dose 1925-726 m=+62.3% | control 2098-687 m=+67.3% | diff -5.0pp
+  skip=30 dose=red | dose 1419-2252 m=-58.7% | control 1364-1829 m=-34.1% | diff -24.6pp
+  league AVG dose -8.2% vs control -3.6%, worst dose row -58.7% (bar: avg >, no row < -300%)
+--- gauge: dose vs greedy 1-ply, 8 games (4 Blue / 4 Red) ---
+  game 0: dose=blue 4884-2122 m=+56.6% WIN | surv dose=100.0% greedy=60.5%
+  game 1: dose=red 4578-1417 m=+69.0% WIN | surv dose=100.0% greedy=86.8%
+  game 2: dose=blue 4884-2122 m=+56.6% WIN | surv dose=100.0% greedy=60.5%
+  game 3: dose=red 4578-1417 m=+69.0% WIN | surv dose=100.0% greedy=86.8%
+  game 4: dose=blue 4884-2122 m=+56.6% WIN | surv dose=100.0% greedy=60.5%
+  game 5: dose=red 4578-1417 m=+69.0% WIN | surv dose=100.0% greedy=86.8%
+  game 6: dose=blue 4884-2122 m=+56.6% WIN | surv dose=100.0% greedy=60.5%
+  game 7: dose=red 4578-1417 m=+69.0% WIN | surv dose=100.0% greedy=86.8%
+  gauge: dose 8/8 (bar: >=7/8)
+--- v1: dose and control vs v1base, 5 openings x 2 chairs each ---
+  open=None us=blue | dose 1570-2145 | control 1411-2173
+  open=None us=red | dose 689-1682 | control 710-1145
+  open=Some(4864) us=blue | dose 1365-2125 | control 1311-2068
+  open=Some(4864) us=red | dose 1594-893 | control 1604-900
+  open=Some(5589) us=blue | dose 958-1274 | control 806-1170
+  open=Some(5589) us=red | dose 1763-1432 | control 1688-1167
+  open=Some(11723) us=blue | dose 819-748 | control 868-777
+  open=Some(11723) us=red | dose 1958-1900 | control 1978-1932
+  open=Some(9199) us=blue | dose 956-709 | control 977-981
+  open=Some(9199) us=red | dose 782-759 | control 733-710
+  v1: dose 6/10 vs control 5/10 (bar: dose >= control)
+
+=== survival (pooled over h2h+league+gauge+v1, dose side vs control side) ===
+  dose: final 1673 + popped 6399 = 20.7% | control: final 499 + popped 6940 = 6.7% (bar: dose > control)
+
+=== VERDICT (W=0.25) ===
+  selftest PASS 
+  identity PASS 
+  h2h      PASS dose 6/10 (B 4/5, R 2/5)
+  league   FAIL dose -8.2% vs ctrl -3.6%, worst -58.7%
+  gauge    PASS 8/8
+  v1       PASS dose 6/10, ctrl 5/10
+  survival PASS dose 20.7% vs ctrl 6.7%
+
+OVERALL: NO-GO (>=1 bar failed) — REINFORCE_W=0.25

@@ -190,3 +190,27 @@ Game JSONs filed on lane-v8-autopsy (12073d2). Mirrors v7's rival profile
 (v7 also winless vs these three) — v8's mirror gains do NOT transfer.
 Verdict: v8 NOT shippable on validation. Ship path now requires a rival-beating
 layer (K-CLASS/VladNet, Angel-circle, PROT-BLOCK/Blue). v7 stays rated.
+
+## 2026-10-03 — REINFORCE-LINES (v9 item 4) — KILL after 3-weight dose-response
+Dose (one variable `REINFORCE_W`, eval_reinforce.rs `analyze_dosed` selection
+term): `+W x Δdurable x hz` — credit the measured increase, across our turn, in
+our area that survives the enemy's best single legal cut (engine-legality view,
+shield-cleared so farmed re-closes earn nothing; 2+-touch walls read in full;
+gain-or-reach gated so DEADWOOD keeps far quiet Connects). Kill-0 GO adopted
+from lane-v9-reinf 5e43810. Rig: verbatim skeleton copy + identity 239/239
+control==shipped; bars stated before runs (research/r9-reinforce-KILL.md).
+| REINFORCE_W | league AVG (vs scoutbase) | h2h vs control | gauge | v1 vs v1base | survival pooled dose/ctrl |
+|---|---|---|---|---|---|
+| 0 (control) | -3.6% | — | — | 5/10 | 6.7-7.3% |
+| 0.1 | -8.2% | 6/10 (B 4/5 R 2/5) | — | — | — |
+| 0.25 | -8.2% (worst -58.7%) | 6/10 (B 4/5 R 2/5) | 8/8 | 6/10 vs ctrl 5/10 | 20.7% vs 6.7% |
+| 0.5 | -16.8% (worst -111.2%) | 5/10 (B 3/5 R 2/5) | 8/8 | 6/10 vs ctrl 5/10 | 21.6% vs 7.3% |
+Mechanism works (survival triples, v1 improves, gauge holds) but league is
+monotone-negative at every positive weight — scoutbase converts the ceded
+expansion tempo into more banking than the protection saves; the v7 E-family
+league death reproduced with a measured-Δdurable form ("the h2h pass does not
+travel"). Damage concentrated in skip0/opening rows (-34 to -107pp); mid/late
+rows improve at 0.1-0.25 (+14 to +35pp) — a phase-gated variant would be a NEW
+dose for a new lane, own kill-0 + gates. Shipped bot untouched (w=0 default,
+identity proven). Verdict: **KILL** — no dose beats control jointly on
+h2h+league. Logs: research/logs/r9-reinforce-*.txt.

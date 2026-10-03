@@ -1,130 +1,1028 @@
-//! Reinforcement evaluation for Lane R (REINFORCE H1).
+//! REINFORCE-LINES dose rig (v9 roadmap item 4; Q2/Q12 lineage).
 //!
-//! H1: if opp places line next to our high-value area, reinforce/protect shape
-//! to prevent breaks.
+//! This file is the shipped `retaliator/src/search.rs` skeleton, copied
+//! verbatim (the v7 eval-lane pattern from `eval_phases.rs`: the skeleton's
+//! items are private, a shared copy would let one drift, so a verbatim copy
+//! with an identity check is the faithful control), plus ONE dose variable
+//! wired into candidate selection:
 //!
-//! Pure, unit-testable functions. No game-state mutability.
+//! `adjusted += REINFORCE_W x Δdurable x hz` — where Δdurable is the change,
+//! across our turn, in the area of ours that survives the enemy's best
+//! single legal cut. "Durable" area is measured by ENGINE LEGALITY, never by
+//! shape names (Q2-amendment: structural properties only): the enemy's full
+//! legal-move list is enumerated on a shield-cleared, enemy-to-move view of
+//! the position (`Position::setup` with no recent edges, so our just-placed
+//! edges count as cuttable — the transient rule-6 shield never credits a
+//! farmed re-close), and the worst one-action pop is subtracted from held
+//! area. A GB-style 2+-touch wall has no legal single cut at all, so area
+//! behind it counts fully; a single-touch loop reads as poppable and earns
+//! nothing here, whatever it touches.
+//!
+//! Dose intent (v9 item 4; c-autopsy §2 #2): extend DENSE_BONUS's thicket
+//! idea toward BUILDING BEHIND 2+ shared-node walls, then far/bank behind —
+//! credit the part of a move's gain that is legally unbreakable, so
+//! protected closes and banks outrank equal-size exposed ones, without
+//! paying for slow thickening that protects nothing. DEADWOOD_PENALTY is
+//! respected by a gain-or-reach gate: the term only fires when the move
+//! gains area or lands within DEADWOOD_ENEMY_DIST of the enemy, so far
+//! quiet no-gain Connects stay penalized exactly as shipped.
+//!
+//! Killed forms this dose deliberately avoids (v7 graveyard,
+//! research/league-scoreboard.md): E_UNBREAK / Q12-D1 proximity+degree
+//! bonuses fired on thickening regardless of measured protection (league
+//! -15pp at every dose); Q12-D2 contesting was catastrophic; Q1 max-pop
+//! recharges lost everywhere. This term fires ONLY on a measured Δdurable
+//! increase. The prior H1 lane (scaffold `reinforcement_bonus`, enemy-node
+//! adjacency; swept {0.5,1,2,4} on lane-v9-reinforce-sweep, NO-GO with a
+//! mis-set W=1.5 "control") is a different, vacuous term — not re-run.
+//!
+//! Kill-0 GO adopted from lane-v9-reinf (5e43810): builds behind 2+ own
+//! shared nodes survive 84.5% pooled — 94.6%/95.7% in wins vs 79.1%/28.6%
+//! in losses, both chairs. Survival metric tracked per side in all gates:
+//! survived / (survived + popped), corpus baselines ours 5.3%, VladNet
+//! 50-55%, GB 88-90% (c-autopsy).
+//!
+//! Laws: one variable (`REINFORCE_W`); full-horizon points (x hz);
+//! deterministic tiebreaks unchanged (center distance, then move index —
+//! the shipped D1); weight 0.0 = byte-identical control (probe identity
+//! check over >= 239 positions); search.rs / lib.rs untouched.
+#![allow(dead_code)]
+use std::cmp::Reverse;
+use std::sync::LazyLock;
+use std::time::Instant;
 
-use meridian_engine::{Game, Move, Player, Position, Point};
+use meridian_engine::{Edge, Move, MoveKind, Outcome, Player, Point, Position, notation};
 
-/// Full-horizon weight for reinforcement when opponent threatens our high-value area.
-///
-/// When the opponent's last move lands adjacent to our nodes that enclose significant area,
-! this constant scales the reinforcement bonus in full-horizon points (area × events_left),
-! so the incentive is proportional to both the value at risk and the time remaining to
-! defend it.
-pub const REINFORCE_W: f64 = 1.5;
+/// Positions searched for a move in a game. Analysis asks for its own number, up to this.
+pub const MOVE_BUDGET: usize = 4096;
+const SMALLEST_BUDGET: usize = 16;
+/// How many first actions get their replies searched.
+const WIDTH: usize = 8;
+/// Enclosed area counts as if held for at most this many more scoring events.
+const HORIZON: f64 = 12.0;
+/// What the room a player's nodes span is worth, per unit of area, against area enclosed.
+const ROOM_WEIGHT: f64 = 0.4;
+/// How much of the beyond-horizon area value counts, in both ranking and final
+/// selection. Applies symmetrically to claims and denial (see below).
+const HORIZON_WEIGHT: f64 = 0.5;
+/// First-action penalty for ending next to an enemy node without cutting anything.
+const CONTACT_PENALTY: f64 = 1.0;
+/// Penalty for a no-area reinforcement between own nodes far from the enemy.
+const DEADWOOD_PENALTY: f64 = 2.0;
+/// Beyond this Chebyshev distance to the nearest enemy node, a no-area
+/// reinforcement counts as dead wood in the back.
+const DEADWOOD_ENEMY_DIST: i8 = 3;
+/// Anti-rebuild routing (rival-analysis steal #1): our edges were cut near
+/// these points within the last few actions, so re-closing there is farmed.
+/// Penalty for a non-breaking first action landing within this radius.
+const CUT_RADIUS: i8 = 3;
+const REBUILD_PENALTY: f64 = 3.0;
+/// Blue's forced first action: D10-F7. Measured over 12 games vs three
+/// opponents (v1, v2, scout-class): +20% to +41% margins, 12/12 positive,
+/// vs -4% to +14% unforced. The search walks backward (D10-A7) on
+/// direction-index ties; the forward diagonal banks early and develops
+/// toward the center. Zero risk: at action 1 nothing can make it illegal
+/// except a non-standard start, which falls through to search via the
+/// legality check below.
+fn blue_opener(position: &Position) -> Option<Move> {
+    if position.actions_played() != 0 {
+        return None;
+    }
+    let mv = Move::between(
+        Point::new(-6, 0).expect("D10 on board"),
+        Point::new(-4, -3).expect("F7 on board"),
+    )
+    .expect("D10-F7 is a king step");
+    position.check_move(mv).ok().map(|_| mv)
+}
 
-/// Compute the reinforcement bonus for the given position and the player to move.
-/// 
-/// The bonus is positive when the opponent's recent move threatens our high-value area,
-! encouraging us to reinforce/protect shape to prevent breaks. The bonus is scaled by
-! `REINFORCE_W`, the number of our nodes adjacent to the threat, and the remaining
-! scoring events (full-horizon so it counts area × events_left proportionally).
-!
-! # Pure function — no game mutation. Unit-testable.
-fn reinforcement_bonus(position: &Position, player: Player) -> f64 {
-    let opponent = player.opponent();
-    let our_nodes = position.nodes(player);
-    let opp_nodes = position.nodes(opponent);
+/// Mesh opening prefix (Lane H mesh8, v6 candidate 2026-09-28): capybara
+/// center mesh as forced prefix, 8 own-moves per color. Built with
+/// Move::between (canonical king-step encoding), EXACTLY like the probe —
+/// integer ids are NOT used for selection because Direction::index is not
+/// injective (from_index can decode a different edge variant with the same
+/// id; found 2026-09-28: from_index(4867) prints D10-G8 but fails
+/// check_move where between(D10,G8) succeeds). h2h: v1 Blue 5-0/Red 4-1,
+/// v2 5-0/5-0, scout Blue 5-0/Red 4-1, gauge 6/6, GB mega-loop 4.5.
+/// League gate PENDING (H-verify) — do not ship rated on this alone.
+/// Blue: D10-D13 D10-G8 G8-J10 J10-G13 G8-J11 G13-J11 G13-D10 J11-M13
+const MESH_B_TXT: [[&str; 2]; 8] = [
+    ["D10", "D13"],
+    ["D10", "G8"],
+    ["G8", "J10"],
+    ["J10", "G13"],
+    ["G8", "J11"],
+    ["G13", "J11"],
+    ["G13", "D10"],
+    ["J11", "M13"],
+];
+/// Red mirror: P10-M8 M8-J10 J10-M13 M8-J11 M13-J11 M13-P11 M13-P10 P11-M8
+const MESH_R_TXT: [[&str; 2]; 8] = [
+    ["P10", "M8"],
+    ["M8", "J10"],
+    ["J10", "M13"],
+    ["M8", "J11"],
+    ["M13", "J11"],
+    ["M13", "P11"],
+    ["M13", "P10"],
+    ["P11", "M8"],
+];
 
-    // Find the opponent's most recent move's target point.
-    // We examine the board for any edge the opponent just placed and check if it's
-    // adjacent to our high-value nodes.
-    let mut bonus = 0.0f64;
+fn decode_pair(pair: [&str; 2]) -> Move {
+    let (a, b) = (pair[0], pair[1]);
+    Move::between(
+        notation::parse_square(a).expect("mesh prefix source square"),
+        notation::parse_square(b).expect("mesh prefix target square"),
+    )
+    .expect("mesh prefix is 1-3 king steps")
+}
 
-    // Count our nodes that are within distance 1 of any of the opponent's nodes.
-    // These are the "high-value area" nodes that could be threatened.
-    let mut nodes_threatened: u32 = 0;
-    for our_node in our_nodes.iter() {
-        for opp_node in opp_nodes.iter() {
-            if (our_node.x() - opp_node.x()).abs() <= 1
-                && (our_node.y() - opp_node.y()).abs() <= 1
+fn decode_prefix(txt: [[&str; 2]; 8]) -> [Move; 8] {
+    txt.map(decode_pair)
+}
+
+static MESH_B: LazyLock<[Move; 8]> = LazyLock::new(|| decode_prefix(MESH_B_TXT));
+static MESH_R: LazyLock<[Move; 8]> = LazyLock::new(|| decode_prefix(MESH_R_TXT));
+
+/// Turn structure (read off probe ply logs): Blue opens with a single action,
+/// then sides alternate in PAIRS starting with Red: totals 1-2 Red, 3-4 Blue,
+/// 5-6 Red, ... Never assume strict alternation.
+fn side_to_move(total: usize) -> Player {
+    if total == 0 {
+        Player::Blue
+    } else if ((total - 1) / 2) % 2 == 0 {
+        Player::Red
+    } else {
+        Player::Blue
+    }
+}
+
+/// Forced-prefix routing with probe Bot::forced semantics, stateless via
+/// history. Our color is whoever is to move; our slots are the history
+/// indices whose turn-side is ours (pair-turn aware, NOT parity). Onset: the
+/// first own slot holding prefix[0] — earlier own slots may hold anything
+/// (site-forced openings delay the prefix, never skip entries: the probe v1
+/// off-by-one lesson). After onset, continuation must be exact; any
+/// deviation (illegal entry stall, or a searched move in our slot) truncates
+/// the prefix permanently, because history never un-deviates. The frontier
+/// entry plays when legal, else search takes this turn (and the resulting
+/// deviation truncates all later turns).
+pub fn mesh_prefix(position: &Position, history: &[Move]) -> Option<Move> {
+    let total = position.actions_played() as usize;
+    if history.len() != total {
+        return None;
+    }
+    let us = position.to_move();
+    if side_to_move(total) != us {
+        return None;
+    }
+    let prefix: &[Move; 8] = match us {
+        Player::Blue => &MESH_B,
+        _ => &MESH_R,
+    };
+    let slots: Vec<usize> = (0..total).filter(|&m| side_to_move(m) == us).collect();
+    // Onset: first own slot holding prefix[0].
+    let mut onset: Option<usize> = None;
+    for (j, &m) in slots.iter().enumerate() {
+        if history[m] == prefix[0] {
+            onset = Some(j);
+            break;
+        }
+    }
+    let verified: usize = match onset {
+        None => 0,
+        Some(o) => {
+            let mut len = 0;
+            while o + len < slots.len()
+                && len < prefix.len()
+                && history[slots[o + len]] == prefix[len]
             {
-                nodes_threatened += 1;
+                len += 1;
+            }
+            // Any own slot past onset+len that exists means deviation...
+            // (only possible when the frontier was skipped, which never
+            // happens: frontier plays whenever legal, else this call is None
+            // and the search move written to history truncates next call).
+            if o + len < slots.len() {
+                return None;
+            }
+            len
+        }
+    };
+    if verified >= prefix.len() {
+        return None;
+    }
+    let mv = prefix[verified];
+    position.check_move(mv).ok().map(|_| mv)
+}
+
+/// Deployed entry: mesh prefix, then the legacy game-start opener, then search.
+/// Timed think (Q6-amendment, v7): searched moves spend at least THINK_SOFT_MS
+/// (no snap replies), more while volatile, capped at THINK_HARD_MS.
+/// Keeps [`best_move_with_avoid`] untouched for probes and back-compat.
+pub fn best_move_routed(
+    position: &Position,
+    history: &[Move],
+    avoid: &[Point],
+) -> Option<Move> {
+    if let Some(prefix) = mesh_prefix(position, history) {
+        return Some(prefix);
+    }
+    if let Some(open) = blue_opener(position) {
+        return Some(open);
+    }
+    analyze_timed(position, avoid)
+        .candidates
+        .first()
+        .map(|candidate| candidate.mv)
+}
+
+/// How many of the latest actions count as "recent" for cut avoidance.
+pub const CUT_MEMORY: usize = 6;
+/// Fresh/shielded-wall avoidance: enemy edges placed last turn can't be
+/// cut this turn, so contesting them burns tempo. Penalty for a
+/// non-breaking first action landing near them.
+const FRESH_RADIUS: i8 = 2;
+const FRESH_PENALTY: f64 = 1.5;
+/// Do-nothing filter: a first action with no area gain, no break, negligible
+/// room growth and nowhere near the enemy does nothing on every axis.
+/// Penalize (both kinds) so shuffling ranks below every real option. Safe
+/// by symmetry: if ALL moves are dead, all share the penalty and order
+/// is preserved.
+const IDLE_ROOM: f64 = 0.5;
+const IDLE_ENEMY_DIST: i8 = 3;
+const IDLE_PENALTY: f64 = 2.0;
+/// Two-front play: where the position is hot (many close cross-color node
+/// pairs), building huge areas FAR from the fighting is nearly unbreakable —
+/// go both ways. Bonus for first actions landing far from all enemy
+/// nodes, paid only when heat says the local fight is contested.
+const FIGHT_DIST: i8 = 4;
+const FIGHT_HEAT: usize = 10;
+const REMOTE_DIST: i8 = 5;
+const REMOTE_BONUS: f64 = 1.0;
+/// Thicket density (the screenshot lesson): walls that share nodes are
+/// near-unbreakable (any cut touches 2+) AND bank area. Bonus for a first
+/// action landing next to 2+ own nodes. Deadwood still bans far no-gain
+/// Connects, so this only ever rewards thickets that gain or reach.
+const DENSE_DIST: i8 = 1;
+const DENSE_COUNT: u32 = 2;
+const DENSE_BONUS: f64 = 1.0;
+/// Doom discount: DISABLED (V5, 2026-09-28). Lane B ablations: the discount
+/// prices the enemy's one-action pop at ×12, but the re-make is shield-delayed
+/// two turns (the pop's placed edge crosses the re-place path and shields it),
+/// so the popped area misses exactly two scoring events — ×12 overcharges by
+/// ~6x and the bot avoids healthy ground. Measured in eval_phases rig (control
+/// faithful 0/239): doom OFF = league -9.9% vs -20.0%, v1 h2h 5/10 vs 4/10,
+/// collapse -55.9% vs -111.4%, gauge 8/8 equal; cost as-Blue 2/5 -> 1/5.
+/// Doom discount: ENABLED (V6, 2026-09-28). V5 disabled it on rig evidence
+/// (league -9.9% vs -20.0%) but the rig bypassed the avoid path and the site
+/// verdict was catastrophic (v5: 1349 Elo, 4W-36L/40 vs v3 1477 13-11 and
+/// v4 1428 11-21, both doom-ON). V6 league gate with mesh8: doom-ON +21.6%
+/// worst -57.6% vs doom-OFF +18.3% worst -71.7% — ON wins locally too.
+/// Restored to 1.0; the OFF dose lives in git history (v6-mesh variant A).
+const DOOM_W: f64 = 1.0;
+/// Doom tail weight: parity with HORIZON_WEIGHT. Applied to the beyond-horizon
+/// portion (E - min(E, HORIZON)) so a close popped next turn doesn't net
+/// phantom profit from horizon_extension's symmetric (gain+destroyed)×tail×0.5.
+const DOOM_TAIL_W: f64 = 0.5;
+/// Capture exposure: nodes held by a single edge can be captured outright.
+/// Counts ours vs theirs; each such node is a discrete, hard-to-reverse
+/// swing, so it prices higher than a generic edge.
+const CAPTURE_W: f64 = 3.0;
+/// Patience (rival-analysis steal #2): in the opening, don't snatch tiny
+/// loops; wall first, close big later. Penalty for a first-action close
+/// gaining less than this, while fewer than this many actions are played.
+/// V5 ablation 2026-09-27: does this misfire on forced openings as Blue
+/// (delaying closes v1 snatches)? 0.0 = off. RESULT: off is byte-identical
+/// across all gates (v3all 4/10+7/10, league -20.0%, gauge 6/6) — the term
+/// never flips a pick in any measured line. Kept at 2.0 (harmless).
+const PATIENCE_MAX_GAIN: f64 = 2.0;
+const PATIENCE_WINDOW: u8 = 12;
+const PATIENCE_PENALTY: f64 = 2.0;
+
+/// Reply budget for the confirming ply: sized for near-complete coverage
+/// like the second ply. A truncated longest-first subset picks unrepresen-
+/// tative replies and the minimax actively misleads (measured: -58%
+/// league). Full coverage costs ~2x total nodes, still milliseconds.
+pub struct Analysis {
+    /// Blue's lead after the best move and its reply.
+    pub evaluation: f64,
+    /// 2 when replies were searched.
+    pub depth: usize,
+    /// Positions searched.
+    pub nodes: usize,
+    /// The best moves first.
+    pub candidates: Vec<Candidate>,
+}
+
+pub struct Candidate {
+    pub mv: Move,
+    /// Blue's lead after this move and the best reply (honest static value;
+    /// ordering uses the retaliation-adjusted score, kept separately).
+    pub evaluation: f64,
+    /// This move, its reply, and the confirming third ply where searched.
+    pub pv: Vec<Move>,
+    /// 1, plus the replies searched.
+    pub visits: usize,
+}
+
+pub fn best_move(position: &Position) -> Option<Move> {
+    best_move_with_avoid(position, &[])
+}
+
+/// Like [`best_move`], but steering clear of `avoid`: points near our loops
+/// the enemy recently cut. Rebuilding there is how rebuilder-farming works
+/// (41 cuts in one game); routing elsewhere denies the repeat cut.
+pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move> {
+    if let Some(open) = blue_opener(position) {
+        return Some(open);
+    }
+    analyze_with_avoid(position, MOVE_BUDGET, avoid).candidates.first().map(|candidate| candidate.mv)
+}
+
+pub fn analyze(position: &Position, budget: usize) -> Analysis {
+    analyze_with_avoid(position, budget, &[])
+}
+
+pub fn analyze_with_avoid(position: &Position, budget: usize, avoid: &[Point]) -> Analysis {
+    analyze_dosed(position, budget, avoid, 0.0)
+}
+
+/// [`analyze_with_avoid`] plus the REINFORCE-LINES dose at weight `w`
+/// (0.0 = the control: the dose block is skipped entirely, so the control
+/// path is the shipped selection untouched).
+pub fn analyze_dosed(
+    position: &Position,
+    budget: usize,
+    avoid: &[Point],
+    w: f64,
+) -> Analysis {
+    let mover = position.to_move();
+    // Measured once per ranking: our durable area before the turn. The
+    // enemy's cuts that matter happen after our turn, on a shield-cleared
+    // view (see `durable_area`), so this baseline is exactly comparable.
+    let durable_before = if w != 0.0 { durable_area(position, mover) } else { 0.0 };
+    let opp = mover.opponent();
+    let budget = budget.clamp(SMALLEST_BUDGET, MOVE_BUDGET);
+    let first_actions = ranked(position, budget / 2, true, avoid);
+    let mut nodes = first_actions.len();
+    let mut depth = usize::from(nodes > 0);
+    let width = first_actions.len().min(WIDTH);
+    // NB: budget < nodes is normal (300+ legal vs small budgets). checked_sub
+    // preserves release behavior (full reply width) without debug underflow.
+    let reply_budget = budget.checked_sub(nodes).map(|r| r / width.max(1)).unwrap_or(usize::MAX);
+
+    // (adjusted score for ordering, candidate with honest static evaluation).
+    let mut scored: Vec<(f64, Candidate)> = Vec::new();
+    for (mv, after, _, _) in first_actions.into_iter().take(width) {
+        let replies = ranked(&after, reply_budget, false, &[]);
+        nodes += replies.len();
+        let mut pv = vec![mv];
+        let mut evaluation = value(&after);
+        if let Some((reply, _, reply_value, _)) = replies.first() {
+            evaluation = *reply_value;
+            pv.push(*reply);
+            depth = 2;
+        }
+        let end = position_after_pv(position, &pv);
+        let mut adjusted = sign(mover) * evaluation + horizon_extension(position, &end, mover);
+        // Poisoned ground counts at SELECTION, not just ranking: a line that
+        // rebuilds where we were just cut (or contests a fresh wall) loses
+        // here even if its honest eval is best — the eval can't see the
+        // re-cut coming, but the cut history can.
+        {
+            let hz_sel = f64::from(position.scoring_events_left()).min(HORIZON);
+            let mut probe = position.clone();
+            let oc = probe.apply_unchecked(mv);
+            if oc.broken.is_none() {
+                let tgt = mv.target().expect("legal moves end on the board");
+                if near_points(avoid.iter().copied(), tgt, CUT_RADIUS) {
+                    adjusted -= REBUILD_PENALTY * hz_sel;
+                }
+                if near_fresh_enemy(position, tgt) {
+                    adjusted -= FRESH_PENALTY * hz_sel;
+                }
+            }
+        }
+        // REINFORCE-LINES dose (v9 item 4, one variable: REINFORCE_W).
+        // Credit the measured increase in our single-cut-proof area, in
+        // full-horizon points. Gain-or-reach gate: DEADWOOD_PENALTY keeps
+        // its exclusive claim on far quiet no-gain Connects — the dose
+        // never fires there, so it can only re-rank moves that gain area
+        // or reach toward the enemy.
+        if w != 0.0 {
+            let hz_dose = f64::from(position.scoring_events_left()).min(HORIZON);
+            let tgt = mv.target().expect("legal moves end on the board");
+            let own_gain = after.area(mover).to_f64() - position.area(mover).to_f64();
+            if own_gain > 0.0 || near_enemy_node(position, opp, tgt, DEADWOOD_ENEMY_DIST) {
+                let delta = durable_area(&end, mover) - durable_before;
+                adjusted += w * delta * hz_dose;
+            }
+        }
+        let visits = 1 + replies.len();
+        // Doom discount (see const docs).
+        {
+            let doom_at = if end.to_move() == opp {
+                Some(&end)
+            } else if after.to_move() == opp {
+                Some(&after)
+            } else {
+                None
+            };
+            if let Some(pos) = doom_at {
+                let events_left = f64::from(pos.scoring_events_left());
+                let hz_doom = events_left.min(HORIZON);
+                let tail = (events_left - hz_doom) * DOOM_TAIL_W;
+                adjusted -= DOOM_W * max_pop(pos, mover) * (hz_doom + tail);
+            }
+        }
+        scored.push((adjusted, Candidate { mv, evaluation, pv, visits }));
+    }
+    scored.sort_by(|a, b| {
+        let gap = (b.0 - a.0).abs();
+        if gap < 1e-9 {
+            // D1: exact tie — break by distance-to-center nearest-first, then mv.index()
+            let da = distance_to_center(&a.1.mv);
+            let db = distance_to_center(&b.1.mv);
+            da.total_cmp(&db).then(a.1.mv.index().cmp(&b.1.mv.index()))
+        } else {
+            b.0.total_cmp(&a.0).then(a.1.mv.index().cmp(&b.1.mv.index()))
+        }
+    });
+    let candidates = scored.into_iter().map(|(_, c)| c).collect::<Vec<_>>();
+    let evaluation = candidates.first().map_or_else(|| value(position), |best| best.evaluation);
+    Analysis { evaluation, depth, nodes, candidates }
+}
+
+/// Timed think (Q6-amendment, v7): every searched move spends at least
+/// THINK_SOFT_MS, extending to THINK_HARD_MS while the position is volatile
+/// (top two candidates disagree). Site envelope (bot-api.md): aim for
+/// limits.moveTimeMs = 5000ms; until 2026-10-04 moves stop at ~23s browser /
+/// 25s server, FROM that date a move past the limit FAILS (forfeit). HARD
+/// stays under 5000 with margin. WASM clock via wasi clock_time_get.
+/// Depth is real minimax, not budget inflation: measured 2026-09-29, full-width
+/// 2-ply costs ~11ms/2436 nodes at 373 legal moves and wider visit budgets
+/// change nothing (saturated). So extra time goes into beam deepening — each
+/// round extends every live line one ply through the same `ranked()` reply
+/// model, re-sorted by the same selection adjustments as `analyze_with_avoid`
+/// (horizon extension, doom discount, rebuild/fresh penalties); only the leaf
+/// is deeper. Solved lines (terminal) stop early: exact needs no more time.
+/// Forced moves (0-1 legal), prefix and opener return instantly.
+/// Machine-speed-dependent depth, NOT probe-deterministic: probes and the
+/// analysis endpoint keep fixed node budgets via `analyze_with_avoid`.
+pub const THINK_SOFT_MS: u64 = 2000;
+pub const THINK_HARD_MS: u64 = 4800;
+/// Mover-relative adjusted gap below which the lead is undecided: keep
+/// thinking to the hard cap.
+const VOLATILE_GAP: f64 = 2.0;
+/// Beam width for timed deepening (matches WIDTH).
+const BEAM: usize = 8;
+
+struct BeamLine {
+    mv: Move,
+    after: Position,
+    pv: Vec<Move>,
+    end: Position,
+    leaf_blue: f64,
+    adjusted: f64,
+    visits: usize,
+    solved: bool,
+}
+
+/// Selection value mirroring `analyze_with_avoid`: mover-relative honest leaf
+/// plus horizon extension, minus rebuild/fresh penalties and the doom
+/// discount (evaluated at the deepest opp-to-move position available).
+fn selection_adjusted(
+    position: &Position,
+    after: &Position,
+    end: &Position,
+    leaf_blue: f64,
+    mover: Player,
+    opp: Player,
+    mv: Move,
+    avoid: &[Point],
+) -> f64 {
+    let mut adjusted = sign(mover) * leaf_blue + horizon_extension(position, end, mover);
+    let hz_sel = f64::from(position.scoring_events_left()).min(HORIZON);
+    let mut probe = position.clone();
+    let oc = probe.apply_unchecked(mv);
+    if oc.broken.is_none() {
+        let tgt = mv.target().expect("legal moves end on the board");
+        if near_points(avoid.iter().copied(), tgt, CUT_RADIUS) {
+            adjusted -= REBUILD_PENALTY * hz_sel;
+        }
+        if near_fresh_enemy(position, tgt) {
+            adjusted -= FRESH_PENALTY * hz_sel;
+        }
+    }
+    let doom_at = if end.to_move() == opp {
+        Some(end)
+    } else if after.to_move() == opp {
+        Some(after)
+    } else {
+        None
+    };
+    if let Some(pos) = doom_at {
+        let events_left = f64::from(pos.scoring_events_left());
+        let hz_doom = events_left.min(HORIZON);
+        let tail = (events_left - hz_doom) * DOOM_TAIL_W;
+        adjusted -= DOOM_W * max_pop(pos, mover) * (hz_doom + tail);
+    }
+    adjusted
+}
+
+fn sort_beam(beam: &mut [BeamLine]) {
+    beam.sort_by(|a, b| {
+        let gap = (b.adjusted - a.adjusted).abs();
+        if gap < 1e-9 {
+            // D1: exact tie — break by distance-to-center nearest-first, then mv.index()
+            let da = distance_to_center(&a.mv);
+            let db = distance_to_center(&b.mv);
+            da.total_cmp(&db).then(a.mv.index().cmp(&b.mv.index()))
+        } else {
+            b.adjusted.total_cmp(&a.adjusted).then(a.mv.index().cmp(&b.mv.index()))
+        }
+    });
+}
+
+pub fn analyze_timed(position: &Position, avoid: &[Point]) -> Analysis {
+    let mover = position.to_move();
+    let opp = mover.opponent();
+    let legal_count = position.legal_moves().len();
+    // Forced: nothing to decide (prefix/opener handled by the caller).
+    if legal_count == 0 {
+        return Analysis { evaluation: value(position), depth: 0, nodes: 0, candidates: vec![] };
+    }
+    let t0 = Instant::now();
+    let firsts = ranked(position, legal_count, true, avoid);
+    let mut nodes = firsts.len();
+    let mut beam: Vec<BeamLine> = Vec::new();
+    for (mv, after, _, _) in firsts.into_iter().take(BEAM) {
+        let replies = ranked(&after, after.legal_moves().len(), false, &[]);
+        nodes += replies.len();
+        let (mut pv, _) = (vec![mv], after.clone());
+        let mut leaf = value(&after);
+        if let Some((reply, rafter, _, _)) = replies.first() {
+            pv.push(*reply);
+            leaf = value(rafter);
+        }
+        let end = position_after_pv(position, &pv);
+        let adjusted = selection_adjusted(position, &after, &end, leaf, mover, opp, mv, avoid);
+        let solved = end.is_finished();
+        let visits = 1 + replies.len();
+        beam.push(BeamLine { mv, after, pv, end, leaf_blue: leaf, adjusted, visits, solved });
+    }
+    sort_beam(&mut beam);
+    if beam.iter().all(|l| l.solved) {
+        return finish_timed(position, beam, nodes);
+    }
+    loop {
+        for line in beam.iter_mut().filter(|l| !l.solved) {
+            if line.end.is_finished() {
+                line.solved = true;
+                continue;
+            }
+            let opts = ranked(&line.end, line.end.legal_moves().len(), false, &[]);
+            nodes += opts.len();
+            match opts.first() {
+                Some((rmv, rafter, _, _)) => {
+                    line.pv.push(*rmv);
+                    line.end = rafter.clone();
+                    line.leaf_blue = value(&line.end);
+                    line.visits += opts.len();
+                    if line.end.is_finished() {
+                        line.solved = true;
+                    }
+                }
+                None => line.solved = true,
+            }
+            line.adjusted =
+                selection_adjusted(position, &line.after, &line.end, line.leaf_blue, mover, opp, line.mv, avoid);
+            if t0.elapsed().as_millis() as u64 >= THINK_HARD_MS {
                 break;
             }
         }
-    }
-
-    if nodes_threatened > 0 {
-        // Full-horizon: count remaining scoring events
-        let events_left = f64::from(position.scoring_events_left());
-        // Bonus scales with threatened nodes, events left, and the weight
-        bonus = REINFORCE_W * (nodes_threatened as f64) * events_left;
-    }
-
-    bonus
-}
-
-/// Evaluate the reinforcement score for a candidate move.
-///
-/// Returns the reinforcement bonus added to the evaluation score.
-/// Positive values encourage reinforcing/protecting shape when the opponent
-! threatens our high-value area.
-!
-! # Pure function — takes a position and move; no game mutation.
-fn move_reinforcement_bonus(position: &Position, player: Player, mv: Move) -> f64 {
-    let opponent = player.opponent();
-    let target = mv.target().expect("legal moves end on the board");
-
-    // Check if the move's target is adjacent to any of our nodes that enclose area
-    let our_nodes = position.nodes(player);
-    let mut nodes_adjacent: u32 = 0;
-    for our_node in our_nodes.iter() {
-        if (our_node.x() - target.x()).abs() <= 1 && (our_node.y() - target.y()).abs() <= 1
+        sort_beam(&mut beam);
+        let elapsed = t0.elapsed().as_millis() as u64;
+        if beam.iter().all(|l| l.solved) {
+            break; // solved: exact, nothing more to learn
+        }
+        if beam.len() < 2 {
+            break; // nothing to choose between — save the clock (cf. Lane T)
+        }
+        if elapsed >= THINK_HARD_MS {
+            break;
+        }
+        if elapsed >= THINK_SOFT_MS
+            && (beam[0].adjusted - beam[1].adjusted).abs() >= VOLATILE_GAP
         {
-            nodes_adjacent += 1;
+            break; // decided, soft budget spent
         }
     }
-
-    if nodes_adjacent == 0 {
-        return 0.0;
-    }
-
-    // Full-horizon scoring events left
-    let events_left = f64::from(position.scoring_events_left());
-    REINFORCE_W * (nodes_adjacent as f64) * events_left
+    finish_timed(position, beam, nodes)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use meridian_engine::Position;
+fn finish_timed(position: &Position, beam: Vec<BeamLine>, nodes: usize) -> Analysis {
+    let depth = beam.iter().map(|l| l.pv.len()).max().unwrap_or(0);
+    let candidates = beam
+        .into_iter()
+        .map(|l| Candidate { mv: l.mv, evaluation: l.leaf_blue, pv: l.pv, visits: l.visits })
+        .collect::<Vec<_>>();
+    let evaluation = candidates.first().map_or_else(|| value(position), |best| best.evaluation);
+    Analysis { evaluation, depth, nodes, candidates }
+}
 
-    #[test]
-    fn test_reinforcement_bonus_no_threat() {
-        // Start position has no threats
-        let pos = Position::new();
-        let bonus = reinforcement_bonus(&pos, Player::Blue);
-        assert_eq!(bonus, 0.0);
+/// Replays a principal variation from `position`.
+fn position_after_pv(position: &Position, pv: &[Move]) -> Position {
+    let mut pos = position.clone();
+    for &mv in pv {
+        pos.apply_unchecked(mv);
     }
+    pos
+}
 
-    #[test]
-    fn test_move_reinforcement_bonus_no_adjacency() {
-        let pos = Position::new();
-        // A move far from any of our nodes
-        // D10 is at (-9, 10)... let's use a point we know is on board
-        // Actually let's just test with a move that has no adjacent nodes
-        // In starting position, Blue has no edges, so any move creates an edge
-        // Let's test with a position where nodes aren't adjacent to target
-        let mv = meridian_engine::Move::between(
-            meridian_engine::Point::new(-6, 0).expect("on board"),
-            meridian_engine::Direction::from_delta(1, 0).expect("valid dir"),
-        ).expect("valid move");
-        let bonus = move_reinforcement_bonus(&pos, Player::Blue, mv);
-        // In start position, the first move creates a node at the target
-        // but we check adjacency - let's see if it's adjacent to existing nodes
-        // Starting position has no nodes yet, so bonus should be 0
-        assert_eq!(bonus, 0.0);
-    }
+/// The beyond-horizon part of an area swing, mover-relative: own area gained
+/// plus enemy area destroyed along the line, times the scoring events past
+/// the horizon. The static evaluation already counts both up to the horizon;
+/// this is the rest, kept symmetric so a break must beat the available
+/// claims on the merits instead of winning by default.
+fn horizon_extension(before: &Position, end: &Position, mover: Player) -> f64 {
+    let gained = (end.area(mover).to_f64() - before.area(mover).to_f64()).max(0.0);
+    let destroyed =
+        (before.area(mover.opponent()).to_f64() - end.area(mover.opponent()).to_f64()).max(0.0);
+    let events = f64::from(end.scoring_events_left());
+    (gained + destroyed) * (events - events.min(HORIZON)) * HORIZON_WEIGHT
+}
 
-    #[test]
-    fn test_reinforcement_bonus_scales_with_events() {
-        // Start position - 120 total actions, 0 played, so 12 scoring events left initially
-        let pos = Position::new();
-        let bonus = reinforcement_bonus(&pos, Player::Blue);
-        // No nodes threatened yet, should be 0
-        assert_eq!(bonus, 0.0);
+struct Ranked {
+    mv: Move,
+    after: Position,
+    value: f64,
+    priority: f64,
+}
+
+/// Blue's lead as Scout sees it. Positive favours Blue.
+pub fn evaluate(position: &Position) -> f64 {
+    let events_left = f64::from(position.scoring_events_left());
+    let worth = |player| {
+        position.score(player).to_f64()
+            + position.area(player).to_f64() * events_left.min(HORIZON)
+            + room(position, player) * ROOM_WEIGHT * events_left.min(1.0)
+    };
+    worth(Player::Blue) - worth(Player::Red)
+        + CAPTURE_W
+            * (one_edge_nodes(position, Player::Red) as f64
+                - one_edge_nodes(position, Player::Blue) as f64)
+}
+
+/// The worst our-area loss across the enemy's legal replies from `pos`
+/// (enemy to move). The one-graze cost of our shape.
+fn max_pop(pos: &Position, victim: Player) -> f64 {
+    let held = pos.area(victim).to_f64();
+    let mut worst: f64 = 0.0;
+    for mv in pos.legal_moves().iter() {
+        let mut next = pos.clone();
+        next.apply_unchecked(mv);
+        worst = worst.max(held - next.area(victim).to_f64());
     }
+    worst.max(0.0)
+}
+
+/// How many of `player`'s nodes hang by a single edge (capturable).
+fn one_edge_nodes(position: &Position, player: Player) -> u32 {
+    use std::collections::HashMap;
+    let mut degree: HashMap<usize, u32> = HashMap::new();
+    for edge in position.edges(player).iter() {
+        for end in [edge.origin(), edge.far()] {
+            *degree.entry(end.index()).or_insert(0) += 1;
+        }
+    }
+    position.nodes(player).iter().filter(|n| degree.get(&n.index()) == Some(&1)).count() as u32
+}
+
+/// [`evaluate`], except that a drawn game is worth 0.
+fn value(position: &Position) -> f64 {
+    let drawn = matches!(position.outcome_given(&position.legal_moves()), Some(Outcome::Draw(_)));
+    if drawn { 0.0 } else { evaluate(position) }
+}
+
+/// The mover's actions, best first, with the position after each and its value. Only the first
+/// `budget` of them, longest edges first, are tried.
+fn ranked(
+    position: &Position,
+    budget: usize,
+    first: bool,
+    avoid: &[Point],
+) -> Vec<(Move, Position, f64, f64)> {
+    let mover = position.to_move();
+    let opp = mover.opponent();
+    let room_before = room(position, mover);
+    let heat = fight_heat(position, mover, opp);
+    let mut moves: Vec<Move> =
+        position.legal_moves().iter().filter(|&mv| !repeats_a_connection(position, mv)).collect();
+    moves.sort_by_key(|mv| (Reverse(length(*mv)), mv.index()));
+
+    let mut tried: Vec<Ranked> = moves
+        .into_iter()
+        .take(budget)
+        .map(|mv| {
+            let mut after = position.clone();
+            let outcome = after.apply_unchecked(mv);
+            let value = value(&after);
+            let mut priority = sign(mover) * value;
+            if first && after.to_move() == mover && !after.is_finished() {
+                priority += loop_bonus(position, mv, &after, room_before);
+            }
+            // Fix 1: full-horizon claims and denial, in ranking as well as selection.
+            priority += horizon_extension(position, &after, mover);
+            let target = mv.target().expect("legal moves end on the board");
+            let own_gain = after.area(mover).to_f64() - position.area(mover).to_f64();
+            // All priorities run in full-horizon points (area x events), so
+            // fixed penalties must scale the same way or they never fire.
+            let hz = f64::from(position.scoring_events_left()).min(HORIZON);
+            if first {
+                // Two-front play: hot position + far target = safe banking.
+                if heat >= FIGHT_HEAT
+                    && outcome.broken.is_none()
+                    && !near_enemy_node(position, opp, target, REMOTE_DIST)
+                {
+                    priority += REMOTE_BONUS * hz;
+                }
+                // Fresh/shielded walls: don't fight what can't be cut yet.
+                if outcome.broken.is_none()
+                    && near_fresh_enemy(position, target)
+                {
+                    priority -= FRESH_PENALTY * hz;
+                }
+                // Thicket density: land next to 2+ own nodes.
+                if near_own_count(position, mover, target) >= DENSE_COUNT {
+                    priority += DENSE_BONUS * hz;
+                }
+                // Do-nothing filter.
+                if outcome.broken.is_none()
+                    && own_gain <= 0.0
+                    && room(&after, mover) - room_before < IDLE_ROOM
+                    && !near_enemy_node(position, opp, target, IDLE_ENEMY_DIST)
+                {
+                    priority -= IDLE_PENALTY * hz;
+                }
+                // Anti-rebuild routing: our loops were cut near these points
+                // recently; re-closing there gets farmed. Counter-cutting
+                // (breaking something) is exempt. (Rival-analysis steal #1.)
+                if outcome.broken.is_none() && near_points(avoid.iter().copied(), target, CUT_RADIUS) {
+                    priority -= REBUILD_PENALTY * hz;
+                }
+                // Patience: don't snatch tiny loops in the opening while the
+                // board is wide open; set up bigger closes instead (GB delays
+                // its first close to action ~13 and banks ~10/loop).
+                if outcome.kind == MoveKind::Connect
+                    && own_gain < PATIENCE_MAX_GAIN
+                    && position.actions_played() < PATIENCE_WINDOW
+                {
+                    priority -= PATIENCE_PENALTY * hz;
+                }
+                // Fix 2: don't graze the enemy frontier for free.
+                if outcome.broken.is_none()
+                    && near_enemy_node(position, opp, target, 1)
+                {
+                    priority -= CONTACT_PENALTY * hz;
+                }
+                // Fix 3: don't reinforce the back; expand instead. A Connect
+                // that adds no area far from the enemy burns tempo: the safe
+                // loop already banks, and redundancy never survives a cut.
+                if outcome.kind == MoveKind::Connect
+                    && own_gain <= 0.0
+                    && !near_enemy_node(position, opp, target, DEADWOOD_ENEMY_DIST)
+                {
+                    priority -= DEADWOOD_PENALTY * hz;
+                }
+            }
+            Ranked { mv, after, value, priority }
+        })
+        .collect();
+    tried.sort_by(|a, b| b.priority.total_cmp(&a.priority).then(a.mv.index().cmp(&b.mv.index())));
+    tried.into_iter().map(|r| (r.mv, r.after, r.value, r.priority)).collect()
+}
+
+/// Whether `target` is within Chebyshev `dist` of any of the given points.
+fn near_points(mut points: impl Iterator<Item = Point>, target: Point, dist: i8) -> bool {
+    points.any(|p| (p.x() - target.x()).abs() <= dist && (p.y() - target.y()).abs() <= dist)
+}
+
+/// How many close opposing-node pairs the position holds: the fight heat.
+/// Computed once per ranking (not per candidate).
+fn fight_heat(position: &Position, mover: Player, opp: Player) -> usize {
+    let own: Vec<Point> = position.nodes(mover).iter().collect();
+    let foe: Vec<Point> = position.nodes(opp).iter().collect();
+    let mut heat = 0;
+    for a in &own {
+        for b in &foe {
+            if (a.x() - b.x()).abs() <= FIGHT_DIST && (a.y() - b.y()).abs() <= FIGHT_DIST {
+                heat += 1;
+            }
+        }
+    }
+    heat
+}
+
+/// Whether `target` is near enemy edges placed last turn (shielded: uncuttable
+/// now, so contesting them is burned tempo).
+fn near_fresh_enemy(position: &Position, target: Point) -> bool {
+    position.shielded_edges().any(|edge| {
+        near_points([edge.origin(), edge.far()].into_iter(), target, FRESH_RADIUS)
+    })
+}
+
+/// How many of `player`'s nodes are within Chebyshev `DENSE_DIST` of `target`.
+fn near_own_count(position: &Position, player: Player, target: Point) -> u32 {
+    position
+        .nodes(player)
+        .iter()
+        .filter(|node| {
+            (node.x() - target.x()).abs() <= DENSE_DIST
+                && (node.y() - target.y()).abs() <= DENSE_DIST
+        })
+        .count() as u32
+}
+
+/// Whether `target` is within Chebyshev `dist` of any of `player`'s nodes.
+fn near_enemy_node(position: &Position, player: Player, target: Point, dist: i8) -> bool {
+    near_points(position.nodes(player).iter(), target, dist)
+}
+
+/// A connection between two of the mover's nodes is listed from both ends. This is the second.
+fn repeats_a_connection(position: &Position, mv: Move) -> bool {
+    let target = mv.target().expect("legal moves end on the board");
+    position.nodes(position.to_move()).contains(target) && target < mv.source
+}
+
+fn length(mv: Move) -> i8 {
+    mv.direction.dx().abs().max(mv.direction.dy().abs())
+}
+
+/// Chebyshev distance from a move's target to the board center (9,9 on 19×19).
+/// Used by D1 for exact-tie breaking: nearest-first.
+fn distance_to_center(mv: &Move) -> f64 {
+    let target = match mv.target() {
+        Some(t) => t,
+        None => return f64::MAX,
+    };
+    let cx = 9.0f64;
+    let cy = 9.0f64;
+    let dx = (target.x() as f64 - cx).abs();
+    let dy = (target.y() as f64 - cy).abs();
+    dx.max(dy)
+}
+
+/// For a first action the second can close into a triangle: the room it adds, up to that
+/// triangle's area, for the scoring events left. It keeps such plans ahead of long edges that
+/// cannot be closed in time.
+fn loop_bonus(position: &Position, mv: Move, after: &Position, room_before: f64) -> f64 {
+    let mover = position.to_move();
+    let target = mv.target().expect("legal moves end on the board");
+    let mut triangle: f64 = 0.0;
+    for edge in position.edges(mover).iter().filter(|edge| edge.has_endpoint(mv.source)) {
+        let (origin, far) = edge.endpoints();
+        let third = if origin == mv.source { far } else { origin };
+        let closes = Move::between(target, third).is_some_and(|closing| after.check_move(closing).is_ok());
+        if closes {
+            triangle = triangle.max(f64::from(cross(mv.source, target, third).abs()) * 0.5);
+        }
+    }
+    let added_room = (room(after, mover) - room_before).max(0.0).min(triangle);
+    added_room * f64::from(after.scoring_events_left().min(HORIZON as u8))
+}
+
+/// The area of the convex hull of a player's nodes: room to grow into.
+fn room(position: &Position, player: Player) -> f64 {
+    let mut points: Vec<Point> = position.nodes(player).iter().collect();
+    points.sort_by_key(|point| (point.x(), point.y()));
+    if points.len() < 3 {
+        return 0.0;
+    }
+    let mut hull = half_hull(points.iter().copied());
+    hull.extend(half_hull(points.iter().rev().copied()));
+    let first = hull[0];
+    hull.windows(2).map(|pair| cross(first, pair[0], pair[1]) as f64).sum::<f64>().abs() * 0.5
+}
+
+/// One side of the convex hull of points sorted left to right (Andrew's monotone chain), without
+/// its last point, which starts the other side.
+fn half_hull(points: impl Iterator<Item = Point>) -> Vec<Point> {
+    let mut chain: Vec<Point> = Vec::new();
+    for point in points {
+        while chain.len() >= 2 && cross(chain[chain.len() - 2], chain[chain.len() - 1], point) <= 0 {
+            chain.pop();
+        }
+        chain.push(point);
+    }
+    chain.pop();
+    chain
+}
+
+/// Twice the signed area of the triangle `a`, `b`, `c`: positive when it turns counter-clockwise.
+fn cross(a: Point, b: Point, c: Point) -> i32 {
+    i32::from(b.x() - a.x()) * i32::from(c.y() - a.y()) - i32::from(b.y() - a.y()) * i32::from(c.x() - a.x())
+}
+
+/// 1 for Blue and -1 for Red, to turn Blue's lead into the mover's.
+fn sign(player: Player) -> f64 {
+    if player == Player::Blue { 1.0 } else { -1.0 }
+}
+
+// ---------------------------------------------------------------------------
+// REINFORCE-LINES dose machinery (lane-owned; everything above is the
+// shipped skeleton except the marked dose block in `analyze_dosed`).
+// ---------------------------------------------------------------------------
+
+/// The one dose variable: the weight on measured Δdurable area at selection,
+/// in full-horizon points (Δdurable x min(events_left, HORIZON) each).
+#[derive(Clone, Copy, PartialEq)]
+pub struct Reinforce {
+    pub w: f64,
+}
+
+impl Reinforce {
+    /// OFF: the control — byte-identical to the shipped search.
+    pub const OFF: Self = Self { w: 0.0 };
+    /// Parse the `R_REINFORCE` probe env (e.g. "0.5"). Absent/unparseable = OFF.
+    pub fn from_env() -> Self {
+        match std::env::var("R_REINFORCE") {
+            Ok(v) => match v.parse::<f64>() {
+                Ok(w) if w.is_finite() => Self { w },
+                _ => Self::OFF,
+            },
+            Err(_) => Self::OFF,
+        }
+    }
+    /// Whether the dose fires at all.
+    pub fn on(self) -> bool {
+        self.w != 0.0
+    }
+}
+
+/// A shield-cleared, enemy-to-move view of `pos`: the same edges and scores,
+/// `actions_played` bumped by the smallest of {0, 1, 2} that leaves `enemy`
+/// to move, no recent edges. On this view `legal_moves` are exactly the
+/// single actions the enemy could play with the rule-6 shield expired — our
+/// just-placed edges count as cuttable, so a farmed re-close never reads as
+/// protected, while a true 2+-touch wall (no legal single cut) reads in full.
+/// `None` only when no bump fits the 120-action budget (the game's last
+/// action), where nothing durable is left to measure.
+fn enemy_view(pos: &Position, enemy: Player) -> Option<Position> {
+    let blue: Vec<Edge> = pos.edges(Player::Blue).iter().collect();
+    let red: Vec<Edge> = pos.edges(Player::Red).iter().collect();
+    let scores = [pos.score(Player::Blue), pos.score(Player::Red)];
+    for bump in [0u8, 1, 2] {
+        let Some(ap) = pos.actions_played().checked_add(bump) else { continue };
+        // 120 = TOTAL_ACTIONS: beyond it the position is not constructible.
+        if ap > 120 {
+            continue;
+        }
+        if let Ok(view) = Position::setup(&blue, &red, ap, scores, &[]) {
+            if view.to_move() == enemy {
+                return Some(view);
+            }
+        }
+    }
+    None
+}
+
+/// Area of `ours` that survives the enemy's best single legal cut next turn:
+/// held area minus the largest pop any one enemy action can inflict,
+/// measured by engine legality on the shield-cleared enemy view. A terminal
+/// position (no constructible view) holds its area by definition — at game
+/// end nothing can be popped any more.
+pub fn durable_area(pos: &Position, ours: Player) -> f64 {
+    let held = pos.area(ours).to_f64();
+    let Some(view) = enemy_view(pos, ours.opponent()) else {
+        return held;
+    };
+    let mut worst = 0.0f64;
+    for mv in view.legal_moves().iter() {
+        let mut next = view.clone();
+        next.apply_unchecked(mv);
+        worst = worst.max(held - next.area(ours).to_f64());
+    }
+    (held - worst).max(0.0)
+}
+
+/// [`best_move_with_avoid`] plus the REINFORCE-LINES dose at weight `w`.
+pub fn reinforce_best_move_with_avoid(
+    position: &Position,
+    avoid: &[Point],
+    w: f64,
+) -> Option<Move> {
+    if let Some(open) = blue_opener(position) {
+        return Some(open);
+    }
+    analyze_dosed(position, MOVE_BUDGET, avoid, w)
+        .candidates
+        .first()
+        .map(|candidate| candidate.mv)
+}
+
+/// [`best_move`] plus the REINFORCE-LINES dose at weight `w` (0.0 = control).
+pub fn reinforce_best_move(position: &Position, w: f64) -> Option<Move> {
+    reinforce_best_move_with_avoid(position, &[], w)
 }
