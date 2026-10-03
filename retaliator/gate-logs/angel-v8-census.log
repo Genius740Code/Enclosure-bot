@@ -1,0 +1,23 @@
+v8_0347cde5: CIRCLE@ 97 gained 4.5 | our nodes inside 2/14 | opp edges 34 (deg>=2: 23) | phase late
+v8_0347cde5: CIRCLE@108 gained 22.6 | our nodes inside 2/18 | opp edges 33 (deg>=2: 21) | phase late
+v8_0347cde5: CIRCLE@109 gained 5.6 | our nodes inside 2/16 | opp edges 34 (deg>=2: 22) | phase late
+v8_0347cde5: 3 circles | final 1319-2085 OPP WINS
+v8_140faf2d: 0 circles | final 479-1810 OPP WINS
+v8_82aa8c12: 0 circles | final 2169-3318 OPP WINS
+v8_abe514b7: CIRCLE@ 66 gained 17.0 | our nodes inside 3/12 | opp edges 16 (deg>=2: 11) | phase mid
+v8_abe514b7: CIRCLE@ 71 gained 11.5 | our nodes inside 3/12 | opp edges 17 (deg>=2: 13) | phase mid
+v8_abe514b7: 2 circles | final 212-1077 OPP WINS
+
+=== ANGEL-CIRCLE census ===
+games 4, actions 480 | opponent closes 52 (gaining 46) | circles 5 in 2 games | circles/closing-gaining 10.9%
+shape by gained area: small(<8) 2 mid(8-30) 3 big(>=30) 0 | by phase: early 0 mid 2 late 3 | our nodes inside: 1 0 2-4 5 5+ 0
+wall thickness at circle: avg deg>=2 (shared-node) count 18.0, avg opponent edges 26.8
+what breaks it: circle edges cuttable at first our-turn 5/5 circles (avg 3.8 cuttable edges, max destroyed 5.6) | we cut a circle edge in 5 circles | bank lost (opp area fell back) in 4 circles
+outcomes: our win rate in circled games 0/2 = 0.0% vs uncircled 0/2 = 0.0%
+port validation (territory port vs engine area): 8 checks, 0 mismatches
+
+-- per opponent (games, circles, circles/game, cuttable-at-turn, we-cut, bank-lost) --
+AngelBot WASM  games  4 circles   5 (1.25/game) | cuttable 5/5 | we-cut 5 | bank-lost 4
+
+NOTE: no AngelWASM games available yet (v8 evals queued, not landed) —
+run this probe on them when they land for the AngelWASM-specific census.

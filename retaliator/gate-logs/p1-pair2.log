@@ -1,0 +1,7 @@
+P1 pair-regret census (our double turns, /home/genius74o/game):
+double turns 1357 | re-plan != PV-assumed mv2: 108 (8.0%)
+regret joint-greedy > 0.5: 87 (6.4%) | > 5: 58 (4.3%)
+regret size: mean 1.016 | p90 0.000 | max 113.250
+us=Blue: turns 667 | mismatch 30 (4.5%) | regret > 0.5 30 (4.5%) | > 5 21 | mean 0.519 | p90 0.000 | max 38.000
+us=Red: turns 690 | mismatch 78 (11.3%) | regret > 0.5 57 (8.3%) | > 5 37 | mean 1.497 | p90 0.000 | max 113.250
+VERDICT: D1 KILL — regret big but re-plan tracks the PV (not frequent)

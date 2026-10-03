@@ -1,0 +1,328 @@
+R-chall-aggro-botIsblue.moves: 120 actions | cuts us 24 (zy 7) / opp 24 (zy 6) | destroyed us 8.8 opp 28.8 | final 538-282 Win
+    zy@ 17 D10-E9 dose=D8-B11 | outcome rec Win dose Win ctrl Win | margin rec +256 dose +960 ctrl +1572 top=same top=zy
+    zy@ 24 E9-D6 dose=A11-C13 | outcome rec Win dose Win ctrl Win | margin rec +256 dose +1134 ctrl +1134 
+    zy@ 64 E8-E5 dose=A11-C13 | outcome rec Win dose Win ctrl Win | margin rec +256 dose +885 ctrl +885 
+    zy@ 76 E8-E6 dose=C11-D14 | outcome rec Win dose Win ctrl Win | margin rec +256 dose +607 ctrl +607 
+    zy@ 85 F9-H10 dose=A9-C6 | outcome rec Win dose Win ctrl Win | margin rec +256 dose +295 ctrl +372 top=zy
+    zy@ 92 D5-A2 dose=C11-D14 | outcome rec Win dose Win ctrl Win | margin rec +256 dose +461 ctrl +461 
+    zy@ 97 E6-F9 dose=C6-C3 | outcome rec Win dose Win ctrl Win | margin rec +256 dose +455 ctrl +455 
+    flip census: 7/7 zero-yield cuts measured (cap 16) | targets 2 | flips ctrl 0 recorded 0
+R-chall-aggro-botIsred.moves: 120 actions | cuts us 21 (zy 7) / opp 32 (zy 7) | destroyed us 10.9 opp 64.9 | final 481-633 Loss
+    zy@ 18 P10-M8 dose=S10-S13 | outcome rec Loss dose Win ctrl Win | margin rec -152 dose +176 ctrl +176 
+    zy@ 22 S10-P13 dose=P9-M11 | outcome rec Loss dose Win ctrl Win | margin rec -152 dose +211 ctrl +211 
+    zy@ 27 P10-Q8 dose=Q7-N4 | outcome rec Loss dose Win ctrl Win | margin rec -152 dose +564 ctrl +583 top=zy
+    zy@ 38 O10-L8 dose=Q13-S13 | outcome rec Loss dose Win ctrl Win | margin rec -152 dose +646 ctrl +646 
+    zy@ 66 Q7-Q8 dose=S13-Q15 | outcome rec Loss dose Win ctrl Win | margin rec -152 dose +89 ctrl +89 
+    zy@ 74 Q13-Q12 dose=S13-Q15 | outcome rec Loss dose Win ctrl Win | margin rec -152 dose +37 ctrl +37 
+    zy@ 90 S9-Q6 dose=S14-Q15 | outcome rec Loss dose Loss ctrl Loss | margin rec -152 dose -36 ctrl -36 
+    flip census: 7/7 zero-yield cuts measured (cap 16) | targets 1 | flips ctrl 0 recorded 6
+R-chall-blob-botIsblue.moves: 120 actions | cuts us 0 (zy 0) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 981-4226 Loss
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-blob-botIsred.moves: 120 actions | cuts us 15 (zy 2) / opp 1 (zy 0) | destroyed us 35.6 opp 3.2 | final 2340-3021 Loss
+    zy@102 F3-C1 dose=M10-J11 | outcome rec Loss dose Loss ctrl Loss | margin rec -681 dose -597 ctrl -597 
+    zy@107 C7-A4 dose=B5-B8 | outcome rec Loss dose Loss ctrl Loss | margin rec -681 dose -642 ctrl -642 
+    flip census: 2/2 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-junk-botIsblue.moves: 120 actions | cuts us 17 (zy 14) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 2535-0 Win
+    zy@ 48 A17-D16 dose=B11-E14 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2258 ctrl +2258 
+    zy@ 61 D16-G13 dose=D16-G17 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +1256 ctrl +1782 top=zy
+    zy@ 65 G13-J10 dose=G13-J14 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +1079 ctrl +2167 top=zy
+    zy@ 68 J10-G7 dose=A19-D19 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +1413 ctrl +1413 
+    zy@ 73 E10-H13 dose=E10-D11 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2025 ctrl +2618 top=zy
+    zy@ 77 G7-I4 dose=A14-B14 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2588 ctrl +1820 top=zy
+    zy@ 80 I4-F3 dose=A19-D19 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2681 ctrl +2640 top=zy
+    zy@ 96 H9-J11 dose=H9-K7 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2469 ctrl +2351 top=zy
+    zy@100 H9-K6 dose=A19-D19 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2297 ctrl +2366 top=zy
+    zy@104 G1-D4 dose=A19-D19 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2336 ctrl +2357 top=zy
+    zy@108 F4-H1 dose=A19-D19 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2522 ctrl +2507 top=zy
+    zy@112 J11-K8 dose=D4-D1 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2465 ctrl +2497 top=zy
+    zy@116 H1-J1 dose=D4-D1 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2540 ctrl +2546 top=zy
+    zy@120 K8-K10 dose=H13-E14 | outcome rec Win dose Win ctrl Win | margin rec +2535 dose +2535 ctrl +2535 top=zy
+    flip census: 14/14 zero-yield cuts measured (cap 16) | targets 12 | flips ctrl 0 recorded 0
+R-chall-junk-botIsred.moves: 120 actions | cuts us 27 (zy 21) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 5575-0 Win
+    zy@ 18 J1-G4 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +1641 ctrl +1641 
+    zy@ 22 D1-A4 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +2315 ctrl +2315 
+    zy@ 23 A4-D7 dose=P13-M16 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +1162 ctrl +1162 
+    zy@ 27 M4-J4 dose=M4-P1 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +3104 ctrl +3104 
+    zy@ 31 A4-A7 dose=P13-O13 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +2493 ctrl +2563 top=zy
+    zy@ 35 A7-B10 dose=P7-S4 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +3128 ctrl +3128 
+    zy@ 39 P13-M13 dose=P7-S4 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +3131 ctrl +3131 
+    zy@ 43 J4-M7 dose=P7-S4 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +3340 ctrl +3340 
+    zy@ 47 B10-A11 dose=P7-S4 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +3596 ctrl +4408 top=zy
+    zy@ 50 A11-A13 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +4201 ctrl +4201 
+    zy@ 54 M7-J10 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +3951 ctrl +3951 
+    zy@ 55 J10-G7 dose=P7-S4 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +4653 ctrl +4653 
+    zy@ 62 A11-C14 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +4980 ctrl +4980 
+    zy@ 75 H10-E10 dose=P7-S4 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +5312 ctrl +5312 
+    zy@ 78 E10-G7 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +5776 ctrl +5776 
+    zy@ 79 C14-A16 dose=P7-S4 | outcome rec Win dose Win ctrl Win | margin rec +5575 dose +5278 ctrl +5278 
+    flip census: 16/21 zero-yield cuts measured (cap 16) | targets 2 | flips ctrl 0 recorded 0
+R-chall-neck-botIsblue.moves: 120 actions | cuts us 23 (zy 1) / opp 22 (zy 2) | destroyed us 28.4 opp 28.6 | final 736-802 Loss
+    zy@ 61 G11-H8 dose=D11-B12 | outcome rec Loss dose Win ctrl Win | margin rec -66 dose +456 ctrl +456 
+    flip census: 1/1 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 1
+R-chall-neck-botIsred.moves: 120 actions | cuts us 30 (zy 4) / opp 44 (zy 3) | destroyed us 31.0 opp 99.0 | final 373-705 Loss
+    zy@ 18 P10-M8 dose=S10-S13 | outcome rec Loss dose Win ctrl Win | margin rec -332 dose +155 ctrl +155 
+    zy@ 22 S10-P13 dose=P9-M11 | outcome rec Loss dose Loss ctrl Loss | margin rec -332 dose -1 ctrl -1 
+    zy@ 27 P10-Q8 dose=Q7-N4 | outcome rec Loss dose Win ctrl Loss | margin rec -332 dose +239 ctrl -99 top=zy FLIP
+    zy@ 50 S10-P9 dose=S10-S7 | outcome rec Loss dose Win ctrl Win | margin rec -332 dose +276 ctrl +276 
+    flip census: 4/4 zero-yield cuts measured (cap 16) | targets 1 | flips ctrl 1 recorded 3
+R-chall-random-botIsblue-s1000.moves: 120 actions | cuts us 0 (zy 0) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 1161-1191 Loss
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsblue-s1001.moves: 120 actions | cuts us 0 (zy 0) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 1223-1233 Loss
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsblue-s1002.moves: 120 actions | cuts us 0 (zy 0) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 1223-1196 Win
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsblue-s1003.moves: 120 actions | cuts us 10 (zy 9) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 1377-1100 Win
+    zy@ 88 C14-F12 dose=C14-E17 | outcome rec Win dose Win ctrl Win | margin rec +277 dose +292 ctrl +292 
+    zy@ 92 F12-G9 dose=C14-E17 | outcome rec Win dose Win ctrl Win | margin rec +277 dose +407 ctrl +407 
+    zy@ 96 G9-H10 dose=C14-E17 | outcome rec Win dose Win ctrl Win | margin rec +277 dose +402 ctrl +352 top=zy
+    zy@100 H10-K11 dose=C14-E17 | outcome rec Win dose Win ctrl Win | margin rec +277 dose +350 ctrl +350 
+    zy@101 K11-H13 dose=B17-B18 | outcome rec Win dose Win ctrl Win | margin rec +277 dose +308 ctrl +308 
+    zy@105 K11-M13 dose=B17-B18 | outcome rec Win dose Win ctrl Win | margin rec +277 dose +336 ctrl +336 
+    zy@109 J11-L13 dose=E3-H1 | outcome rec Win dose Win ctrl Win | margin rec +277 dose +297 ctrl +297 
+    zy@113 M12-O10 dose=M12-P11 | outcome rec Win dose Win ctrl Win | margin rec +277 dose +279 ctrl +279 
+    zy@120 I12-L14 dose=B2-B3 | outcome rec Win dose Win ctrl Win | margin rec +277 dose +277 ctrl +277 
+    flip census: 9/9 zero-yield cuts measured (cap 16) | targets 1 | flips ctrl 0 recorded 0
+R-chall-random-botIsblue-s1004.moves: 120 actions | cuts us 0 (zy 0) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 1129-1386 Loss
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsblue-s1005.moves: 120 actions | cuts us 0 (zy 0) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 1129-1290 Loss
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsblue-s1006.moves: 120 actions | cuts us 10 (zy 5) / opp 0 (zy 0) | destroyed us 15.9 opp 0.0 | final 1203-886 Win
+    zy@ 92 E16-H16 dose=B7-E4 | outcome rec Win dose Win ctrl Win | margin rec +317 dose +394 ctrl +394 
+    zy@ 93 H16-K15 dose=H16-K18 | outcome rec Win dose Win ctrl Win | margin rec +317 dose +354 ctrl +354 
+    zy@108 J16-L18 dose=B18-E19 | outcome rec Win dose Win ctrl Win | margin rec +317 dose +378 ctrl +378 
+    zy@116 O15-N18 dose=B18-E19 | outcome rec Win dose Win ctrl Win | margin rec +317 dose +337 ctrl +337 
+    zy@120 K15-M12 dose=N18-Q17 | outcome rec Win dose Win ctrl Win | margin rec +317 dose +320 ctrl +320 
+    flip census: 5/5 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsblue-s1007.moves: 120 actions | cuts us 8 (zy 3) / opp 0 (zy 0) | destroyed us 5.5 opp 0.0 | final 1210-1268 Loss
+    zy@ 84 E3-H1 dose=B11-E14 | outcome rec Loss dose Win ctrl Win | margin rec -58 dose +171 ctrl +171 
+    zy@100 J5-J7 dose=A19-D19 | outcome rec Loss dose Loss ctrl Loss | margin rec -58 dose -34 ctrl -34 
+    zy@113 G2-J1 dose=B18-E19 | outcome rec Loss dose Loss ctrl Loss | margin rec -58 dose -57 ctrl -57 
+    flip census: 3/3 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 1
+R-chall-random-botIsblue-s1008.moves: 120 actions | cuts us 10 (zy 4) / opp 0 (zy 0) | destroyed us 8.1 opp 0.0 | final 1610-1070 Win
+    zy@ 92 E16-H13 dose=B7-E4 | outcome rec Win dose Win ctrl Win | margin rec +539 dose +449 ctrl +449 
+    zy@ 96 H11-F8 dose=E16-H16 | outcome rec Win dose Win ctrl Win | margin rec +539 dose +246 ctrl +246 
+    zy@100 H13-J10 dose=E16-H16 | outcome rec Win dose Win ctrl Win | margin rec +539 dose +499 ctrl +499 
+    zy@104 G10-J7 dose=E16-H16 | outcome rec Win dose Win ctrl Win | margin rec +539 dose +502 ctrl +502 
+    flip census: 4/4 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsblue-s1009.moves: 120 actions | cuts us 10 (zy 5) / opp 0 (zy 0) | destroyed us 15.5 opp 0.0 | final 1305-739 Win
+    zy@ 85 E3-H2 dose=D2-E3 | outcome rec Win dose Win ctrl Win | margin rec +566 dose +449 ctrl +449 
+    zy@ 89 H2-H5 dose=H2-G3 | outcome rec Win dose Win ctrl Win | margin rec +566 dose +392 ctrl +392 
+    zy@ 93 G3-I3 dose=H2-G3 | outcome rec Win dose Win ctrl Win | margin rec +566 dose +208 ctrl +208 
+    zy@100 H5-K5 dose=C14-E17 | outcome rec Win dose Win ctrl Win | margin rec +566 dose +344 ctrl +344 
+    zy@109 H2-K3 dose=H2-I3 | outcome rec Win dose Win ctrl Win | margin rec +566 dose +565 ctrl +565 
+    flip census: 5/5 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsred-s2000.moves: 120 actions | cuts us 19 (zy 7) / opp 0 (zy 0) | destroyed us 21.9 opp 0.0 | final 2180-998 Win
+    zy@ 62 B4-D6 dose=P12-M12 | outcome rec Win dose Win ctrl Win | margin rec +1182 dose +1404 ctrl +1404 
+    zy@ 66 D6-F8 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +1182 dose +1252 ctrl +1252 
+    zy@ 70 H10-E9 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +1182 dose +1243 ctrl +1243 
+    zy@ 74 F8-G11 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +1182 dose +1228 ctrl +1228 
+    zy@ 83 H10-F13 dose=Q9-Q6 | outcome rec Win dose Win ctrl Win | margin rec +1182 dose +1102 ctrl +1102 
+    zy@103 E8-B7 dose=B15-C18 | outcome rec Win dose Win ctrl Win | margin rec +1182 dose +1180 ctrl +1180 
+    zy@107 D12-A14 dose=B7-E10 | outcome rec Win dose Win ctrl Win | margin rec +1182 dose +1197 ctrl +1197 
+    flip census: 7/7 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsred-s2001.moves: 120 actions | cuts us 25 (zy 5) / opp 0 (zy 0) | destroyed us 19.0 opp 0.0 | final 2355-624 Win
+    zy@ 23 J7-G6 dose=J7-H10 | outcome rec Win dose Win ctrl Win | margin rec +1731 dose +2541 ctrl +2541 
+    zy@ 27 E6-B3 dose=E6-B8 | outcome rec Win dose Win ctrl Win | margin rec +1731 dose +2234 ctrl +2234 
+    zy@ 30 B3-D2 dose=P13-M13 | outcome rec Win dose Win ctrl Win | margin rec +1731 dose +2479 ctrl +2479 
+    zy@ 62 J7-G9 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +1731 dose +1916 ctrl +1916 
+    zy@ 83 A13-A10 dose=F7-D8 | outcome rec Win dose Win ctrl Win | margin rec +1731 dose +1808 ctrl +1808 
+    flip census: 5/5 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsred-s2002.moves: 120 actions | cuts us 24 (zy 12) / opp 3 (zy 1) | destroyed us 25.0 opp 8.7 | final 2130-812 Win
+    zy@ 22 M4-J6 dose=G1-D4 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +2278 ctrl +2278 
+    zy@ 58 K3-H6 dose=P7-P4 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1337 ctrl +1337 
+    zy@ 63 P13-M14 dose=H6-F7 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1116 ctrl +1116 
+    zy@ 67 A3-A6 dose=P10-O13 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1364 ctrl +1364 
+    zy@ 71 C8-B9 dose=H2-J5 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1114 ctrl +1114 
+    zy@ 75 M14-J12 dose=H2-J5 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1435 ctrl +1435 
+    zy@ 79 G13-D14 dose=H2-J5 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1672 ctrl +1672 
+    zy@ 82 D14-E13 dose=P7-P4 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1648 ctrl +1648 
+    zy@ 91 M5-J8 dose=J6-G7 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1143 ctrl +1143 
+    zy@ 99 C8-A8 dose=G13-G10 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1539 ctrl +1539 
+    zy@103 B9-D6 dose=D14-E12 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1423 ctrl +1423 
+    zy@107 G13-D15 dose=H2-G4 | outcome rec Win dose Win ctrl Win | margin rec +1317 dose +1364 ctrl +1364 
+    flip census: 12/12 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsred-s2003.moves: 120 actions | cuts us 22 (zy 15) / opp 0 (zy 0) | destroyed us 13.6 opp 0.0 | final 2475-666 Win
+    zy@ 22 D1-A4 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +1824 ctrl +1824 
+    zy@ 23 A4-C5 dose=P12-P15 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +2002 ctrl +2002 
+    zy@ 30 M4-J2 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +2092 ctrl +2092 
+    zy@ 34 J1-G3 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +1794 ctrl +1794 
+    zy@ 42 F2-H5 dose=G3-E6 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +2447 ctrl +2447 
+    zy@ 47 E2-E4 dose=C5-C8 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +2214 ctrl +2214 
+    zy@ 51 F2-I4 dose=C5-C8 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +2133 ctrl +2133 
+    zy@ 62 I4-L7 dose=S10-S7 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +1948 ctrl +1948 
+    zy@ 74 B5-D7 dose=O5-O2 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +2159 ctrl +2159 
+    zy@ 79 C4-E6 dose=C8-D9 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +2082 ctrl +2082 
+    zy@ 86 C4-F6 dose=C8-B10 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +1993 ctrl +1993 
+    zy@ 94 L8-J11 dose=F6-D9 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +2045 ctrl +2045 
+    zy@107 L13-I12 dose=C8-D9 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +1859 ctrl +1859 
+    zy@110 I12-G15 dose=O5-O2 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +1840 ctrl +1840 
+    zy@119 G15-D13 dose=C8-D9 | outcome rec Win dose Win ctrl Win | margin rec +1809 dose +1815 ctrl +1815 
+    flip census: 15/15 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsred-s2004.moves: 120 actions | cuts us 21 (zy 10) / opp 1 (zy 0) | destroyed us 12.2 opp 1.9 | final 2719-458 Win
+    zy@ 31 H8-E8 dose=G4-I7 | outcome rec Win dose Win ctrl Win | margin rec +2261 dose +2271 ctrl +2271 
+    zy@ 34 E8-B8 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +2261 dose +2115 ctrl +2115 
+    zy@ 90 C10-B13 dose=H4-E2 | outcome rec Win dose Win ctrl Win | margin rec +2261 dose +2379 ctrl +2379 
+    zy@ 91 B13-A16 dose=N4-Q1 | outcome rec Win dose Win ctrl Win | margin rec +2261 dose +2259 ctrl +2259 
+    zy@ 95 I7-J10 dose=B13-E16 | outcome rec Win dose Win ctrl Win | margin rec +2261 dose +2286 ctrl +2286 
+    zy@102 C12-B15 dose=H4-E2 | outcome rec Win dose Win ctrl Win | margin rec +2261 dose +2393 ctrl +2393 
+    zy@106 B13-D15 dose=H4-E2 | outcome rec Win dose Win ctrl Win | margin rec +2261 dose +2360 ctrl +2360 
+    zy@110 B15-D17 dose=H4-E2 | outcome rec Win dose Win ctrl Win | margin rec +2261 dose +2339 ctrl +2339 
+    zy@115 P13-M16 dose=N4-Q1 | outcome rec Win dose Win ctrl Win | margin rec +2261 dose +2276 ctrl +2276 top=zy
+    zy@119 M16-J13 dose=D15-F14 | outcome rec Win dose Win ctrl Win | margin rec +2261 dose +2280 ctrl +2280 
+    flip census: 10/10 zero-yield cuts measured (cap 16) | targets 1 | flips ctrl 0 recorded 0
+R-chall-random-botIsred-s2005.moves: 120 actions | cuts us 23 (zy 10) / opp 2 (zy 1) | destroyed us 20.5 opp 2.5 | final 2575-902 Win
+    zy@ 55 E10-B7 dose=Q7-Q6 | outcome rec Win dose Win ctrl Win | margin rec +1673 dose +1830 ctrl +1830 
+    zy@ 58 B7-A4 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +1673 dose +1761 ctrl +1761 
+    zy@ 59 H8-E9 dose=Q7-Q6 | outcome rec Win dose Win ctrl Win | margin rec +1673 dose +1684 ctrl +1684 
+    zy@ 63 E9-B8 dose=H11-I14 | outcome rec Win dose Win ctrl Win | margin rec +1673 dose +1975 ctrl +1975 
+    zy@ 67 K8-K11 dose=H11-I14 | outcome rec Win dose Win ctrl Win | margin rec +1673 dose +1836 ctrl +1836 
+    zy@ 74 J8-G11 dose=H11-K13 | outcome rec Win dose Win ctrl Win | margin rec +1673 dose +1820 ctrl +1820 
+    zy@ 79 G11-J14 dose=H11-G13 | outcome rec Win dose Win ctrl Win | margin rec +1673 dose +1893 ctrl +1893 
+    zy@ 83 B8-C9 dose=H11-G13 | outcome rec Win dose Win ctrl Win | margin rec +1673 dose +1824 ctrl +1824 
+    zy@ 86 I14-F15 dose=H11-G13 | outcome rec Win dose Win ctrl Win | margin rec +1673 dose +1782 ctrl +1782 
+    zy@ 95 F16-D16 dose=G13-D13 | outcome rec Win dose Win ctrl Win | margin rec +1673 dose +1754 ctrl +1754 
+    flip census: 10/10 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsred-s2006.moves: 120 actions | cuts us 24 (zy 7) / opp 0 (zy 0) | destroyed us 13.7 opp 0.0 | final 3165-391 Win
+    zy@ 55 H13-K14 dose=H13-I15 | outcome rec Win dose Win ctrl Win | margin rec +2774 dose +2254 ctrl +2254 
+    zy@ 71 N10-L13 dose=J6-L8 | outcome rec Win dose Win ctrl Win | margin rec +2774 dose +2965 ctrl +2965 
+    zy@ 83 G15-E15 dose=O9-Q6 | outcome rec Win dose Win ctrl Win | margin rec +2774 dose +2915 ctrl +2915 
+    zy@ 90 D14-C17 dose=F6-E3 | outcome rec Win dose Win ctrl Win | margin rec +2774 dose +2871 ctrl +2871 
+    zy@ 94 H11-F13 dose=F6-C8 | outcome rec Win dose Win ctrl Win | margin rec +2774 dose +2859 ctrl +2859 
+    zy@114 H7-E7 dose=F8-C9 | outcome rec Win dose Win ctrl Win | margin rec +2774 dose +2816 ctrl +2816 
+    zy@118 G14-D17 dose=F8-C7 | outcome rec Win dose Win ctrl Win | margin rec +2774 dose +2787 ctrl +2787 
+    flip census: 7/7 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsred-s2007.moves: 120 actions | cuts us 23 (zy 12) / opp 2 (zy 1) | destroyed us 1.6 opp 10.1 | final 3069-575 Win
+    zy@ 39 K8-H5 dose=N4-Q1 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2464 ctrl +2464 
+    zy@ 43 H11-E13 dose=N4-Q1 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2600 ctrl +2600 
+    zy@ 47 N10-L13 dose=P13-S16 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2703 ctrl +2703 
+    zy@ 58 M12-J12 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2552 ctrl +2552 
+    zy@ 67 D8-A5 dose=G11-D9 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2899 ctrl +2899 
+    zy@ 70 M11-J11 dose=G11-J12 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2808 ctrl +2808 
+    zy@ 74 E13-G13 dose=P13-O16 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2752 ctrl +2752 
+    zy@ 78 J11-G14 dose=P13-O16 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2806 ctrl +2806 
+    zy@ 83 G13-E10 dose=E13-G14 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2744 ctrl +2744 
+    zy@ 86 E10-C7 dose=P13-O16 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2714 ctrl +2714 
+    zy@ 94 F8-D5 dose=P13-O16 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2607 ctrl +2607 
+    zy@ 99 C7-A7 dose=J12-L13 | outcome rec Win dose Win ctrl Win | margin rec +2494 dose +2535 ctrl +2535 
+    flip census: 12/12 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsred-s2008.moves: 120 actions | cuts us 22 (zy 13) / opp 2 (zy 1) | destroyed us 2.7 opp 4.2 | final 2353-398 Win
+    zy@ 30 G4-D7 dose=D1-A4 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +2674 ctrl +2674 
+    zy@ 31 D7-E9 dose=N4-Q1 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +2767 ctrl +2767 
+    zy@ 34 E9-B6 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +2623 ctrl +2623 
+    zy@ 51 C10-A10 dose=N4-Q1 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +2362 ctrl +2362 
+    zy@ 55 E11-H11 dose=N4-Q1 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +2531 ctrl +2531 
+    zy@ 59 H11-G12 dose=E7-F10 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +2282 ctrl +2282 
+    zy@ 63 D10-E13 dose=G12-H14 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +2214 ctrl +2214 
+    zy@ 79 D14-A16 dose=N4-Q1 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +2219 ctrl +2219 
+    zy@ 86 H14-I11 dose=P13-S13 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +2066 ctrl +2066 
+    zy@ 91 A16-B17 dose=P13-S16 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +1995 ctrl +1995 
+    zy@ 95 E12-H13 dose=P13-S16 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +2030 ctrl +2030 
+    zy@ 99 H13-K11 dose=P13-S16 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +1962 ctrl +1962 
+    zy@103 M10-J7 dose=P13-S16 | outcome rec Win dose Win ctrl Win | margin rec +1955 dose +1947 ctrl +1947 
+    flip census: 13/13 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-random-botIsred-s2009.moves: 120 actions | cuts us 10 (zy 6) / opp 1 (zy 1) | destroyed us 1.8 opp 0.0 | final 4100-689 Win
+    zy@ 43 H2-E2 dose=P13-M16 | outcome rec Win dose Win ctrl Win | margin rec +3411 dose +3607 ctrl +3607 
+    zy@ 50 G4-D6 dose=P13-M13 | outcome rec Win dose Win ctrl Win | margin rec +3411 dose +3983 ctrl +3983 
+    zy@ 54 F3-C6 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +3411 dose +4018 ctrl +4018 
+    zy@ 86 C5-D8 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +3411 dose +3726 ctrl +3726 
+    zy@114 M10-J11 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +3411 dose +3424 ctrl +3424 
+    zy@118 L8-I11 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +3411 dose +3418 ctrl +3418 
+    flip census: 6/6 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-sandbag-botIsblue.moves: 120 actions | cuts us 0 (zy 0) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 1203-498 Win
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-sandbag-botIsred.moves: 120 actions | cuts us 1 (zy 1) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 3981-537 Win
+    zy@ 90 B6-B9 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +3444 dose +3554 ctrl +3554 
+    flip census: 1/1 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-sprawl-botIsblue.moves: 120 actions | cuts us 7 (zy 7) / opp 2 (zy 1) | destroyed us 0.0 opp 2.2 | final 1128-703 Win
+    zy@ 72 A4-C4 dose=B11-E14 | outcome rec Win dose Win ctrl Win | margin rec +425 dose +1131 ctrl +1131 
+    zy@ 76 C4-F1 dose=B11-E14 | outcome rec Win dose Win ctrl Win | margin rec +425 dose +947 ctrl +947 
+    zy@ 77 F1-H1 dose=B14-B15 | outcome rec Win dose Win ctrl Win | margin rec +425 dose +918 ctrl +918 
+    zy@ 81 H1-J1 dose=B14-B15 | outcome rec Win dose Win ctrl Win | margin rec +425 dose +826 ctrl +826 
+    zy@ 84 J1-K2 dose=B11-E14 | outcome rec Win dose Win ctrl Win | margin rec +425 dose +810 ctrl +810 
+    zy@ 88 K2-M4 dose=B11-E14 | outcome rec Win dose Win ctrl Win | margin rec +425 dose +745 ctrl +745 
+    zy@ 89 M4-O6 dose=B17-E19 | outcome rec Win dose Win ctrl Win | margin rec +425 dose +569 ctrl +569 
+    flip census: 7/7 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-sprawl-botIsred.moves: 120 actions | cuts us 3 (zy 1) / opp 2 (zy 0) | destroyed us 3.0 opp 1.2 | final 2253-785 Win
+    zy@ 75 C2-A5 dose=P13-M16 | outcome rec Win dose Win ctrl Win | margin rec +1468 dose +1625 ctrl +1625 
+    flip census: 1/1 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-turtle-botIsblue.moves: 120 actions | cuts us 0 (zy 0) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 1203-416 Win
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+R-chall-turtle-botIsred.moves: 120 actions | cuts us 4 (zy 3) / opp 0 (zy 0) | destroyed us 2.0 opp 0.0 | final 3985-393 Win
+    zy@ 90 B6-A9 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +3592 dose +3642 ctrl +3642 
+    zy@ 94 A9-C9 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +3592 dose +3583 ctrl +3583 
+    zy@102 B7-E10 dose=Q7-Q4 | outcome rec Win dose Win ctrl Win | margin rec +3592 dose +3601 ctrl +3601 
+    flip census: 3/3 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+chall-aggro-botIsblue.moves: 120 actions | cuts us 28 (zy 6) / opp 49 (zy 5) | destroyed us 18.7 opp 104.4 | final 352-573 Loss
+    zy@ 12 D10-E7 dose=B13-E13 | outcome rec Loss dose Win ctrl Win | margin rec -221 dose +864 ctrl +864 
+    zy@ 16 D10-G10 dose=D10-G9 | outcome rec Loss dose Win ctrl Win | margin rec -221 dose +213 ctrl +591 top=same top=zy
+    zy@ 28 C9-A12 dose=B13-D13 | outcome rec Loss dose Win ctrl Win | margin rec -221 dose +213 ctrl +213 
+    zy@ 36 D10-E13 dose=B13-A14 | outcome rec Loss dose Win ctrl Win | margin rec -221 dose +241 ctrl +241 
+    zy@ 64 B9-A6 dose=E15-B16 | outcome rec Loss dose Win ctrl Win | margin rec -221 dose +67 ctrl +67 
+    zy@ 84 D7-B4 dose=A6-D4 | outcome rec Loss dose Loss ctrl Loss | margin rec -221 dose -209 ctrl -197 top=zy
+    flip census: 6/6 zero-yield cuts measured (cap 16) | targets 2 | flips ctrl 0 recorded 5
+chall-aggro-botIsred.moves: 120 actions | cuts us 18 (zy 4) / opp 54 (zy 8) | destroyed us 13.4 opp 146.6 | final 449-893 Loss
+    zy@ 50 P10-N13 dose=O15-M14 | outcome rec Loss dose Loss ctrl Loss | margin rec -444 dose -94 ctrl -7 top=zy
+    zy@ 62 R15-R13 dose=R15-O18 | outcome rec Loss dose Loss ctrl Loss | margin rec -444 dose -187 ctrl -187 
+    zy@ 90 O15-R13 dose=O18-L19 | outcome rec Loss dose Loss ctrl Loss | margin rec -444 dose -408 ctrl -408 
+    zy@ 98 O19-L16 dose=O15-M18 | outcome rec Loss dose Loss ctrl Loss | margin rec -444 dose -465 ctrl -465 
+    flip census: 4/4 zero-yield cuts measured (cap 16) | targets 1 | flips ctrl 0 recorded 0
+chall-blob-botIsblue.moves: 120 actions | cuts us 9 (zy 1) / opp 0 (zy 0) | destroyed us 28.0 opp 0.0 | final 2412-3879 Loss
+    zy@104 P2-M1 dose=G11-J8 | outcome rec Loss dose Loss ctrl Loss | margin rec -1468 dose -1351 ctrl -1351 
+    flip census: 1/1 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+chall-blob-botIsred.moves: 120 actions | cuts us 15 (zy 1) / opp 3 (zy 0) | destroyed us 65.6 opp 4.6 | final 5227-2791 Win
+    zy@102 B18-A15 dose=P4-M1 | outcome rec Win dose Win ctrl Win | margin rec +2436 dose +2492 ctrl +2492 
+    flip census: 1/1 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+chall-neck-botIsblue.moves: 120 actions | cuts us 38 (zy 8) / opp 51 (zy 4) | destroyed us 54.3 opp 108.6 | final 236-523 Loss
+    zy@ 12 D10-E7 dose=B13-E13 | outcome rec Loss dose Win ctrl Win | margin rec -287 dose +344 ctrl +344 
+    zy@ 16 D10-G10 dose=D10-G9 | outcome rec Loss dose Loss ctrl Win | margin rec -287 dose -247 ctrl +84 top=same top=zy FLIP
+    zy@ 28 C9-A12 dose=B13-D13 | outcome rec Loss dose Win ctrl Win | margin rec -287 dose +298 ctrl +298 
+    zy@ 36 D10-E13 dose=B13-D14 | outcome rec Loss dose Loss ctrl Loss | margin rec -287 dose -169 ctrl -169 
+    zy@ 40 A10-C11 dose=E13-B16 | outcome rec Loss dose Loss ctrl Loss | margin rec -287 dose -34 ctrl -34 
+    zy@ 52 F12-H9 dose=D10-F12 | outcome rec Loss dose Win ctrl Win | margin rec -287 dose +87 ctrl +87 
+    zy@ 88 G9-E6 dose=F6-E9 | outcome rec Loss dose Loss ctrl Loss | margin rec -287 dose -223 ctrl -223 
+    zy@100 E9-H11 dose=I8-I5 | outcome rec Loss dose Loss ctrl Loss | margin rec -287 dose -297 ctrl -297 
+    flip census: 8/8 zero-yield cuts measured (cap 16) | targets 1 | flips ctrl 1 recorded 3
+chall-neck-botIsred.moves: 120 actions | cuts us 20 (zy 1) / opp 43 (zy 1) | destroyed us 39.2 opp 86.4 | final 512-990 Loss
+    zy@ 74 P14-N11 dose=S12-Q11 | outcome rec Loss dose Loss ctrl Loss | margin rec -477 dose -102 ctrl -102 
+    flip census: 1/1 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+chall-sandbag-botIsblue.moves: 120 actions | cuts us 0 (zy 0) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 2120-498 Win
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+chall-sandbag-botIsred.moves: 120 actions | cuts us 1 (zy 0) / opp 1 (zy 0) | destroyed us 2.5 opp 7.0 | final 4613-497 Win
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+chall-sprawl-botIsblue.moves: 120 actions | cuts us 1 (zy 0) / opp 1 (zy 0) | destroyed us 1.2 opp 0.0 | final 2206-708 Win
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+chall-sprawl-botIsred.moves: 120 actions | cuts us 0 (zy 0) / opp 2 (zy 0) | destroyed us 0.0 opp 9.0 | final 4819-825 Win
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+chall-turtle-botIsblue.moves: 120 actions | cuts us 0 (zy 0) / opp 0 (zy 0) | destroyed us 0.0 opp 0.0 | final 2120-416 Win
+    flip census: 0/0 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+chall-turtle-botIsred.moves: 120 actions | cuts us 3 (zy 2) / opp 0 (zy 0) | destroyed us 2.0 opp 0.0 | final 4709-408 Win
+    zy@110 A7-D9 dose=P13-M15 | outcome rec Win dose Win ctrl Win | margin rec +4300 dose +4264 ctrl +4264 
+    zy@114 D9-G11 dose=P13-M15 | outcome rec Win dose Win ctrl Win | margin rec +4300 dose +4281 ctrl +4281 
+    flip census: 2/2 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+skip (neither format): /home/genius74o/game/package-lock.json
+skip (neither format): /home/genius74o/game/package.json
+
+=== CUT-YIELD census (flip) ===
+games 46, actions 5520
+cuts: us 566 / opp 342 | zero-yield: us 214 / opp 42 | destroyed from cuts: us 521.6 / opp 721.9
+zero-yield rate by outcome (our cuts): in wins 177/356 = 49.7% | in losses 37/210 = 17.6% | overall 37.8%
+
+-- per opponent (cuts us / cuts opp | zero-yield us / zero-yield opp) --
+aggro           91 / 159 |  24 /  26
+blob            39 /   4 |   4 /   0
+junk            44 /   0 |  35 /   0
+neck           111 / 160 |  14 /  10
+random         261 /  11 | 123 /   5
+sandbag          2 /   1 |   1 /   0
+sprawl          11 /   7 |   8 /   1
+turtle           7 /   0 |   5 /   0
+
+-- flip census (our zero-yield cuts) --
+measured 209/214 (cap 16) | current engine also plays a zero-yield cut at 24 decision points (dose targets)
+outcome flips vs CONTROL: 2/209 = 1.0% of measured | 0.9% of all recorded zero-yield cuts | 8.3% of dose targets
+outcome flips vs RECORDED (drift-inflated): 19/209 = 9.1% of measured | engine stand-in fallbacks 2308
+
+=== Kill-0 gate (roadmap: >=10% of zero-yield cuts flipping) ===
+0.9% < 10% — below the gate; coordinator decides (weak signal).
+
+NOTE: per-game cap 16 hit — flip rate measured on the capped sample.

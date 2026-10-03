@@ -1,0 +1,66 @@
+MIRROR-ORACLE kill-0 (corrected): 9 openers, Red = recorded mesh line + prot_kill0 continuation (pref = g % min(9)), Blue @30 area >= 35
+============================================================
+
+-- BASELINE (w8 re-plan, no prefixes) --
+opener 0: Blue @30 area =   40.2 | score =    325.2 | Red @30 area =   21.6 PASS
+opener 1: Blue @30 area =   40.2 | score =    325.2 | Red @30 area =   20.8 PASS
+opener 2: Blue @30 area =   40.2 | score =    325.2 | Red @30 area =   21.8 PASS
+opener 3: Blue @30 area =   40.2 | score =    325.2 | Red @30 area =   21.8 PASS
+opener 4: Blue @30 area =   40.2 | score =    325.2 | Red @30 area =   20.8 PASS
+opener 5: Blue @30 area =   40.2 | score =    325.2 | Red @30 area =   19.7 PASS
+opener 6: Blue @30 area =   40.2 | score =    325.2 | Red @30 area =   21.9 PASS
+opener 7: Blue @30 area =   40.2 | score =    325.2 | Red @30 area =   19.7 PASS
+opener 8: Blue @30 area =   40.2 | score =    325.2 | Red @30 area =   20.8 PASS
+=> BASELINE (w8 re-plan, no prefixes): Blue @30 >= 35 in 9/9 openers (distinct Red lines through move 30: 9)
+
+-- ORACLE-A (beam64 solved) --
+opener 0: Blue @30 area =   33.7 | score =    288.1 | Red @30 area =   21.6 fail
+opener 1: Blue @30 area =   33.7 | score =    288.1 | Red @30 area =   20.8 fail
+opener 2: Blue @30 area =   33.7 | score =    288.1 | Red @30 area =   21.8 fail
+opener 3: Blue @30 area =   33.7 | score =    288.1 | Red @30 area =   21.8 fail
+opener 4: Blue @30 area =   33.7 | score =    288.1 | Red @30 area =   20.8 fail
+opener 5: Blue @30 area =   33.7 | score =    288.1 | Red @30 area =   19.7 fail
+opener 6: Blue @30 area =   33.7 | score =    288.1 | Red @30 area =   21.9 fail
+opener 7: Blue @30 area =   33.7 | score =    288.1 | Red @30 area =   19.7 fail
+opener 8: Blue @30 area =   33.7 | score =    288.1 | Red @30 area =   20.8 fail
+=> ORACLE-A (beam64 solved): Blue @30 >= 35 in 0/9 openers (distinct Red lines through move 30: 9)
+
+-- ORACLE-B (beam64 re-plan) --
+opener 0: Blue @30 area =   37.4 | score =    295.0 | Red @30 area =   21.6 PASS
+opener 1: Blue @30 area =   37.4 | score =    295.0 | Red @30 area =   20.8 PASS
+opener 2: Blue @30 area =   37.4 | score =    295.0 | Red @30 area =   21.8 PASS
+opener 3: Blue @30 area =   37.4 | score =    295.0 | Red @30 area =   21.8 PASS
+opener 4: Blue @30 area =   37.4 | score =    295.0 | Red @30 area =   20.8 PASS
+opener 5: Blue @30 area =   37.4 | score =    295.0 | Red @30 area =   19.7 PASS
+opener 6: Blue @30 area =   37.4 | score =    295.0 | Red @30 area =   21.9 PASS
+opener 7: Blue @30 area =   37.4 | score =    295.0 | Red @30 area =   19.7 PASS
+opener 8: Blue @30 area =   37.4 | score =    295.0 | Red @30 area =   20.8 PASS
+=> ORACLE-B (beam64 re-plan): Blue @30 >= 35 in 9/9 openers (distinct Red lines through move 30: 9)
+
+-- BLUE-MESH (w8 + mesh prefix = current) --
+opener 0: Blue @30 area =   38.3 | score =    290.8 | Red @30 area =   21.6 PASS
+opener 1: Blue @30 area =   38.3 | score =    290.8 | Red @30 area =   20.8 PASS
+opener 2: Blue @30 area =   38.3 | score =    290.8 | Red @30 area =   21.8 PASS
+opener 3: Blue @30 area =   38.3 | score =    290.8 | Red @30 area =   21.8 PASS
+opener 4: Blue @30 area =   38.3 | score =    290.8 | Red @30 area =   20.8 PASS
+opener 5: Blue @30 area =   38.3 | score =    290.8 | Red @30 area =   19.7 PASS
+opener 6: Blue @30 area =   38.3 | score =    290.8 | Red @30 area =   21.9 PASS
+opener 7: Blue @30 area =   38.3 | score =    290.8 | Red @30 area =   19.7 PASS
+opener 8: Blue @30 area =   38.3 | score =    290.8 | Red @30 area =   20.8 PASS
+=> BLUE-MESH (w8 + mesh prefix = current): Blue @30 >= 35 in 9/9 openers (distinct Red lines through move 30: 9)
+
+-- BLUE-OPENER (w8 + D10-F7 only) --
+opener 0: Blue @30 area =   40.5 | score =    314.3 | Red @30 area =   21.6 PASS
+opener 1: Blue @30 area =   40.5 | score =    314.3 | Red @30 area =   20.8 PASS
+opener 2: Blue @30 area =   40.5 | score =    314.3 | Red @30 area =   21.8 PASS
+opener 3: Blue @30 area =   40.5 | score =    314.3 | Red @30 area =   21.8 PASS
+opener 4: Blue @30 area =   40.5 | score =    314.3 | Red @30 area =   20.8 PASS
+opener 5: Blue @30 area =   40.5 | score =    314.3 | Red @30 area =   19.7 PASS
+opener 6: Blue @30 area =   40.5 | score =    314.3 | Red @30 area =   21.9 PASS
+opener 7: Blue @30 area =   40.5 | score =    314.3 | Red @30 area =   19.7 PASS
+opener 8: Blue @30 area =   40.5 | score =    314.3 | Red @30 area =   20.8 PASS
+=> BLUE-OPENER (w8 + D10-F7 only): Blue @30 >= 35 in 9/9 openers (distinct Red lines through move 30: 9)
+
+============================================================
+baseline 9/9 | ORACLE-A 0/9 | ORACLE-B 9/9 | BLUE-MESH 9/9 | BLUE-OPENER 9/9
+VERDICT: KILL-0 MET — beam-64 Blue reaches @30 >= 35 in >= 8/9 openers; dose spec (MESH_B_ORACLE table extraction) may be written.

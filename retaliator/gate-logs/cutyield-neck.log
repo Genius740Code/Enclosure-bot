@@ -1,0 +1,38 @@
+R-chall-neck-botIsblue.moves: 120 actions | cuts us 23 (zy 1) / opp 22 (zy 2) | destroyed us 28.4 opp 28.6 | final 736-802 Loss
+    zy@ 61 G11-H8 dose=D11-B12 | outcome rec Loss dose Win ctrl Win | margin rec -66 dose +456 ctrl +456 
+    flip census: 1/1 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 1
+R-chall-neck-botIsred.moves: 120 actions | cuts us 30 (zy 4) / opp 44 (zy 3) | destroyed us 31.0 opp 99.0 | final 373-705 Loss
+    zy@ 18 P10-M8 dose=S10-S13 | outcome rec Loss dose Win ctrl Win | margin rec -332 dose +155 ctrl +155 
+    zy@ 22 S10-P13 dose=P9-M11 | outcome rec Loss dose Loss ctrl Loss | margin rec -332 dose -1 ctrl -1 
+    zy@ 27 P10-Q8 dose=Q7-N4 | outcome rec Loss dose Win ctrl Loss | margin rec -332 dose +239 ctrl -99 top=zy FLIP
+    zy@ 50 S10-P9 dose=S10-S7 | outcome rec Loss dose Win ctrl Win | margin rec -332 dose +276 ctrl +276 
+    flip census: 4/4 zero-yield cuts measured (cap 16) | targets 1 | flips ctrl 1 recorded 3
+chall-neck-botIsblue.moves: 120 actions | cuts us 38 (zy 8) / opp 51 (zy 4) | destroyed us 54.3 opp 108.6 | final 236-523 Loss
+    zy@ 12 D10-E7 dose=B13-E13 | outcome rec Loss dose Win ctrl Win | margin rec -287 dose +344 ctrl +344 
+    zy@ 16 D10-G10 dose=D10-G9 | outcome rec Loss dose Loss ctrl Win | margin rec -287 dose -247 ctrl +84 top=same top=zy FLIP
+    zy@ 28 C9-A12 dose=B13-D13 | outcome rec Loss dose Win ctrl Win | margin rec -287 dose +298 ctrl +298 
+    zy@ 36 D10-E13 dose=B13-D14 | outcome rec Loss dose Loss ctrl Loss | margin rec -287 dose -169 ctrl -169 
+    zy@ 40 A10-C11 dose=E13-B16 | outcome rec Loss dose Loss ctrl Loss | margin rec -287 dose -34 ctrl -34 
+    zy@ 52 F12-H9 dose=D10-F12 | outcome rec Loss dose Win ctrl Win | margin rec -287 dose +87 ctrl +87 
+    zy@ 88 G9-E6 dose=F6-E9 | outcome rec Loss dose Loss ctrl Loss | margin rec -287 dose -223 ctrl -223 
+    zy@100 E9-H11 dose=I8-I5 | outcome rec Loss dose Loss ctrl Loss | margin rec -287 dose -297 ctrl -297 
+    flip census: 8/8 zero-yield cuts measured (cap 16) | targets 1 | flips ctrl 1 recorded 3
+chall-neck-botIsred.moves: 120 actions | cuts us 20 (zy 1) / opp 43 (zy 1) | destroyed us 39.2 opp 86.4 | final 512-990 Loss
+    zy@ 74 P14-N11 dose=S12-Q11 | outcome rec Loss dose Loss ctrl Loss | margin rec -477 dose -102 ctrl -102 
+    flip census: 1/1 zero-yield cuts measured (cap 16) | targets 0 | flips ctrl 0 recorded 0
+
+=== CUT-YIELD census (flip) ===
+games 4, actions 480
+cuts: us 111 / opp 160 | zero-yield: us 14 / opp 10 | destroyed from cuts: us 152.9 / opp 322.6
+zero-yield rate by outcome (our cuts): in wins 0/0 = 0.0% | in losses 14/111 = 12.6% | overall 12.6%
+
+-- per opponent (cuts us / cuts opp | zero-yield us / zero-yield opp) --
+neck           111 / 160 |  14 /  10
+
+-- flip census (our zero-yield cuts) --
+measured 14/14 (cap 16) | current engine also plays a zero-yield cut at 2 decision points (dose targets)
+outcome flips vs CONTROL: 2/14 = 14.3% of measured | 14.3% of all recorded zero-yield cuts | 100.0% of dose targets
+outcome flips vs RECORDED (drift-inflated): 7/14 = 50.0% of measured | engine stand-in fallbacks 664
+
+=== Kill-0 gate (roadmap: >=10% of zero-yield cuts flipping) ===
+14.3% >= 10% — PROCEED to dose (ZERO_CUT_PENALTY=1.0 x hz).

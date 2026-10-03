@@ -1,0 +1,30 @@
+MIRROR-ORACLE kill-0 (recorded mirrors): 5 openers = the 5 recorded v7-vs-v6 mirrors, Red = recorded moves (fallback mesh/g-continuation), Blue @30 area >= 35
+============================================================
+
+-- CURRENT (w8 + mesh, re-plan) --
+opener 0 (16840108…): Blue @30 area =   38.3 | score =    290.8 | Red @30 =   37.2 | recorded 15/60 used, fb 0 PASS
+opener 1 (21fc2945…): Blue @30 area =   38.3 | score =    290.8 | Red @30 =   37.2 | recorded 15/60 used, fb 0 PASS
+opener 2 (b4462808…): Blue @30 area =   38.3 | score =    290.8 | Red @30 =   37.2 | recorded 15/60 used, fb 0 PASS
+opener 3 (c20c750b…): Blue @30 area =   38.3 | score =    290.8 | Red @30 =   37.2 | recorded 15/60 used, fb 0 PASS
+opener 4 (c3c8cf5b…): Blue @30 area =   38.3 | score =    290.8 | Red @30 =   37.2 | recorded 15/60 used, fb 0 PASS
+=> CURRENT (w8 + mesh, re-plan): Blue @30 >= 35 in 5/5 recorded openers
+
+-- BEAM64 (w64, no prefixes, re-plan) --
+opener 0 (16840108…): Blue @30 area =   37.4 | score =    295.0 | Red @30 =   37.2 | recorded 15/60 used, fb 0 PASS
+opener 1 (21fc2945…): Blue @30 area =   37.4 | score =    295.0 | Red @30 =   37.2 | recorded 15/60 used, fb 0 PASS
+opener 2 (b4462808…): Blue @30 area =   37.4 | score =    295.0 | Red @30 =   37.2 | recorded 15/60 used, fb 0 PASS
+opener 3 (c20c750b…): Blue @30 area =   37.4 | score =    295.0 | Red @30 =   37.2 | recorded 15/60 used, fb 0 PASS
+opener 4 (c3c8cf5b…): Blue @30 area =   37.4 | score =    295.0 | Red @30 =   37.2 | recorded 15/60 used, fb 0 PASS
+=> BEAM64 (w64, no prefixes, re-plan): Blue @30 >= 35 in 5/5 recorded openers
+
+-- BEAM64-SOLVED (w64 PV played out, no re-plan) --
+opener 0 (16840108…): Blue @30 area =   33.7 | score =    288.1 | Red @30 =   37.2 | recorded 15/60 used, fb 0 fail
+opener 1 (21fc2945…): Blue @30 area =   33.7 | score =    288.1 | Red @30 =   37.2 | recorded 15/60 used, fb 0 fail
+opener 2 (b4462808…): Blue @30 area =   33.7 | score =    288.1 | Red @30 =   37.2 | recorded 15/60 used, fb 0 fail
+opener 3 (c20c750b…): Blue @30 area =   33.7 | score =    288.1 | Red @30 =   37.2 | recorded 15/60 used, fb 0 fail
+opener 4 (c3c8cf5b…): Blue @30 area =   33.7 | score =    288.1 | Red @30 =   37.2 | recorded 15/60 used, fb 0 fail
+=> BEAM64-SOLVED (w64 PV played out, no re-plan): Blue @30 >= 35 in 0/5 recorded openers
+
+============================================================
+CURRENT 5/5 | BEAM64 5/5 | BEAM64-SOLVED 0/5
+VERDICT: KILL-0 MET on the recorded mirrors — beam-64 Blue reaches @30 >= 35 in 5/5; dose spec may be written.
