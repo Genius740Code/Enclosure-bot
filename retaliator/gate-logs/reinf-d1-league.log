@@ -1,0 +1,150 @@
+warning: variable does not need to be mutable
+   --> examples/probe_r_reinforce.rs:249:9
+    |
+249 |     let mut take_every = |game: &mut Game, step: usize, out: &mut Vec<(Position, Vec<Move>)>| {
+    |         ----^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `capped` is never read
+   --> examples/probe_r_reinforce.rs:120:5
+    |
+112 | struct Played {
+    |        ------ field in this struct
+...
+120 |     capped: bool,
+    |     ^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `CUT_MEMORY` is never used
+   --> examples/../src/eval_reinforce.rs:253:11
+    |
+253 | pub const CUT_MEMORY: usize = 6;
+    |           ^^^^^^^^^^
+
+warning: field `depth` is never read
+   --> examples/../src/eval_reinforce.rs:331:9
+    |
+327 | pub struct Analysis {
+    |            -------- field in this struct
+...
+331 |     pub depth: usize,
+    |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+   --> examples/../src/eval_reinforce.rs:344:9
+    |
+338 | pub struct Candidate {
+    |            --------- fields in this struct
+...
+344 |     pub pv: Vec<Move>,
+    |         ^^
+345 |     /// 1, plus the replies searched.
+346 |     pub visits: usize,
+    |         ^^^^^^
+
+warning: function `best_move` is never used
+   --> examples/../src/eval_reinforce.rs:349:8
+    |
+349 | pub fn best_move(position: &Position) -> Option<Move> {
+    |        ^^^^^^^^^
+
+warning: function `baseline_best_move` is never used
+   --> examples/../src/eval_reinforce.rs:354:8
+    |
+354 | pub fn baseline_best_move(position: &Position) -> Option<Move> {
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: function `best_move_with_avoid` is never used
+   --> examples/../src/eval_reinforce.rs:361:8
+    |
+361 | pub fn best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move> {
+    |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `baseline_best_move_with_avoid` is never used
+   --> examples/../src/eval_reinforce.rs:369:8
+    |
+369 | pub fn baseline_best_move_with_avoid(position: &Position, avoid: &[Point]) -> Option<Move> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `analyze` is never used
+   --> examples/../src/eval_reinforce.rs:379:8
+    |
+379 | pub fn analyze(position: &Position, budget: usize) -> Analysis {
+    |        ^^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/v1base.rs:47:9
+   |
+45 | pub struct Analysis {
+   |            -------- fields in this struct
+46 |     /// Blue's lead after the best move and its reply.
+47 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+48 |     /// 2 when replies were searched.
+49 |     pub depth: usize,
+   |         ^^^^^
+50 |     /// Positions searched.
+51 |     pub nodes: usize,
+   |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/v1base.rs:62:9
+   |
+56 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+62 |     pub pv: Vec<Move>,
+   |         ^^
+63 |     /// 1, plus the replies searched.
+64 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: fields `evaluation`, `depth`, and `nodes` are never read
+  --> examples/support/scoutbase.rs:27:9
+   |
+25 | pub struct Analysis {
+   |            -------- fields in this struct
+26 |     /// Blue's lead after the best move and its reply.
+27 |     pub evaluation: f64,
+   |         ^^^^^^^^^^
+28 |     /// 2 when replies were searched.
+29 |     pub depth: usize,
+   |         ^^^^^
+30 |     /// Positions searched.
+31 |     pub nodes: usize,
+   |         ^^^^^
+
+warning: fields `pv` and `visits` are never read
+  --> examples/support/scoutbase.rs:41:9
+   |
+36 | pub struct Candidate {
+   |            --------- fields in this struct
+...
+41 |     pub pv: Vec<Move>,
+   |         ^^
+42 |     /// 1, plus the replies searched.
+43 |     pub visits: usize,
+   |         ^^^^^^
+
+warning: `retaliator` (example "probe_r_reinforce") generated 14 warnings (run `cargo fix --example "probe_r_reinforce" -p retaliator` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 0.04s
+     Running `target/release/examples/probe_r_reinforce league`
+probe_r_reinforce: v9 REINFORCE D1 (DENSE extension, kill-0 GO 5e43810)
+mode: league
+=== league: league_mesh structure, routed, vs scoutbase ===
+rows: skip x color x variant; margins from our perspective
+skip=0 blue dose: 1421 vs 1082 margin +23.9% (survival 8.4%) | control: 1344 vs 1061 margin +21.0% (survival 13.7%)
+skip=0 red  dose: 2042 vs  797 margin +61.0% (survival 19.7%) | control: 2181 vs 1458 margin +33.1% (survival 26.3%)
+skip=10 blue dose: 1280 vs 1696 margin -32.6% (survival 18.3%) | control: 1494 vs  606 margin +59.4% (survival 23.8%)
+skip=10 red  dose: 2053 vs  943 margin +54.1% (survival 65.1%) | control: 1924 vs 1001 margin +48.0% (survival 57.4%)
+skip=20 blue dose:  928 vs  737 margin +20.6% (survival 11.5%) | control:  939 vs  876 margin +6.7% (survival 10.9%)
+skip=20 red  dose:  864 vs  844 margin +2.3% (survival 0.9%) | control: 1119 vs  947 margin +15.3% (survival 10.3%)
+skip=30 blue dose: 1880 vs  874 margin +53.5% (survival 23.2%) | control: 2025 vs 1047 margin +48.3% (survival 64.2%)
+skip=30 red  dose: 1120 vs 2092 margin -86.8% (survival 5.1%) | control:  808 vs 1956 margin -142.1% (survival 0.0%)
+league AVG margin: dose +12.0% (worst -86.8%) | control +11.2% (worst -142.1%)
+GATE (AVG > -9.9% AND worst > -300%): PASS
+mode league done in 1235s

@@ -214,3 +214,47 @@ rows improve at 0.1-0.25 (+14 to +35pp) — a phase-gated variant would be a NEW
 dose for a new lane, own kill-0 + gates. Shipped bot untouched (w=0 default,
 identity proven). Verdict: **KILL** — no dose beats control jointly on
 h2h+league. Logs: research/logs/r9-reinforce-*.txt.
+
+## 2026-10-03 — v9 REINFORCE D1 (DENSE extension toward shared-node walls) — KILL
+Parallel GLM-lane attempt at item 4, same kill-0 GO (5e43810), independent
+dose form: ranking-time instead of selection-time (the two KILLs compose —
+see cross-note in research/reinf-d1.md). Code under `*_dense` names
+(`src/eval_reinforce_dense.rs`, `examples/probe_r_reinforce_dense.rs`) since
+the selection-time attempt owns the canonical file names.
+Dose: ranking-time DENSE_BONUS extension, one variable REINFORCE_DENSE_W=1.0
+(build behind 2+ shared-node walls by shared-node ratio + adjacency floor;
+expand far/bank behind from 2+-edge anchors; DEADWOOD/IDLE respected — gains
+or reaches only). Lane snapshot of shipped `search.rs` + term (Lane B
+pattern) at `src/eval_reinforce_dense.rs` (renamed post-push: the
+selection-time attempt owns the canonical names);
+`src/search.rs`/`src/lib.rs` untouched.
+Branch lane-v9-reinforce (append-only), base 530d4b4, kill-0 GO 5e43810
+adopted. Full report: research/reinf-d1.md; logs gate-logs/reinf-d1-*.log.
+- OFF-identity: **PASS** 32/32 picks + 32/32 full candidate lists byte-identical
+  to live search (routed spot check 5/5).
+- Flip census: live — 4/36 picks flip at W in {0.25,0.5,1.0}, 6/36 at {2,4}
+  (H1 NO-GO's zero-flip failure mode ruled out; same 4 decisions at every
+  W<=1, so weight-tuning cannot rescue the direction).
+- h2h vs control (live engine, 10 games 5+5, fixed budget): **FAIL 2/10**
+  (Blue 2/5, Red 0/5; bar >=6/10). Pooled survival 7.0%, margin -54.7%,
+  dense-freq 30.3%.
+- Suite E-6 (8 games per opponent, 4+4 both colors): v1 dose 1/8 vs control
+  2/8; scout dose 2/8 vs control 3/8 (margins -34.1% vs +2.2%); greedy 8/8 =
+  8/8. Dose <= control on every opponent.
+- Gauge: **PASS** 6/6 (dose 6/6 = control 6/6; dose outscores vs greedy).
+- League (routed, league_mesh structure): **PASS** AVG +12.0% worst -86.8%
+  (control +11.2%/-142.1% same rows — within run variance; one dose
+  regression skip=10 blue -32.6% vs +59.4%).
+- Survival metric (survived/(survived+popped); site baseline 5.3%, VladNet
+  50-55%, GB 88-90%): h2h 7.0%, vs v1 8.6% (control 5.1%), vs scout 13.9%
+  (control 12.1%), league rows mixed. Moves toward the dose's intent; wins
+  do not follow.
+Verdict: **KILL — do not stack, do not sweep.** The dose steers as designed
+(dense-freq up, survival up on some axes) but the promoted thicket landings
+lose the direct, deterministic comparisons (2/10 vs control; E-6 <= everywhere).
+Successor requirement (per the census): move to selection-time
+(`selection_adjusted`) and gate on flipping the 48/96 rebuild-farm
+`now=same` positions, not generic flips. NOTE: the selection-time form was
+independently tried and KILLed by the parallel lane (row above) — item 4's
+reinforcing direction is dead in both layers on this base; revival needs a
+phase-gated/corpus-targeted gate with its own kill-0.
